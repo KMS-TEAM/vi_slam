@@ -1,2 +1,0 @@
-/home/lacie/Github/visual-slam/vi-slam/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/lacie/Github/visual-slam/vi-slam/cmake-build-debug/CMakeFiles/edit_cache.dir
