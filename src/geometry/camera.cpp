@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include " vi_slam/geometry/camera.h"
+#include "vi_slam/geometry/camera.h"
 
 namespace vi_slam{
     namespace geometry{

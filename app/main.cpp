@@ -13,7 +13,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
-// my
 #include "vi_slam/common_include.h"
 
 #include "vi_slam/vo/vo_io.h"

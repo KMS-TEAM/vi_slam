@@ -1,3 +1,2 @@
 add_executable(app main.cpp)
-target_link_libraries( app vi_slam)
-
+target_link_libraries(app vi_slam)

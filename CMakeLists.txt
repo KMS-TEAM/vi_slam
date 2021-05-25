@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(vi_slam)
 
 set(CMAKE_BUILD_TYPE Release)
@@ -78,5 +78,14 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(app)
+
+add_library(vi_slam INTERFACE)
+target_link_libraries(vi_slam INTERFACE
+        vo
+        optimization
+        geometry
+        basics
+        display
+        ${THIRD_PARTY_LIBS})
 
 

@@ -3,7 +3,7 @@
 //
 
 
-#include "vi_slam/display/pcl_display_lib.h"
+#include "vi_slam/display/display_lib.h"
 #include "vi_slam/basics/eigen_funcs.h"
 
 namespace vi_slam

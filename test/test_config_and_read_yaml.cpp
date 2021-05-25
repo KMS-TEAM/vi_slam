@@ -21,8 +21,8 @@ int main(int argc, char **argv)
     cout << "Read yaml by this cpp: level_pyrimid = " << level_pyramid << endl;
 
     // test 2
-    basics::Config::setParameterFile(filename);
-    level_pyramid = basics::Config::get<int>(key);
+    vi_slam::basics::Config::setParameterFile(filename);
+    level_pyramid = vi_slam::basics::Config::get<int>(key);
     cout << "Read yaml by config.h: level_pyrimid = " << level_pyramid << endl;
 
     return 1;

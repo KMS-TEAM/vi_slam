@@ -28,10 +28,8 @@ add_library( vo SHARED
         vo/map.cpp
         vo/mappoint.cpp
         vo/vo_commons.cpp
+        vo/vo.cpp
         )
-
-add_library(vi_slam INTERFACE)
-
 
 target_link_libraries( basics
         ${THIRD_PARTY_LIBS}
@@ -53,10 +51,3 @@ target_link_libraries( vo
         ${THIRD_PARTY_LIBS} geometry basics optimization
         )
 
-target_link_libraries(vi_slam INTERFACE
-        vo
-        optimization
-        geometry
-        basics
-        display
-        ${THIRD_PARTY_LIBS})

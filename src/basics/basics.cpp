@@ -40,7 +40,7 @@ namespace vi_slam{
 
             return vector<double>{
                 std::istream_iterator<double>(iss),
-                std::istream_iterrator<double>()};
+                std::istream_iterator<double>()};
         }
 
 
