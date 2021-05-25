@@ -5,7 +5,7 @@
 #ifndef VI_SLAM_MOTION_ESTIMATION_H
 #define VI_SLAM_MOTION_ESTIMATION_H
 
-/* @brief Functions for estimating camera motion between two frames.
+/** @brief Functions for estimating camera motion between two frames.
  */
 
 #include "../common_include.h"
