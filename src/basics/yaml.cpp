@@ -2,9 +2,9 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi-slam/yaml.h"
+#include "vi_slam/basics/yaml.h"
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
         Yaml::Yaml(const std::string &filename) : file_storage_(filename, cv::FileStorage::READ),
                                                   is_file_node_(false){

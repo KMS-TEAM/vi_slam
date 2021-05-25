@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi-slam/basics.h"
+#include "vi_slam/basics/basics.h"
 
 #include <iterator>
 #include <assert.h>
@@ -13,7 +13,7 @@
 #include <unistd.h>      // access
 #include <stdlib.h>      // access
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
 
         bool str2bool(const string &s){

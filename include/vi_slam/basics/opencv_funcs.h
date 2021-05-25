@@ -7,7 +7,7 @@
 
 #include "../common_include.h"
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
         // -----------------Image operation---------------------
         vector<unsigned char> getPixelAt(const cv::Mat &image, int x, int y);

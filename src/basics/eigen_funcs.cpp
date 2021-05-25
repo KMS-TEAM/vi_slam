@@ -2,10 +2,10 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi-slam/eigen_funcs.h"
-#include "vi-slam/opencv_funcs.h"
+#include "vi_slam/basics/eigen_funcs.h"
+#include "vi_slam/basics/opencv_funcs.h"
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
         // --------------  Eigen --------------
         Eigen::Affine3d getAffine3d(double x, double y, double z, double rot_axis_x, double rot_axis_y, double rot_axis_z)

@@ -7,7 +7,7 @@
 
 #include "../common_include.h"
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics {
 
         /// Convert a string of "true" or "false" to bool

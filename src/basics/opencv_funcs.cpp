@@ -2,10 +2,10 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi-slam/opencv_funcs.h"
+#include "vi_slam/basics/opencv_funcs.h"
 
-namespace mono_vo{
-    namespace bascis{
+namespace vi_slam{
+    namespace basics{
 
         // ---------------- image operation ----------------
         vector<unsigned char> getPixelAt(const cv::Mat &image, int x, int y){

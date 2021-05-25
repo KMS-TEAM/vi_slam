@@ -2,9 +2,9 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi-slam/config.h"
+#include "vi_slam/basics/config.h"
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
         std::shared_ptr<Config> Config::config_ = nullptr;
 

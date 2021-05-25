@@ -7,7 +7,7 @@
 
 #include "../common_include.h"
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
 
         /// Interface with config file

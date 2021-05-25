@@ -12,12 +12,12 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "sophus/so3.hpp"
-#include "src/sophus/se3.hpp"
+#include <sophus/so3.hpp>
+#include <sophus/se3.hpp>
 
 #include <opencv2/core/eigen.hpp>
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
         /**
          * ------------------Eigen-----------------------

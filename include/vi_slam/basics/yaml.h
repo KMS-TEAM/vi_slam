@@ -11,7 +11,7 @@
 #include <vector>
 #include <assert.h>
 
-namespace mono_vo{
+namespace vi_slam{
     namespace basics{
         class Yaml{
         public:
