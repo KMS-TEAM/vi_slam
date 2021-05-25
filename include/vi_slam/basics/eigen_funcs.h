@@ -34,12 +34,12 @@ namespace vi_slam{
         /**
          * ----------------OpenCV <--> Sophus-------------------
          */
-        Sophus::SE3 transT_cv2sophus(const cv::Mat &T_cv);
+        Sophus::SE3d transT_cv2sophus(const cv::Mat &T_cv);
 
         /**
          * ----------------OpenCV <--> Sophus-------------------
          */
-        cv::Mat transT_sophus2cv(const Sophus::SE3 &T_sophus);
+        cv::Mat transT_sophus2cv(const Sophus::SE3d &T_sophus);
     }
 }
 

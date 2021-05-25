@@ -12,6 +12,8 @@ namespace vi_slam{
 
         /// Interface with config file
         class Config {
+
+        public:
             /// Set a new config file
             static void setParameterFile(const std::string &filename);
 
