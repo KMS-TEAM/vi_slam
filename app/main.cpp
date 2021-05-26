@@ -243,10 +243,13 @@ bool drawResultByPcl(basics::Yaml config_dataset,
 
     // -- Update truth camera pose
     static const bool is_draw_true_traj = config_dataset.getBool("is_draw_true_traj");
+
     if (is_draw_true_traj)
     {
         static const string true_traj_filename = config_dataset.get<string>("true_traj_filename");
+
         static const vector<cv::Mat> truth_poses = vo::readPoseFromFile(true_traj_filename);
+        std::cout << truth_poses[frame->id_] << std::endl;
         cv::Mat truth_T = truth_poses[frame->id_], truth_R_vec, truth_t;
         basics::getRtFromT(truth_T, truth_R_vec, truth_t);
 

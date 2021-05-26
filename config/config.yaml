@@ -5,12 +5,12 @@ dataset_name: kitti
 kitti:
 
     dataset_dir: /home/lacie/Github/data/00/image_0
-    num_images: 4541
+    num_images: 4500
 
-    camera_info.cx: 607.1928
-    camera_info.cy: 185.2157
-    camera_info.fx: 718.856
-    camera_info.fy: 718.856
+    camera_info.cx: 6.071928000000e+02
+    camera_info.cy: 1.852157000000e+02
+    camera_info.fx: 7.188560000000e+02
+    camera_info.fy: 7.188560000000e+02
 
     is_draw_true_traj: "true"
     true_traj_filename: /home/lacie/Github/data/00/00.txt
@@ -18,10 +18,10 @@ kitti:
 # ================================================
 # =============== General settings ===============
 # ================================================
-max_num_imgs_to_proc: 4541
+max_num_imgs_to_proc: 4500
 is_pcl_wait_for_keypress: "false"
 cv_waitkey_time: 1
-save_predicted_traj_to: /home/lacie/Github/data/00/cam_traj.txt
+save_predicted_traj_to: /home/lacie/Github/data/00/image_0/cam_traj.txt
 output_folder: output
 
 # ------------------- Feature Matching -------------------
@@ -29,7 +29,7 @@ output_folder: output
 number_of_keypoints_to_extract: 1500
 max_number_of_keypoints: 1500
 scale_factor: 1.2
-level_pyramid: 4
+level_pyramid: 8
 score_threshold: 20
 
 feature_match_method_index_initialization: 1
