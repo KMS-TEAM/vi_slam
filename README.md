@@ -40,3 +40,19 @@ sudo apt-get install pcl-tools
 ### Pangolin
 Version: [v0.6](https://github.com/stevenlovegrove/Pangolin/releases/tag/v0.6)
 
+## Mannual
+
+1. Install all requirement
+   
+2. Install third party library
+
+2.1. Vilib
+```
+cd thirdparty
+mkdir build
+cd build
+cmake ..
+make 
+sudo make install
+```
+

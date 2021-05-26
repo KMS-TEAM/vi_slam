@@ -1,27 +1,27 @@
 %YAML:1.0
 ---
-dataset_name: kitti
+dataset_name: TUM
 
-kitti:
+TUM:
 
-    dataset_dir: /home/lacie/Github/data/00/image_0
-    num_images: 4500
+    dataset_dir: /home/lacie/Github/data/rgbd_dataset_freiburg1_desk/undist
+    num_images: 613
 
-    camera_info.cx: 6.071928000000e+02
-    camera_info.cy: 1.852157000000e+02
-    camera_info.fx: 7.188560000000e+02
-    camera_info.fy: 7.188560000000e+02
+    camera_info.cx: 318.6
+    camera_info.cy: 255.3
+    camera_info.fx: 517.3
+    camera_info.fy: 516.5
 
-    is_draw_true_traj: "true"
+    is_draw_true_traj: "false"
     true_traj_filename: /home/lacie/Github/data/00/00.txt
 
 # ================================================
 # =============== General settings ===============
 # ================================================
-max_num_imgs_to_proc: 4500
+max_num_imgs_to_proc: 613
 is_pcl_wait_for_keypress: "false"
 cv_waitkey_time: 1
-save_predicted_traj_to: /home/lacie/Github/data/00/image_0/cam_traj.txt
+save_predicted_traj_to: /home/lacie/Github/data/rgbd_dataset_freiburg1_desk/cam_traj.txt
 output_folder: output
 
 # ------------------- Feature Matching -------------------
