@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.0)
 project(vi_slam)
 
+include(CheckLanguage)
+check_language(CUDA)
+if (CMAKE_CUDA_COMPILER)
+    project(vi_slam LANGUAGES CXX CUDA)
+else()
+    project(vi_slam LANGUAGES CXX)
+endif()
+
 set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
@@ -56,6 +64,11 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+#vilib
+find_package(vilib REQUIRED)
+find_package(CUDA REQUIRED)
+message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
+
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}
         ${Sophus_LIBRARIES}
@@ -71,12 +84,13 @@ set(THIRD_PARTY_LIBS
         ${CSPARSE_LIBRARY}
         pthread
         g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
+        vilib::vilib
         )
 
 ############### source and test ######################
 include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(src)
-#add_subdirectory(test)
+add_subdirectory(test)
 add_subdirectory(app)
 
 add_library(vi_slam INTERFACE)

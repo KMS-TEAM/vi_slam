@@ -16,6 +16,7 @@ add_library(geometry SHARED
         geometry/feature_match.cpp
         geometry/epipolar_geometry.cpp
         geometry/motion_estimation.cpp
+        geometry/fast_cuda.cpp
         )
 
 add_library( optimization SHARED
@@ -40,6 +41,7 @@ target_link_libraries( display
         )
 
 target_link_libraries( geometry
+        vilib::vilib
         ${THIRD_PARTY_LIBS} basics
         )
 

@@ -18,3 +18,4 @@ target_link_libraries( test_pcl_display
    basics
     display
 )
+

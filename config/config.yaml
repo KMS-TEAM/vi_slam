@@ -32,6 +32,22 @@ scale_factor: 1.2
 level_pyramid: 8
 score_threshold: 20
 
+# FAST CUDA
+#-----Frame preprocessing----
+pyramid_levels: 1
+pyramid_min_level: 0
+pyramid_max_level: 1
+#-----FAST detector parameters---
+fast_epsilon: 10.0
+fast_min_arc_length: 10
+fast_score: 1
+#----NMS parameters
+horizontal_border: 0
+vertical_border: 0
+cell_size_width: 32
+cell_size_height: 32
+
+
 feature_match_method_index_initialization: 1
 feature_match_method_index_pnp: 1
 feature_match_method_index_triangulation: 1

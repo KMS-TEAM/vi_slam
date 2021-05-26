@@ -16,12 +16,8 @@ find_package(Eigen3 REQUIRED)
 
 message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
-file(GLOB_RECURSE HARRIS_TEST_SOURCES
-  src/*.cpp
-  src/*.cu
-  )
 
-add_executable(fast_tests ${HARRIS_TEST_SOURCES})
+add_executable(fast_tests test_fast_class.cpp)
 include_directories(include)
 
 target_link_libraries(fast_tests

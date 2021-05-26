@@ -1,2 +1,3 @@
 add_subdirectory(harris-cuda)
 add_subdirectory(slam_test)
+add_subdirectory(fast_slam_test)
