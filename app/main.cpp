@@ -58,8 +58,9 @@ const bool IS_DEBUGGING = false;
 int main(int argc, char **argv)
 {
     // -- Set configuration file
-    assert(checkInputArguments(argc, argv));
-    const string kConfigFile = argv[1];
+    //assert(checkInputArguments(argc, argv));
+    // const string kConfigFile = argv[1];
+    const string kConfigFile = "/home/lacie/Github/vi_slam/config/config.yaml";
     basics::Yaml config(kConfigFile);              // Use Yaml to read .yaml
     basics::Config::setParameterFile(kConfigFile); // Use Config to read .yaml
     const string dataset_name = config.get<string>("dataset_name");
@@ -72,7 +73,7 @@ int main(int argc, char **argv)
             image_paths;
     if (IS_DEBUGGING) // Read certain images specified below.
     {
-        string folder = "/home/feiyu/Documents/Projects/EECS432_CV_VO/data/test_data/";
+        string folder = "/home/lacie/Github/data/00/image_0";
         vector<string> tmp{
                 "image0001.jpg", "image0013.jpg", "image0015.jpg"};
         for (string &filename : tmp)
@@ -84,7 +85,7 @@ int main(int argc, char **argv)
         const string dataset_dir = config_dataset.get<string>("dataset_dir");
         const int num_images = config_dataset.get<int>("num_images");
         constexpr bool is_print_res = false;
-        const string image_formatting = "/rgb_%05d.png";
+        const string image_formatting = "/00%04d.png";
         image_paths = vo::readImagePaths(dataset_dir, num_images, image_formatting, is_print_res);
     }
 

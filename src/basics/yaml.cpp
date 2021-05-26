@@ -8,6 +8,7 @@ namespace vi_slam{
     namespace basics{
         Yaml::Yaml(const std::string &filename) : file_storage_(filename, cv::FileStorage::READ),
                                                   is_file_node_(false){
+            std::cout << filename << std::endl;
             if (!file_storage_.isOpened()){
                 std::cout << "Error reading config file: " << filename << std::endl;
                 exit(EXIT_FAILURE);
