@@ -69,7 +69,7 @@ max_ratio_between_max_angle_and_median_angle: 20
 # ------------------- Initialization -------------------
 min_inlier_matches: 15
 min_pixel_dist: 50
-min_median_triangulation_angle: 2.0
+min_median_triangulation_angle: 1.0
 assumed_mean_pts_depth_during_vo_init: 0.8
 
 # ------------------- Tracking -------------------
