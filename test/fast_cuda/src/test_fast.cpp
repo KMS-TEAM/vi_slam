@@ -69,7 +69,7 @@ using namespace vilib;
 // Test framework options
 #define DISPLAY_PYRAMID_CPU                  0
 #define DISPLAY_DETECTED_FEATURES_CPU        0
-#define DISPLAY_DETECTED_FEATURES_GPU        0
+#define DISPLAY_DETECTED_FEATURES_GPU        1
 #define ENABLE_CPU_VERSION                   1
 #define ENABLE_GPU_VERSION                   1
 // Remark: the subset verification only works with the scores mentioned above
@@ -197,7 +197,8 @@ bool TestFAST::run_benchmark(std::vector<vilib::Statistics> & stat_cpu,
   stat_gpu[STAT_ID_FEATURE_COUNT].add(detector_gpu_->count());
   // Display results
 #if DISPLAY_DETECTED_FEATURES_GPU
-  detector_gpu_->displayFeatures("FAST detector (GPU)",image_pyramid,true,true);
+  //detector_gpu_->displayFeatures("FAST detector (GPU)",image_pyramid,true,true);
+    
 #endif /* DISPLAY_DETECTED_FEATURES_GPU */
 #else
   (void)stat_gpu;

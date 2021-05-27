@@ -12,6 +12,7 @@
 #include "vilib/feature_detection/detector_base_gpu.h"
 #include "vilib/timer.h"
 #include "vilib/statistics.h"
+#include "vilib/cuda_common.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -20,6 +21,10 @@
 
 int main(int argc, char** argv){
     // std::string image_path = argv[1];
+
+    if(!vilib::cuda_initialize()) {
+        return -1;
+    }
 
     const string kConfigFile = "/home/lacie/Github/vi_slam/config/config.yaml";
     vi_slam::basics::Yaml config(kConfigFile);              // Use Yaml to read .yaml
@@ -37,6 +42,8 @@ int main(int argc, char** argv){
     vi_slam::geometry::FAST proce;
     std::vector<cv::KeyPoint> keypoints;
     proce.detect(img, keypoints);
+
+
 
     return 0;
 }

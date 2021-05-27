@@ -13,7 +13,7 @@
 
 #include "../include/test_fast.h"
 
-#define TEST_IMAGE_CHESSBOARD_798_798          "/home/lacie/Github/vi_slam/test/fast_cuda/images/chessboard_798_798.png"
+#define TEST_IMAGE_CHESSBOARD_798_798          "/home/lacie/Github/vi_slam/test/images/chessboard_798_798.png"
 
 
 using namespace vilib;
