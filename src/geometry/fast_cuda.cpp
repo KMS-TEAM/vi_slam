@@ -25,7 +25,7 @@ namespace vi_slam{
     namespace geometry{
 
         void FAST::detect(const cv::Mat &image, vector<cv::KeyPoint> &keypoints) {
-            std::cout << "Check" << std::endl;
+
             // -- Set arguments
 
             static const int pyramid_levels = basics::Config::get<int>("pyramid_levels");
@@ -53,6 +53,8 @@ namespace vi_slam{
                                             fast_min_arc_length,
                                             FAST_SCORE));
 
+
+
             // Initialize the pyramid pool
             PyramidPool::init(1,
                               image.cols,
@@ -63,11 +65,14 @@ namespace vi_slam{
 
             // Create a Frame (image upload, pyramid)
             std::shared_ptr<Frame> frame0(new Frame(image,0,pyramid_levels));
+
             // Reset detector's grid
             // Note: this step could be actually avoided with custom processing
             detector_gpu_->reset();
+
             // Do the detection
             detector_gpu_->detect(frame0->pyramid_);
+            std::cout << "Check" << std::endl;
 
             PyramidPool::deinit();
 
