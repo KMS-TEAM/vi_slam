@@ -14,7 +14,7 @@ find_package(CUDA REQUIRED)
 find_package(OpenCV COMPONENTS core imgproc features2d highgui)
 find_package(Eigen3 REQUIRED)
 
-message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
+#message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 file(GLOB_RECURSE FAST_TEST_SOURCES
         src/*.cpp

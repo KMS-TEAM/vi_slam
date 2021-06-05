@@ -67,7 +67,7 @@ add_definitions(${PCL_DEFINITIONS})
 #vilib
 find_package(vilib REQUIRED)
 find_package(CUDA REQUIRED)
-message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
+#message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}

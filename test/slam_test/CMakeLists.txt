@@ -19,3 +19,6 @@ target_link_libraries( test_pcl_display
     display
 )
 
+add_executable(test_basics_func test_basics_func.cpp)
+target_link_libraries( test_basics_func basics)
+

@@ -4,6 +4,7 @@ add_library(basics SHARED
         basics/yaml.cpp
         basics/eigen_funcs.cpp
         basics/opencv_funcs.cpp
+        basics/converter.cpp
         )
 
 add_library(display SHARED
