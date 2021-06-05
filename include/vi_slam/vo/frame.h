@@ -44,8 +44,26 @@ namespace vi_slam{
             // -- image features
             cv::Mat rgb_img_;
             vector<cv::KeyPoint> keypoints_;
+            vector<cv::KeyPoint> ukeypoints_;
             cv::Mat descriptors_;
             vector<vector<unsigned char>> kpts_colors_; // rgb colors
+
+            // Scale pyramid info.
+            int mnScaleLevels;
+            float mfScaleFactor;
+            float mfLogScaleFactor;
+            vector<float> mvScaleFactors;
+            vector<float> mvInvScaleFactors;
+            vector<float> mvLevelSigma2;
+            vector<float> mvInvLevelSigma2;
+
+            // Number of KeyPoints
+            int N;
+
+            // Corresponding stereo coordinate and depth for each keypoint.
+            // "Monocular" keypoints have a negative value.
+            std::vector<float> mvuRight;
+            std::vector<float> mvDepth;
 
             // -- Vocabulary used for relocalization
             DBoW3::Vocabulary* mpVocaburary;
