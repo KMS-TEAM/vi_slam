@@ -44,5 +44,25 @@ namespace vi_slam{
         {
             return basics::getPosFromT(T_w_c_);
         }
+
+        void Frame::ComputeBoW() {
+            if(mBowVec.empty())
+            {
+                vector<cv::Mat> vCurrentDesc = vi_slam::basics::toDescriptorVector(descriptors_);
+                mpVocaburary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
+            }
+        }
+
+        void Frame::SetPose(cv::Mat Tcw) {
+            T_w_c_ = Tcw.clone();
+            UpdatePoseMatrices();
+        }
+
+        void Frame::UpdatePoseMatrices() {
+            mRcw = T_w_c_.rowRange(0,3).colRange(0,3);
+            mRwc = mRcw.t();
+            mtcw = T_w_c_.rowRange(0,3).col(3);
+            mOw = -mRcw.t()*mtcw;
+        }
     }
 }

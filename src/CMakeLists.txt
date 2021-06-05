@@ -31,6 +31,8 @@ add_library( vo SHARED
         vo/mappoint.cpp
         vo/vo_commons.cpp
         vo/vo.cpp
+        vo/keyframe.cpp
+        vo/keyframedatabase.cpp
         )
 
 target_link_libraries( basics

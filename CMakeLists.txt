@@ -85,6 +85,7 @@ set(THIRD_PARTY_LIBS
         pthread
         g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
         vilib::vilib
+        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
         )
 
 ############### source and test ######################
