@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/vo/map.h"
+#include "vi_slam/datastructures/map.h"
 #include <mutex>
 
 using namespace std;

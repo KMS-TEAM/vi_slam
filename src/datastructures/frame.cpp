@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/vo/frame.h"
+#include "vi_slam/datastructures/frame.h"
 
 namespace vi_slam{
     namespace vo{

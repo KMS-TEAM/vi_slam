@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/vo/vo_commons.h"
+#include "vi_slam/core/vo_commons.h"
 
 namespace vi_slam{
     namespace vo{

@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/vo/vo_io.h"
+#include "vi_slam/core/vo_io.h"
 #include "vi_slam/basics/yaml.h"
 
 #include <iostream>

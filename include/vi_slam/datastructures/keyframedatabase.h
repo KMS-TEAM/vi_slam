@@ -9,8 +9,8 @@
 #include <list>
 #include <set>
 
-#include "vi_slam/vo/keyframe.h"
-#include "vi_slam/vo/frame.h"
+#include "vi_slam/datastructures/keyframe.h"
+#include "vi_slam/datastructures/frame.h"
 #include "../../thirdparty/DBow3/DBoW3/src/Vocabulary.h"
 
 #include <mutex>

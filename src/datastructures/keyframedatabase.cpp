@@ -2,9 +2,9 @@
 // Created by lacie on 05/06/2021.
 //
 
-#include "vi_slam/vo/keyframedatabase.h"
+#include "vi_slam/datastructures/keyframedatabase.h"
 
-#include "vi_slam/vo/keyframe.h"
+#include "vi_slam/datastructures/keyframe.h"
 
 #include "../../thirdparty/DBow3/DBoW3/src/BowVector.h"
 #include <mutex>
