@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/vo/mappoint.h"
+#include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/common_include.h"
 #include "vi_slam/basics/opencv_funcs.h"
 #include <iostream>

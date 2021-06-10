@@ -28,6 +28,10 @@ add_library( core SHARED
         core/vo_io.cpp
         core/vo_commons.cpp
         core/vo.cpp
+        core/localmapping.cpp
+        core/loopclosing.cpp
+        core/system.cpp
+        core/tracking.cpp
         )
 
 add_library( datastructures SHARED

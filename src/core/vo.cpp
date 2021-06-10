@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/vo/vo.h"
+#include "vi_slam/core/vo.h"
 #include "vi_slam/optimization/g2o_ba.h"
 #include <numeric>
 

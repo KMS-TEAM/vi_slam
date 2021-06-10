@@ -5,13 +5,13 @@
 #ifndef VI_SLAM_KEYFRAME_H
 #define VI_SLAM_KEYFRAME_H
 
-#include "vi_slam/vo/mappoint.h"
+#include "vi_slam/datastructures/mappoint.h"
 #include "../../thirdparty/DBow3/DBoW3/src/BowVector.h"
 #include "../../thirdparty/DBow3/DBoW3/src/FeatureVector.h"
 #include "../../thirdparty/DBow3/DBoW3/src/Vocabulary.h"
 
-#include "vi_slam/vo/frame.h"
-#include "vi_slam/vo/keyframedatabase.h"
+#include "vi_slam/datastructures/frame.h"
+#include "vi_slam/datastructures/keyframedatabase.h"
 
 #include "../common_include.h"
 
