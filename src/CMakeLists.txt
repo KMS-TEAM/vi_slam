@@ -24,15 +24,18 @@ add_library( optimization SHARED
         optimization/g2o_ba.cpp
         )
 
-add_library( vo SHARED
-        vo/frame.cpp
-        vo/vo_io.cpp
-        vo/map.cpp
-        vo/mappoint.cpp
-        vo/vo_commons.cpp
-        vo/vo.cpp
-        vo/keyframe.cpp
-        vo/keyframedatabase.cpp
+add_library( core SHARED
+        core/vo_io.cpp
+        core/vo_commons.cpp
+        core/vo.cpp
+        )
+
+add_library( datastructures SHARED
+        datastructures/keyframe.cpp
+        datastructures/keyframedatabase.cpp
+        datastructures/map.cpp
+        datastructures/mappoint.cpp
+        datastructures/frame.cpp
         )
 
 target_link_libraries( basics
@@ -45,14 +48,27 @@ target_link_libraries( display
 
 target_link_libraries( geometry
         vilib::vilib
-        ${THIRD_PARTY_LIBS} basics
+        ${THIRD_PARTY_LIBS}
+        basics
         )
 
 target_link_libraries( optimization
-        ${THIRD_PARTY_LIBS} basics
+        ${THIRD_PARTY_LIBS}
+        basics
         )
 
-target_link_libraries( vo
-        ${THIRD_PARTY_LIBS} geometry basics optimization
+target_link_libraries(datastructures
+        ${THIRD_PARTY_LIBS}
+        geometry
+        basics
+        optimization
+        )
+
+target_link_libraries( core
+        ${THIRD_PARTY_LIBS}
+        geometry
+        basics
+        optimization
+        datastructures
         )
 

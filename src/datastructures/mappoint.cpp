@@ -410,6 +410,5 @@ namespace vi_slam{
 
             return nScale;
         }
-
     }
 }
