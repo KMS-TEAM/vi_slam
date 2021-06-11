@@ -32,6 +32,7 @@ add_library( core SHARED
         core/loopclosing.cpp
         core/system.cpp
         core/tracking.cpp
+        core/monoinitializer.cpp
         )
 
 add_library( datastructures SHARED

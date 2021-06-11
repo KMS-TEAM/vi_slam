@@ -94,9 +94,11 @@ add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(app)
 
+############# Lib Interface ####################
 add_library(vi_slam INTERFACE)
 target_link_libraries(vi_slam INTERFACE
-        vo
+        core
+        datastructures
         optimization
         geometry
         basics

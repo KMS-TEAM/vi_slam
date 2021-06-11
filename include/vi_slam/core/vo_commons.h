@@ -9,7 +9,7 @@
 #include "frame.h"
 
 namespace vi_slam{
-    namespace vo{
+    namespace core{
 
         cv::Mat getMotionFromFrame1to2(const Frame::Ptr f1, const Frame::Ptr f2);
         void getMotionFromFrame1to2(const Frame::Ptr f1, const Frame::Ptr f2, cv::Mat &R, cv::Mat &t);

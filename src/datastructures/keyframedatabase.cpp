@@ -12,7 +12,7 @@
 using namespace std;
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
         KeyFrameDatabase::KeyFrameDatabase (const DBoW3::Vocabulary &voc):
                 mpVoc(&voc)
         {

@@ -5,7 +5,7 @@
 #include "vi_slam/core/vo_commons.h"
 
 namespace vi_slam{
-    namespace vo{
+    namespace core{
 
         cv::Mat getMotionFromFrame1to2(const Frame::Ptr f1, const Frame::Ptr f2){
             const cv::Mat &T_w_to_f1 = f1->T_w_c_;

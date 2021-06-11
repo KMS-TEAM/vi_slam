@@ -16,6 +16,8 @@
 namespace vi_slam{
     namespace geometry{
 
+        typedef pair<int,int> Match;
+
         /** @brief This is a giant function, which:
          *      - Computes: E21/H21
          *      - Decompose E and H into R and t.
@@ -91,6 +93,7 @@ namespace vi_slam{
                 const vector<cv::DMatch> &curr_inlier_matches,
                 const cv::Mat &T_curr_to_prev,
                 const cv::Mat &K);
+
         vector<cv::Point3f> helperTriangulatePoints(
                 const vector<cv::KeyPoint> &prev_kpts, const vector<cv::KeyPoint> &curr_kpts,
                 const vector<cv::DMatch> &curr_inlier_matches,
@@ -110,6 +113,72 @@ namespace vi_slam{
         double checkHomographyScore(const cv::Mat &H21,
                                     const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
                                     vector<int> &inliers_index, double sigma = 1.0);
+
+        void FindHomography(vector<cv::KeyPoint> &mvKeys1,
+                            vector<cv::KeyPoint> &mvKeys2,
+                            vector<bool> &vbMatchesInliers,
+                            vector<Match> &mvMatches12,
+                            float &score, cv::Mat &H21,
+                            int mMaxIterations, float mSigma,
+                            vector<vector<size_t> > mvSets);
+
+        void FindFundamental(vector<cv::KeyPoint> &mvKeys1,
+                             vector<cv::KeyPoint> &mvKeys2,
+                             vector<bool> &vbMatchesInliers,
+                             vector<Match> &mvMatches12,
+                             float &score, cv::Mat &F21,
+                             int mMaxIterations, float mSigma,
+                             vector<vector<size_t> > mvSets);
+
+        cv::Mat ComputeH21(const vector<cv::Point2f> &vP1, const vector<cv::Point2f> &vP2);
+
+        cv::Mat ComputeF21(const vector<cv::Point2f> &vP1, const vector<cv::Point2f> &vP2);
+
+        float CheckHomography(const cv::Mat &H21, const cv::Mat &H12,
+                              vector<bool> &vbMatchesInliers,
+                              vector<cv::KeyPoint> &mvKeys1,
+                              vector<cv::KeyPoint> &mvKeys2,
+                              vector<Match> &mvMatches12,
+                              float sigma);
+
+        float CheckFundamental(const cv::Mat &F21,
+                               vector<bool> &vbMatchesInliers,
+                               vector<Match> &mvMatches12,
+                               vector<cv::KeyPoint> &mvKeys1,
+                               vector<cv::KeyPoint> &mvKeys2,
+                               float sigma);
+
+        bool ReconstructF(vector<bool> &vbMatchesInliers,
+                          vector<Match> &mvMatches12,
+                          vector<cv::KeyPoint> &mvKeys1,
+                          vector<cv::KeyPoint> &mvKeys2,
+                          cv::Mat &F21, cv::Mat &K,
+                          cv::Mat &R21, cv::Mat &t21,
+                          vector<cv::Point3f> &vP3D,
+                          vector<bool> &vbTriangulated,
+                          float minParallax, float mSigma,
+                          int minTriangulated);
+
+        bool ReconstructH(vector<bool> &vbMatchesInliers,
+                          vector<Match> &mvMatches12,
+                          vector<cv::KeyPoint> &mvKeys1,
+                          vector<cv::KeyPoint> &mvKeys2,
+                          cv::Mat &H21, cv::Mat &K,
+                          cv::Mat &R21, cv::Mat &t21,
+                          vector<cv::Point3f> &vP3D,
+                          vector<bool> &vbTriangulated,
+                          float minParallax, float mSigma,
+                          int minTriangulated);
+
+        void Triangulate(const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const cv::Mat &P1, const cv::Mat &P2, cv::Mat &x3D);
+
+        void Normalize(const vector<cv::KeyPoint> &vKeys, vector<cv::Point2f> &vNormalizedPoints, cv::Mat &T);
+
+        int CheckRT(const cv::Mat &R, const cv::Mat &t, const vector<cv::KeyPoint> &vKeys1, const vector<cv::KeyPoint> &vKeys2,
+                    const vector<Match> &vMatches12, vector<bool> &vbInliers,
+                    const cv::Mat &K, vector<cv::Point3f> &vP3D, float th2, vector<bool> &vbGood, float &parallax);
+
+        void DecomposeE(const cv::Mat &E, cv::Mat &R1, cv::Mat &R2, cv::Mat &t);
 
         // ---------------------------------------------
         // ---------------------------------------------

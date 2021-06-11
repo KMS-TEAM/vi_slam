@@ -11,7 +11,7 @@
 using namespace std;
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
         int MapPoint::factory_id_ = 0;
         long unsigned int MapPoint::nNextId=0;
         std::mutex MapPoint::mGlobalMutex;

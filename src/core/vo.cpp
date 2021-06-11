@@ -8,7 +8,7 @@
 
 namespace vi_slam
 {
-    namespace vo
+    namespace core
     {
 
         VisualOdometry::VisualOdometry() : map_(new (Map))

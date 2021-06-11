@@ -11,7 +11,7 @@
 #include "map.h"
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
 
         class Frame;
         class KeyFrame;

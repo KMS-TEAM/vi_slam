@@ -16,7 +16,7 @@
 #include "../../thirdparty/DBow3/DBoW3/src/Vocabulary.h"
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
 
 #define FRAME_GRID_ROWS 48
 #define FRAME_GRID_COLS 64

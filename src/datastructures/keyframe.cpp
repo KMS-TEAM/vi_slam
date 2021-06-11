@@ -10,7 +10,7 @@
 
 namespace vi_slam
 {
-    namespace vo {
+    namespace datastructures {
         using namespace std;
         long unsigned int KeyFrame::nNextId = 0;
 

@@ -18,7 +18,7 @@
 #include <mutex>
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
 
         class MapPoint;
         class Map;

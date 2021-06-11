@@ -11,7 +11,7 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include "vi_slam/basics/basics.h"
-#include "vi_slam/core//vo_io.h"
+#include "vi_slam/core/vo_io.h"
 #include "vi_slam/basics/config.h"
 #include "vi_slam/basics/opencv_funcs.h"
 
@@ -27,7 +27,7 @@
 
 namespace vi_slam
 {
-    namespace vo
+    namespace core
     {
 
         class VisualOdometry

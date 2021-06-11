@@ -5,7 +5,7 @@
 #include "vi_slam/datastructures/frame.h"
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
         int Frame::factory_id_ = 0;
 
         Frame::Ptr Frame::createFrame(cv::Mat rgb_img, geometry::Camera::Ptr camera, double time_stamp)

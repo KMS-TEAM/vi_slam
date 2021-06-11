@@ -8,7 +8,7 @@
 using namespace std;
 
 namespace vi_slam{
-    namespace vo{
+    namespace datastructures{
 
         Map::Map():mnMaxKFid(0),mnBigChangeIdx(0)
         {
