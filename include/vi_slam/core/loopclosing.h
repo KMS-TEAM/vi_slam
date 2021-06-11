@@ -5,10 +5,14 @@
 #ifndef VI_SLAM_LOOPCLOSING_H
 #define VI_SLAM_LOOPCLOSING_H
 
+#include "../common_include.h"
 
-class LoopClosing {
+namespace vi_slam{
+    namespace core{
+        class LoopClosing {
 
-};
-
+        };
+    }
+}
 
 #endif //VI_SLAM_LOOPCLOSING_H

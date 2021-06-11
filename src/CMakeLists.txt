@@ -18,6 +18,7 @@ add_library(geometry SHARED
         geometry/epipolar_geometry.cpp
         geometry/motion_estimation.cpp
         geometry/fast_cuda.cpp
+        geometry/fextractor.cpp
         )
 
 add_library( optimization SHARED

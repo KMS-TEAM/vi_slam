@@ -5,10 +5,14 @@
 #ifndef VI_SLAM_SYSTEM_H
 #define VI_SLAM_SYSTEM_H
 
+#include "../common_include.h"
 
-class System {
+namespace vi_slam{
+    namespace core{
+        class System {
 
-};
-
+        };
+    }
+}
 
 #endif //VI_SLAM_SYSTEM_H

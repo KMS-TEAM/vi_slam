@@ -5,10 +5,14 @@
 #ifndef VI_SLAM_LOCALMAPPING_H
 #define VI_SLAM_LOCALMAPPING_H
 
+#include "../common_include.h"
 
-class LocalMapping {
+namespace vi_slam{
+    namespace core{
+        class LocalMapping {
 
-};
-
+        };
+    }
+}
 
 #endif //VI_SLAM_LOCALMAPPING_H
