@@ -25,6 +25,7 @@ add_library( optimization SHARED
         optimization/g2o_ba.cpp
         optimization/pnpsolver.cpp
         optimization/optimizer.cpp
+        optimization/sim3solver.cpp
         )
 
 add_library( core SHARED
