@@ -8,12 +8,14 @@
 #include "../common_include.h"
 #include "vi_slam/basics/opencv_funcs.h"
 #include "vi_slam/geometry/camera.h"
-#include "vi_slam/geometry/feature_match.h"
+#include "vi_slam/geometry/fmatcher.h"
 #include "vi_slam/basics/converter.h"
 
 #include "../../thirdparty/DBow3/DBoW3/src/BowVector.h"
 #include "../../thirdparty/DBow3/DBoW3/src/FeatureVector.h"
 #include "../../thirdparty/DBow3/DBoW3/src/Vocabulary.h"
+
+#include "vi_slam/datastructures/mappoint.h"
 
 namespace vi_slam{
     namespace datastructures{
@@ -115,7 +117,21 @@ namespace vi_slam{
             ~Frame() {}
             static Frame::Ptr createFrame(cv::Mat rgb_img, geometry::Camera::Ptr camera, double time_stamp = -1);
 
+            // Copy constructor.
+            Frame(const Frame &frame);
+
+            // Constructor for stereo cameras.
+            Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, geometry::FExtractor* extractorLeft, geometry::FExtractor* extractorRight, DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+
+            // Constructor for RGB-D cameras.
+            Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+
+            // Constructor for Monocular cameras.
+            Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+
         public: // Below are deprecated. These were used in the two-frame-matching vo.
+
+
             void clearNoUsed()
             {
                 // rgb_img_.release();
@@ -141,6 +157,9 @@ namespace vi_slam{
                 }
             };
 
+            // Extract ORB on the image. 0 for left image and 1 for right image.
+            void ExtractORB(int flag, const cv::Mat &im);
+
             // Compute Bag of Words representation.
             void ComputeBoW();
 
@@ -159,6 +178,25 @@ namespace vi_slam{
             inline cv::Mat GetRotationInverse(){
                 return mRwc.clone();
             }
+
+            // Check if a MapPoint is in the frustum of the camera
+            // and fill variables of the MapPoint to be used by the tracking
+            bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
+
+            // Compute the cell of a keypoint (return false if outside the grid)
+            bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
+
+            vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
+
+            // Search a match for each keypoint in the left image to a keypoint in the right image.
+            // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
+            void ComputeStereoMatches();
+
+            // Associate a "right" coordinate to a keypoint if there is valid depth in the depthmap.
+            void ComputeStereoFromRGBD(const cv::Mat &imDepth);
+
+            // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
+            cv::Mat UnprojectStereo(const int &i);
 
             cv::Point2f projectWorldPointToImage(const cv::Point3f &p_world);
             bool isInFrame(const cv::Point3f &p_world);

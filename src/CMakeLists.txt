@@ -14,7 +14,7 @@ add_library(display SHARED
 
 add_library(geometry SHARED
         geometry/camera.cpp
-        geometry/feature_match.cpp
+        geometry/fmatcher.cpp
         geometry/epipolar_geometry.cpp
         geometry/motion_estimation.cpp
         geometry/fast_cuda.cpp
@@ -23,6 +23,8 @@ add_library(geometry SHARED
 
 add_library( optimization SHARED
         optimization/g2o_ba.cpp
+        optimization/pnpsolver.cpp
+        optimization/optimizer.cpp
         )
 
 add_library( core SHARED
