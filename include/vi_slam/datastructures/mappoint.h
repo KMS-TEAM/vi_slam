@@ -6,9 +6,9 @@
 #define VI_SLAM_MAPPOINT_H
 
 #include "../common_include.h"
-#include "frame.h"
-#include "keyframe.h"
-#include "map.h"
+#include "vi_slam/datastructures/frame.h"
+#include "vi_slam/datastructures/keyframe.h"
+#include "vi_slam/datastructures/map.h"
 
 namespace vi_slam{
     namespace datastructures{

@@ -53,7 +53,7 @@ namespace vi_slam{
         {
             pos_ = Pos.clone();
             cv::Mat Ow = pFrame->GetCameraCenter();
-            norm_ = vi_slam::basics::point3f_to_mat3x1(pos_) - Ow;
+            norm_ = pos_ - Ow;
             norm_ = norm_/cv::norm(norm_);
 
             cv::Mat PC = Pos - Ow;
@@ -273,7 +273,7 @@ namespace vi_slam{
                 Distances[i][i]=0;
                 for(size_t j=i+1;j<N;j++)
                 {
-                    int distij = ORBmatcher::DescriptorDistance(vDescriptors[i],vDescriptors[j]);
+                    int distij = geometry::FMatcher::DescriptorDistance(vDescriptors[i],vDescriptors[j]);
                     Distances[i][j]=distij;
                     Distances[j][i]=distij;
                 }

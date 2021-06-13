@@ -12,9 +12,9 @@
 #include "vi_slam/basics/converter.h"
 #include "vi_slam/geometry/fextractor.h"
 
-#include "../../thirdparty/DBow3/DBoW3/src/BowVector.h"
-#include "../../thirdparty/DBow3/DBoW3/src/FeatureVector.h"
-#include "../../thirdparty/DBow3/DBoW3/src/Vocabulary.h"
+#include "DBow3/DBoW3/src/BowVector.h"
+#include "DBow3/DBoW3/src/FeatureVector.h"
+#include "DBow3/DBoW3/src/Vocabulary.h"
 
 #include "vi_slam/datastructures/mappoint.h"
 

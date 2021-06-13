@@ -5,7 +5,7 @@
 #include "vi_slam/core/monoinitializer.h"
 #include "vi_slam/geometry/epipolar_geometry.h"
 #include "vi_slam/geometry/motion_estimation.h"
-#include "../../thirdparty/DBow3/DUtils/Random.h"
+#include "DBow3/DUtils/Random.h"
 
 #include <mutex>
 #include <thread>

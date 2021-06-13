@@ -9,7 +9,7 @@
  */
 
 #include "../common_include.h"
-#include "vi_slam/geometry/feature_match.h"
+#include "vi_slam/geometry/fmatcher.h"
 #include "vi_slam/geometry/epipolar_geometry.h"
 #include "vi_slam/basics/opencv_funcs.h"
 

@@ -89,20 +89,12 @@ set(THIRD_PARTY_LIBS
         )
 
 ############### source and test ######################
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(app)
 
 ############# Lib Interface ####################
-add_library(vi_slam INTERFACE)
-target_link_libraries(vi_slam INTERFACE
-        core
-        datastructures
-        optimization
-        geometry
-        basics
-        display
-        ${THIRD_PARTY_LIBS})
+
 
 

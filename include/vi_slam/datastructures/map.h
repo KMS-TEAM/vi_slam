@@ -6,9 +6,9 @@
 #define VI_SLAM_MAP_H
 
 #include "../common_include.h"
-#include "frame.h"
-#include "mappoint.h"
-#include "keyframe.h"
+#include "vi_slam/datastructures/frame.h"
+#include "vi_slam/datastructures/mappoint.h"
+#include "vi_slam/datastructures/keyframe.h"
 
 #include <set>
 #include <mutex>
@@ -18,6 +18,7 @@ namespace vi_slam{
 
         class MapPoint;
         class KeyFrame;
+        class Frame;
 
         class Map
         {

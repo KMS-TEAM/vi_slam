@@ -3,10 +3,8 @@
 //
 
 #include "vi_slam/datastructures/keyframedatabase.h"
-
 #include "vi_slam/datastructures/keyframe.h"
-
-#include "../../thirdparty/DBow3/DBoW3/src/BowVector.h"
+#include "DBow3/DBoW3/src/BowVector.h"
 #include <mutex>
 
 using namespace std;

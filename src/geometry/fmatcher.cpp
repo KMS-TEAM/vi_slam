@@ -6,7 +6,7 @@
 #include "vi_slam/basics/opencv_funcs.h"
 #include "vi_slam/basics/config.h"
 
-#include "../../thirdparty/DBow3/DBoW3/src/FeatureVector.h"
+#include "DBow3/DBoW3/src/FeatureVector.h"
 
 #include<limits.h>
 #include<stdint-gcc.h>

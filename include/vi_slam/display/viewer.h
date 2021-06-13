@@ -18,6 +18,13 @@
 #define VI_SLAM_VIEWER_H
 
 #include "../common_include.h"
+#include "vi_slam/display/framedrawer.h"
+#include "vi_slam/display/mapdrawer.h"
+
+#include "vi_slam/core/tracking.h"
+#include "vi_slam/core/system.h"
+
+#include <mutex>
 
 namespace vi_slam
 {
@@ -57,6 +64,52 @@ namespace vi_slam
             void spinOnce(unsigned int millisecond);
             bool isStopped();
             bool isKeyPressed();
+        };
+
+        class Viewer
+        {
+        public:
+            Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const string &strSettingPath);
+
+            // Main thread function. Draw points, keyframes, the current camera pose and the last processed
+            // frame. Drawing is refreshed according to the camera fps. We use Pangolin.
+            void Run();
+
+            void RequestFinish();
+
+            void RequestStop();
+
+            bool isFinished();
+
+            bool isStopped();
+
+            void Release();
+
+        private:
+
+            bool Stop();
+
+            System* mpSystem;
+            FrameDrawer* mpFrameDrawer;
+            MapDrawer* mpMapDrawer;
+            Tracking* mpTracker;
+
+            // 1/fps in ms
+            double mT;
+            float mImageWidth, mImageHeight;
+
+            float mViewpointX, mViewpointY, mViewpointZ, mViewpointF;
+
+            bool CheckFinish();
+            void SetFinish();
+            bool mbFinishRequested;
+            bool mbFinished;
+            std::mutex mMutexFinish;
+
+            bool mbStopped;
+            bool mbStopRequested;
+            std::mutex mMutexStop;
+
         };
 
     }

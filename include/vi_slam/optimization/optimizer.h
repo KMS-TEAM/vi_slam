@@ -12,7 +12,7 @@
 
 #include "vi_slam/core/loopclosing.h"
 
-#include "../../thirdparty/g2o/g2o/types/sim3/types_seven_dof_expmap.h"
+#include "g2o/g2o/types/sim3/types_seven_dof_expmap.h"
 
 namespace vi_slam{
     namespace optimization{

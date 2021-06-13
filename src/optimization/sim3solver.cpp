@@ -8,7 +8,7 @@
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/geometry/fmatcher.h"
 
-#include "../../thirdparty/DBow3/DUtils/Random.h"
+#include "DBow3/DUtils/Random.h"
 
 namespace vi_slam{
     namespace optimization{

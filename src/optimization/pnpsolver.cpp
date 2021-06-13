@@ -9,7 +9,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "../../thirdparty/DBow3/DUtils/Random.h"
+#include "DBow3/DUtils/Random.h"
 
 using namespace std;
 
