@@ -24,6 +24,9 @@
 
 namespace vi_slam{
     namespace core{
+
+        class System;
+
         class Tracking {
 
         public:

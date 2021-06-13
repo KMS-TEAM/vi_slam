@@ -12,6 +12,8 @@
 
 #include "vi_slam/datastructures/frame.h"
 #include "vi_slam/datastructures/keyframedatabase.h"
+#include "vi_slam/datastructures/mappoint.h"
+#include "vi_slam/datastructures/map.h"
 
 #include "../common_include.h"
 
@@ -19,11 +21,6 @@
 
 namespace vi_slam{
     namespace datastructures{
-
-        class MapPoint;
-        class Map;
-        class Frame;
-        class KeyFrameDatabase;
 
         class KeyFrame {
 

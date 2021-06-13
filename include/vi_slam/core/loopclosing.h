@@ -20,17 +20,28 @@
 #include <thread>
 
 namespace vi_slam{
+
+    namespace datastructures{
+        class KeyFrame;
+        class Map;
+        class KeyFrameDatabase;
+    }
+
     namespace core{
+
+        class Tracking;
+        class LocalMapping;
+
         class LoopClosing {
             public:
 
-                typedef pair<set<KeyFrame*>,int> ConsistentGroup;
-                typedef map<KeyFrame*,g2o::Sim3,std::less<KeyFrame*>,
-                        Eigen::aligned_allocator<std::pair<const KeyFrame*, g2o::Sim3> > > KeyFrameAndPose;
+                typedef pair<set<datastructures::KeyFrame*>,int> ConsistentGroup;
+                typedef map<datastructures::KeyFrame*,g2o::Sim3,std::less<datastructures::KeyFrame*>,
+                        Eigen::aligned_allocator<std::pair<const datastructures::KeyFrame*, g2o::Sim3> > > KeyFrameAndPose;
 
             public:
 
-                LoopClosing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
+                LoopClosing(datastructures::Map* pMap, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale);
 
                 void SetTracker(Tracking* pTracker);
 
@@ -39,7 +50,7 @@ namespace vi_slam{
                 // Main function
                 void Run();
 
-                void InsertKeyFrame(KeyFrame *pKF);
+                void InsertKeyFrame(datastructures::KeyFrame *pKF);
 
                 void RequestReset();
 
@@ -83,15 +94,15 @@ namespace vi_slam{
                 bool mbFinished;
                 std::mutex mMutexFinish;
 
-                Map* mpMap;
+                datastructures::Map* mpMap;
                 Tracking* mpTracker;
 
-                KeyFrameDatabase* mpKeyFrameDB;
-                ORBVocabulary* mpORBVocabulary;
+                datastructures::KeyFrameDatabase* mpKeyFrameDB;
+                DBoW3::Vocabulary* mpORBVocabulary;
 
                 LocalMapping *mpLocalMapper;
 
-                std::list<KeyFrame*> mlpLoopKeyFrameQueue;
+                std::list<datastructures::KeyFrame*> mlpLoopKeyFrameQueue;
 
                 std::mutex mMutexLoopQueue;
 
@@ -99,13 +110,13 @@ namespace vi_slam{
                 float mnCovisibilityConsistencyTh;
 
                 // Loop detector variables
-                KeyFrame* mpCurrentKF;
-                KeyFrame* mpMatchedKF;
+                datastructures::KeyFrame* mpCurrentKF;
+                datastructures::KeyFrame* mpMatchedKF;
                 std::vector<ConsistentGroup> mvConsistentGroups;
-                std::vector<KeyFrame*> mvpEnoughConsistentCandidates;
-                std::vector<KeyFrame*> mvpCurrentConnectedKFs;
-                std::vector<MapPoint*> mvpCurrentMatchedPoints;
-                std::vector<MapPoint*> mvpLoopMapPoints;
+                std::vector<datastructures::KeyFrame*> mvpEnoughConsistentCandidates;
+                std::vector<datastructures::KeyFrame*> mvpCurrentConnectedKFs;
+                std::vector<datastructures::MapPoint*> mvpCurrentMatchedPoints;
+                std::vector<datastructures::MapPoint*> mvpLoopMapPoints;
                 cv::Mat mScw;
                 g2o::Sim3 mg2oScw;
 

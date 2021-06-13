@@ -12,7 +12,6 @@
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/frame.h"
 #include "DBow3/DBoW3/src/Vocabulary.h"
-#include "keyframe.h"
 
 #include <mutex>
 
@@ -28,17 +27,17 @@ namespace vi_slam{
 
             KeyFrameDatabase(const DBoW3::Vocabulary &voc);
 
-            void add(datastructures::KeyFrame* pKF);
+            void add(KeyFrame* pKF);
 
-            void erase(datastructures::KeyFrame* pKF);
+            void erase(KeyFrame* pKF);
 
             void clear();
 
             // Loop Detection
-            std::vector<datastructures::KeyFrame *> DetectLoopCandidates(datastructures::KeyFrame* pKF, float minScore);
+            std::vector<KeyFrame *> DetectLoopCandidates(KeyFrame* pKF, float minScore);
 
             // Relocalization
-            std::vector<datastructures::KeyFrame*> DetectRelocalizationCandidates(datastructures::Frame* F);
+            std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F);
 
         protected:
 
@@ -46,7 +45,7 @@ namespace vi_slam{
             const DBoW3::Vocabulary* mpVoc;
 
             // Inverted file
-            std::vector<std::list<datastructures::KeyFrame*> > mvInvertedFile;
+            std::vector<std::list<KeyFrame*> > mvInvertedFile;
 
             // Mutex
             std::mutex mMutex;

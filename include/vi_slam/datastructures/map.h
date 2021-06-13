@@ -18,14 +18,13 @@ namespace vi_slam{
 
         class MapPoint;
         class KeyFrame;
-        class Frame;
 
         class Map
         {
         public:
             typedef std::shared_ptr<Map> Ptr;
-            std::unordered_map<int, Frame::Ptr> keyframes_;
-            std::unordered_map<int, MapPoint::Ptr> map_points_;
+//            std::unordered_map<int, Frame::Ptr> keyframes_;
+//            std::unordered_map<int, MapPoint::Ptr> map_points_;
 
             vector<KeyFrame*> mvpKeyFrameOrigins;
 
@@ -49,10 +48,10 @@ namespace vi_slam{
         public:
             Map();
 
-            void insertKeyFrame(Frame::Ptr frame);
-            void insertMapPoint(MapPoint::Ptr map_point);
-            Frame::Ptr findKeyFrame(int frame_id);
-            bool hasKeyFrame(int frame_id);
+//            void insertKeyFrame(Frame::Ptr frame);
+//            void insertMapPoint(MapPoint::Ptr map_point);
+//            Frame::Ptr findKeyFrame(int frame_id);
+//            bool hasKeyFrame(int frame_id);
 
             void EraseMapPoint(MapPoint* pMP);
             void EraseKeyFrame(KeyFrame* pKF);

@@ -14,12 +14,26 @@
 #include "vi_slam/datastructures/map.h"
 #include "vi_slam/datastructures/keyframedatabase.h"
 
+#include "vi_slam/display/viewer.h"
+#include "vi_slam/display/framedrawer.h"
+
 #include <thread>
 
 using namespace vi_slam::core;
+using namespace vi_slam::datastructures;
 
 namespace vi_slam{
+
+    class display::Viewer;
+    class display::FrameDrawer;
+    class datastructures::Map;
+
     namespace core{
+
+        class Tracking;
+        class LocalMapping;
+        class LoopClosing;
+
         class System {
         public:
             // Input sensor

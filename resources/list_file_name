@@ -1,0 +1,38 @@
+basics/basics.cpp
+        basics/config.cpp
+        basics/yaml.cpp
+        basics/eigen_funcs.cpp
+        basics/opencv_funcs.cpp
+        basics/converter.cpp
+
+        datastructures/keyframe.cpp
+        datastructures/keyframedatabase.cpp
+        datastructures/map.cpp
+        datastructures/mappoint.cpp
+        datastructures/frame.cpp
+
+        display/viewer.cpp
+        display/display_lib.cpp
+        display/mapdrawer.cpp
+        display/framedrawer.cpp
+
+        geometry/camera.cpp
+        geometry/fmatcher.cpp
+        geometry/epipolar_geometry.cpp
+        geometry/motion_estimation.cpp
+        geometry/fast_cuda.cpp
+        geometry/fextractor.cpp
+
+        optimization/g2o_ba.cpp
+        optimization/pnpsolver.cpp
+        optimization/optimizer.cpp
+        optimization/sim3solver.cpp
+
+        core/vo_io.cpp
+        core/vo_commons.cpp
+        core/vo.cpp
+        core/localmapping.cpp
+        core/loopclosing.cpp
+        core/system.cpp
+        core/tracking.cpp
+        core/monoinitializer.cpp

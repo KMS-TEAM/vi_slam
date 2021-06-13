@@ -15,7 +15,7 @@ using namespace std;
 namespace vi_slam{
     namespace core{
 
-        MonoInitializer::MonoInitializer(const Frame &ReferenceFrame, float sigma, int iterations)
+        MonoInitializer::MonoInitializer(const datastructures::Frame &ReferenceFrame, float sigma, int iterations)
         {
             mK = ReferenceFrame.camera_->K_.clone();
 
@@ -26,7 +26,7 @@ namespace vi_slam{
             mMaxIterations = iterations;
         }
 
-        bool MonoInitializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatches12, cv::Mat &R21, cv::Mat &t21,
+        bool MonoInitializer::Initialize(const datastructures::Frame &CurrentFrame, const vector<int> &vMatches12, cv::Mat &R21, cv::Mat &t21,
                                      vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated)
         {
             // Fill structures with current keypoints and matches with reference frame

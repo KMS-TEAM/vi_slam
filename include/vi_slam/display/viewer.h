@@ -28,6 +28,11 @@
 
 namespace vi_slam
 {
+    class core::Tracking;
+    class display::FrameDrawer;
+    class display::MapDrawer;
+    class core::System;
+
     namespace display
     {
 

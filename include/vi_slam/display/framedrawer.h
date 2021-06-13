@@ -10,16 +10,31 @@
 #include "vi_slam/datastructures/map.h"
 #include "vi_slam/core/tracking.h"
 
+#include "vi_slam/display/viewer.h"
+
 #include <mutex>
 
 namespace vi_slam{
+
+    namespace core{
+        class Tracking;
+    }
+
+    namespace datastructures{
+        class Map;
+        class MapPoint;
+    }
+
     namespace display{
+
+        class Viewer;
+
         class FrameDrawer {
         public:
-            FrameDrawer(Map* pMap);
+            FrameDrawer(datastructures::Map* pMap);
 
             // Update info from the last processed frame.
-            void Update(Tracking *pTracker);
+            void Update(core::Tracking *pTracker);
 
             // Draw last processed frame.
             cv::Mat DrawFrame();
@@ -39,7 +54,7 @@ namespace vi_slam{
             vector<int> mvIniMatches;
             int mState;
 
-            Map* mpMap;
+            datastructures::Map* mpMap;
 
             std::mutex mMutex;
         };

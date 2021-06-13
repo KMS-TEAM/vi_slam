@@ -13,10 +13,6 @@
 namespace vi_slam{
     namespace datastructures{
 
-        class Frame;
-        class KeyFrame;
-        class Map;
-
         class MapPoint
         {
         public: // Basics Properties

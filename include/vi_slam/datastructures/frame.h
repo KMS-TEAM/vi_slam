@@ -17,6 +17,7 @@
 #include "DBow3/DBoW3/src/Vocabulary.h"
 
 #include "vi_slam/datastructures/mappoint.h"
+#include "vi_slam/datastructures/keyframe.h"
 
 namespace vi_slam{
     namespace datastructures{
@@ -29,9 +30,6 @@ namespace vi_slam{
             int pt_ref_idx;
             int pt_map_idx;
         } PtConn;
-
-        class MapPoint;
-        class KeyFrame;
 
         class Frame
         {

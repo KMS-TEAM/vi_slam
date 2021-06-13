@@ -14,18 +14,25 @@
 #include <mutex>
 
 namespace vi_slam{
+
+    namespace datastructures{
+        class Map;
+        class MapPoint;
+        class KeyFrame;
+    }
+
     namespace display{
         class MapDrawer {
         public:
-            MapDrawer(Map* pMap, const string &strSettingPath);
+            MapDrawer(datastructures::Map* pMap, const string &strSettingPath);
 
-            Map* mpMap;
+            datastructures::Map* mpMap;
 
             void DrawMapPoints();
             void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph);
             void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
             void SetCurrentCameraPose(const cv::Mat &Tcw);
-            void SetReferenceKeyFrame(KeyFrame *pKF);
+            void SetReferenceKeyFrame(datastructures::KeyFrame *pKF);
             void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
 
         private:
