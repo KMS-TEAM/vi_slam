@@ -65,10 +65,16 @@
 using namespace cv;
 
 namespace vi_slam{
+
+    namespace datastructures{
+        class Frame;
+        class MapPoint;
+    }
+
     namespace optimization{
         class PnPSolver {
         public:
-            PnPSolver(const Frame &F, const vector<MapPoint*> &vpMapPointMatches);
+            PnPSolver(const datastructures::Frame &F, const vector<datastructures::MapPoint*> &vpMapPointMatches);
 
             ~PnPSolver();
 
@@ -142,7 +148,7 @@ namespace vi_slam{
             double cws[4][3], ccs[4][3];
             double cws_determinant;
 
-            vector<MapPoint*> mvpMapPointMatches;
+            vector<datastructures::MapPoint*> mvpMapPointMatches;
 
             // 2D Points
             vector<cv::Point2f> mvP2D;

@@ -8,8 +8,8 @@
 #include "../common_include.h"
 
 #include <Eigen/Dense>
-#include <g2o/types/sba/types_six_dof_expmap.h>
-#include <g2o/types/sim3/types_seven_dof_expmap.h>
+#include "g2o/g2o/types/sba/types_six_dof_expmap.h"
+#include "g2o/g2o/types/sim3/types_seven_dof_expmap.h"
 
 namespace vi_slam{
     namespace basics{

@@ -45,13 +45,16 @@ namespace vi_slam{
             cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
             mpVocabulary = new DBoW3::Vocabulary();
-            bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-            if(!bVocLoad)
-            {
-                cerr << "Wrong path to vocabulary. " << endl;
-                cerr << "Falied to open at: " << strVocFile << endl;
-                exit(-1);
-            }
+            mpVocabulary->load(strVocFile);
+            //bool bVocLoad = mpVocabulary->load(strVocFile);
+
+//            if(!bVocLoad)
+//            {
+//                cerr << "Wrong path to vocabulary. " << endl;
+//                cerr << "Falied to open at: " << strVocFile << endl;
+//                exit(-1);
+//            }
+
             cout << "Vocabulary loaded!" << endl << endl;
 
             //Create KeyFrame Database

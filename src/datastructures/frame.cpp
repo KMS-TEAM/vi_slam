@@ -11,14 +11,15 @@ namespace vi_slam{
         int Frame::factory_id_ = 0;
         int Frame::nNextId_ = 0;
         bool Frame::mbInitialComputations=true;
-        // float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
+        float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
         float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
         float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 
         //Copy Constructor
         Frame::Frame(const Frame &frame)
                 :mpVocaburary(frame.mpVocaburary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
-                 time_stamp_(frame.time_stamp_), camera_(frame.camera_), N(frame.N), keypoints_(frame.keypoints_),
+                 time_stamp_(frame.time_stamp_), mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()),
+                 mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), keypoints_(frame.keypoints_),
                  keypointsRight_(frame.keypointsRight_), ukeypoints_(frame.ukeypoints_),  mvuRight(frame.mvuRight),
                  mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
                  descriptors_(frame.descriptors_.clone()), descriptorsRight_(frame.descriptorsRight_.clone()),
@@ -36,8 +37,9 @@ namespace vi_slam{
                 SetPose(frame.T_w_c_);
         }
 
-        Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, geometry::FExtractor* extractorLeft, geometry::FExtractor* extractorRight, DBoW3::Vocabulary* voc, geometry::Camera* camera)
-                :mpVocaburary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), time_stamp_(time_stamp_), camera_(camera),
+        Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, geometry::FExtractor* extractorLeft, geometry::FExtractor* extractorRight, DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
+                :mpVocaburary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), time_stamp_(time_stamp_), mK(mK.clone()), mDistCoef(mDistCoef.clone()),
+                 mbf(mbf), mb(mb), mThDepth(mThDepth),
                  mpReferenceKF(static_cast<KeyFrame*>(NULL))
         {
             // Frame ID
@@ -80,24 +82,25 @@ namespace vi_slam{
                 mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
                 mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
 
-                this->camera_->fx_ = this->camera_->K_.at<float>(0,0);
-                this->camera_->fy_ = this->camera_->K_.at<float>(1,1);
-                this->camera_->cx_ = this->camera_->K_.at<float>(0,2);
-                this->camera_->cy_ = this->camera_->K_.at<float>(1,2);
-                this->camera_->invfx = 1.0f/this->camera_->fx_;
-                this->camera_->invfy = 1.0f/this->camera_->fy_;
+                fx = K.at<float>(0,0);
+                fy = K.at<float>(1,1);
+                cx = K.at<float>(0,2);
+                cy = K.at<float>(1,2);
+                invfx = 1.0f/fx;
+                invfy = 1.0f/fy;
 
                 mbInitialComputations=false;
             }
 
-            this->camera_->mb = this->camera_->mbf/this->camera_->fx_;
+            mb = mbf/fx;
 
             AssignFeaturesToGrid();
         }
 
-        Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, geometry::Camera* camera)
+        Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
                 :mpVocaburary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<geometry::FExtractor*>(NULL)),
-                 time_stamp_(timeStamp), camera_(camera)
+                 time_stamp_(timeStamp), mK(mK.clone()), mDistCoef(mDistCoef.clone()),
+                 mbf(mbf), mb(mb), mThDepth(mThDepth)
         {
             // Frame ID
             id_=nNextId_++;
@@ -134,24 +137,24 @@ namespace vi_slam{
                 mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
                 mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
 
-                this->camera_->fx_ = this->camera_->K_.at<float>(0,0);
-                this->camera_->fy_ = this->camera_->K_.at<float>(1,1);
-                this->camera_->cx_ = this->camera_->K_.at<float>(0,2);
-                this->camera_->cy_ = this->camera_->K_.at<float>(1,2);
-                this->camera_->invfx = 1.0f/this->camera_->fx_;
-                this->camera_->invfy = 1.0f/this->camera_->fy_;
+                fx = K.at<float>(0,0);
+                fy = K.at<float>(1,1);
+                cx = K.at<float>(0,2);
+                cy = K.at<float>(1,2);
+                invfx = 1.0f/fx;
+                invfy = 1.0f/fy;
 
                 mbInitialComputations=false;
             }
 
-            this->camera_->mb = this->camera_->mbf/this->camera_->fx_;
+            mb = mbf/fx;
 
             AssignFeaturesToGrid();
         }
 
-        Frame::Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, geometry::Camera* camera)
+        Frame::Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
                 :mpVocaburary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<geometry::FExtractor*>(NULL)),
-                 time_stamp_(timeStamp), camera_(camera)
+                 time_stamp_(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth)
         {
             // Frame ID
             id_ = nNextId_++;
@@ -190,17 +193,17 @@ namespace vi_slam{
                 mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
                 mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
 
-                this->camera_->fx_ = this->camera_->K_.at<float>(0,0);
-                this->camera_->fy_ = this->camera_->K_.at<float>(1,1);
-                this->camera_->cx_ = this->camera_->K_.at<float>(0,2);
-                this->camera_->cy_ = this->camera_->K_.at<float>(1,2);
-                this->camera_->invfx = 1.0f/this->camera_->fx_;
-                this->camera_->invfy = 1.0f/this->camera_->fy_;
+                fx = K.at<float>(0,0);
+                fy = K.at<float>(1,1);
+                cx = K.at<float>(0,2);
+                cy = K.at<float>(1,2);
+                invfx = 1.0f/fx;
+                invfy = 1.0f/fy;
 
                 mbInitialComputations=false;
             }
 
-            this->camera_->mb = this->camera_->mbf/this->camera_->fx_;
+            mb = mbf/fx;
 
             AssignFeaturesToGrid();
         }
@@ -243,7 +246,7 @@ namespace vi_slam{
         cv::Point2f Frame::projectWorldPointToImage(const cv::Point3f &p_world)
         {
             cv::Point3f p_cam = basics::preTranslatePoint3f(p_world, T_w_c_.inv()); // T_c_w * p_w = p_c
-            cv::Point2f pixel = geometry::cam2pixel(p_cam, camera_->K_);
+            cv::Point2f pixel = geometry::cam2pixel(p_cam, mK);
             return pixel;
         }
 
@@ -306,8 +309,8 @@ namespace vi_slam{
 
             // Project in image and check it is not outside
             const float invz = 1.0f/PcZ;
-            const float u= this->camera_->fx_*PcX*invz+this->camera_->cx_;
-            const float v=this->camera_->fy_*PcY*invz+this->camera_->cy_;
+            const float u= fx*PcX*invz+cx;
+            const float v=fy*PcY*invz+cy;
 
             if(u<mnMinX || u>mnMaxX)
                 return false;
@@ -337,7 +340,7 @@ namespace vi_slam{
             // Data used by the tracking
             pMP->mbTrackInView = true;
             pMP->mTrackProjX = u;
-            pMP->mTrackProjXR = u - this->camera_->mbf*invz;
+            pMP->mTrackProjXR = u - mbf*invz;
             pMP->mTrackProjY = v;
             pMP->mnTrackScaleLevel= nPredictedLevel;
             pMP->mTrackViewCos = viewCos;
@@ -414,7 +417,7 @@ namespace vi_slam{
 
         void Frame::UndistortKeyPoints()
         {
-            if(this->camera_->mDistCoef.at<float>(0)==0.0)
+            if(mDistCoef.at<float>(0)==0.0)
             {
                 ukeypoints_=keypoints_;
                 return;
@@ -430,7 +433,7 @@ namespace vi_slam{
 
             // Undistort points
             mat=mat.reshape(2);
-            cv::undistortPoints(mat,mat, this->camera_->K_,this->camera_->mDistCoef,cv::Mat(),this->camera_->K_);
+            cv::undistortPoints(mat, mat, mK, mDistCoef, cv::Mat(), mK);
             mat=mat.reshape(1);
 
             // Fill undistorted keypoint vector
@@ -446,7 +449,7 @@ namespace vi_slam{
 
         void Frame::ComputeImageBounds(const cv::Mat &imLeft)
         {
-            if(this->camera_->mDistCoef.at<float>(0)!=0.0)
+            if(mDistCoef.at<float>(0)!=0.0)
             {
                 cv::Mat mat(4,2,CV_32F);
                 mat.at<float>(0,0)=0.0; mat.at<float>(0,1)=0.0;
@@ -456,7 +459,7 @@ namespace vi_slam{
 
                 // Undistort corners
                 mat=mat.reshape(2);
-                cv::undistortPoints(mat,mat, this->camera_->K_,this->camera_->mDistCoef,cv::Mat(),this->camera_->K_);
+                cv::undistortPoints(mat, mat, mK, mDistCoef, cv::Mat(), mK);
                 mat=mat.reshape(1);
 
                 mnMinX = std::min(mat.at<float>(0,0),mat.at<float>(2,0));
@@ -504,9 +507,9 @@ namespace vi_slam{
             }
 
             // Set limits for search
-            const float minZ = this->camera_->mb;
+            const float minZ = mb;
             const float minD = 0;
-            const float maxD = this->camera_->mbf/minZ;
+            const float maxD = mbf/minZ;
 
             // For each left keypoint search a match in the right image
             vector<std::pair<int, int> > vDistIdx;
@@ -627,7 +630,7 @@ namespace vi_slam{
                             disparity=0.01;
                             bestuR = uL-0.01;
                         }
-                        mvDepth[iL]=this->camera_->mbf/disparity;
+                        mvDepth[iL]=mbf/disparity;
                         mvuRight[iL] = bestuR;
                         vDistIdx.push_back(std::pair<int,int>(bestDist,iL));
                     }
@@ -669,7 +672,7 @@ namespace vi_slam{
                 if(d>0)
                 {
                     mvDepth[i] = d;
-                    mvuRight[i] = kpU.pt.x-this->camera_->mbf/d;
+                    mvuRight[i] = kpU.pt.x-mbf/d;
                 }
             }
         }
@@ -681,8 +684,8 @@ namespace vi_slam{
             {
                 const float u = ukeypoints_[i].pt.x;
                 const float v = ukeypoints_[i].pt.y;
-                const float x = (u-this->camera_->cx_)*z*this->camera_->invfx;
-                const float y = (v-this->camera_->cy_)*z*this->camera_->invfy;
+                const float x = (u-cx)*z*invfx;
+                const float y = (v-cy)*z*invfy;
                 cv::Mat x3Dc = (cv::Mat_<float>(3,1) << x, y, z);
                 return mRwc*x3Dc+mOw;
             }

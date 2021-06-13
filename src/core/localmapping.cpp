@@ -149,7 +149,7 @@ namespace vi_slam{
             mpCurrentKeyFrame->UpdateConnections();
 
             // Insert Keyframe in Map
-            mpMap->AddKeyFrame(mpCurrentKeyFrame);
+            mpMap->insertKeyFrame(mpCurrentKeyFrame);
         }
 
         void LocalMapping::MapPointCulling()
@@ -428,7 +428,7 @@ namespace vi_slam{
 
                     pMP->UpdateNormalAndDepth();
 
-                    mpMap->AddMapPoint(pMP);
+                    mpMap->insertMapPoint(pMP);
                     mlpRecentAddedMapPoints.push_back(pMP);
 
                     nnew++;

@@ -9,14 +9,18 @@
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/mappoint.h"
 
-using namespace vi_slam::datastructures;
-
 namespace vi_slam{
+
+    namespace datastructures{
+        class KeyFrame;
+        class MapPoint;
+    }
+
     namespace optimization{
         class Sim3Solver {
             public:
 
-                Sim3Solver(KeyFrame* pKF1, KeyFrame* pKF2, const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true);
+                Sim3Solver(datastructures::KeyFrame* pKF1, datastructures::KeyFrame* pKF2, const std::vector<datastructures::MapPoint*> &vpMatched12, const bool bFixScale = true);
 
                 void SetRansacParameters(double probability = 0.99, int minInliers = 6 , int maxIterations = 300);
 
@@ -49,9 +53,9 @@ namespace vi_slam{
 
                 std::vector<cv::Mat> mvX3Dc1;
                 std::vector<cv::Mat> mvX3Dc2;
-                std::vector<MapPoint*> mvpMapPoints1;
-                std::vector<MapPoint*> mvpMapPoints2;
-                std::vector<MapPoint*> mvpMatches12;
+                std::vector<datastructures::MapPoint*> mvpMapPoints1;
+                std::vector<datastructures::MapPoint*> mvpMapPoints2;
+                std::vector<datastructures::MapPoint*> mvpMatches12;
                 std::vector<size_t> mvnIndices1;
                 std::vector<size_t> mvSigmaSquare1;
                 std::vector<size_t> mvSigmaSquare2;

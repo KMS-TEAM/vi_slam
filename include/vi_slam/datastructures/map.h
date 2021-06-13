@@ -48,8 +48,9 @@ namespace vi_slam{
         public:
             Map();
 
-//            void insertKeyFrame(Frame::Ptr frame);
-//            void insertMapPoint(MapPoint::Ptr map_point);
+            void insertKeyFrame(KeyFrame* pKF);
+            void insertMapPoint(MapPoint* pMP);
+
 //            Frame::Ptr findKeyFrame(int frame_id);
 //            bool hasKeyFrame(int frame_id);
 

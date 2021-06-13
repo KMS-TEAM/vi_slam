@@ -10,8 +10,8 @@
 #include "g2o/g2o/solvers/eigen/linear_solver_eigen.h"
 #include "g2o/g2o/types/sim3/types_seven_dof_expmap.h"
 #include "g2o/g2o/core/robust_kernel_impl.h"
-#include "thirdparty/g2o/g2o/solvers/dense/linear_solver_dense.h"
-#include "thirdparty/g2o/g2o/types/sba/types_six_dof_expmap.h"
+#include "g2o/g2o/solvers/dense/linear_solver_dense.h"
+#include "g2o/g2o/types/sba/types_six_dof_expmap.h"
 
 #include <Eigen/StdVector>
 #include <mutex>
@@ -33,13 +33,20 @@ namespace vi_slam{
             vbNotIncludedMP.resize(vpMP.size());
 
             g2o::SparseOptimizer optimizer;
-            g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
 
-            linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
 
-            g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+            //g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+            //linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
+            //g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+            //g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
-            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+            // G2O new version
+            typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType;
+            typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType;
+            // use LM
+            auto solver = new g2o::OptimizationAlgorithmLevenberg(
+                    g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
+
             optimizer.setAlgorithm(solver);
 
             if(pbStopFlag)
@@ -71,9 +78,9 @@ namespace vi_slam{
                 MapPoint* pMP = vpMP[i];
                 if(pMP->isBad())
                     continue;
-                g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
+                g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
                 vPoint->setEstimate(basics::toVector3d(pMP->GetWorldPos()));
-                const int id = pMP->mnId+maxKFid+1;
+                const int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
                 vPoint->setMarginalized(true);
                 optimizer.addVertex(vPoint);
@@ -199,11 +206,11 @@ namespace vi_slam{
 
                 if(pMP->isBad())
                     continue;
-                g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+                g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
 
                 if(nLoopKF==0)
                 {
-                    pMP->SetWorldPos(basics::toCvMat(vPoint->estimate()));
+                    pMP->setPos(basics::toCvMat(vPoint->estimate()));
                     pMP->UpdateNormalAndDepth();
                 }
                 else
@@ -219,20 +226,28 @@ namespace vi_slam{
         int Optimizer::PoseOptimization(Frame *pFrame)
         {
             g2o::SparseOptimizer optimizer;
-            g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+//            g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+//
+//            linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+//
+//            g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+//
+//            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
-            linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+            // G2O new version
+            typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> BlockSolverType;
+            typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType;
+            // use LM
+            auto solver = new g2o::OptimizationAlgorithmLevenberg(
+                    g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
 
-            g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
-
-            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
             optimizer.setAlgorithm(solver);
 
             int nInitialCorrespondences=0;
 
             // Set Frame vertex
             g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-            vSE3->setEstimate(basics::toSE3Quat(pFrame->mTcw));
+            vSE3->setEstimate(basics::toSE3Quat(pFrame->T_w_c_));
             vSE3->setId(0);
             vSE3->setFixed(false);
             optimizer.addVertex(vSE3);
@@ -269,7 +284,7 @@ namespace vi_slam{
                             pFrame->mvbOutlier[i] = false;
 
                             Eigen::Matrix<double,2,1> obs;
-                            const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
+                            const cv::KeyPoint &kpUn = pFrame->ukeypoints_[i];
                             obs << kpUn.pt.x, kpUn.pt.y;
 
                             g2o::EdgeSE3ProjectXYZOnlyPose* e = new g2o::EdgeSE3ProjectXYZOnlyPose();
@@ -304,7 +319,7 @@ namespace vi_slam{
 
                             //SET EDGE
                             Eigen::Matrix<double,3,1> obs;
-                            const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
+                            const cv::KeyPoint &kpUn = pFrame->ukeypoints_[i];
                             const float &kp_ur = pFrame->mvuRight[i];
                             obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
@@ -354,7 +369,7 @@ namespace vi_slam{
             for(size_t it=0; it<4; it++)
             {
 
-                vSE3->setEstimate(basics::toSE3Quat(pFrame->mTcw));
+                vSE3->setEstimate(basics::toSE3Quat(pFrame->T_w_c_));
                 optimizer.initializeOptimization(0);
                 optimizer.optimize(its[it]);
 
@@ -485,13 +500,21 @@ namespace vi_slam{
 
             // Setup optimizer
             g2o::SparseOptimizer optimizer;
-            g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+//            g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+//
+//            linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
+//
+//            g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
+//
+//            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
-            linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
+            // G2O new version
+            typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> BlockSolverType;
+            typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType;
+            // use LM
+            auto solver = new g2o::OptimizationAlgorithmLevenberg(
+                    g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
 
-            g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
-
-            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
             optimizer.setAlgorithm(solver);
 
             if(pbStopFlag)
@@ -552,9 +575,9 @@ namespace vi_slam{
             for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
             {
                 MapPoint* pMP = *lit;
-                g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
+                g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
                 vPoint->setEstimate(basics::toVector3d(pMP->GetWorldPos()));
-                int id = pMP->mnId+maxKFid+1;
+                int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
                 vPoint->setMarginalized(true);
                 optimizer.addVertex(vPoint);
@@ -751,8 +774,8 @@ namespace vi_slam{
             for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
             {
                 MapPoint* pMP = *lit;
-                g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
-                pMP->SetWorldPos(basics::toCvMat(vPoint->estimate()));
+                g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
+                pMP->setPos(basics::toCvMat(vPoint->estimate()));
                 pMP->UpdateNormalAndDepth();
             }
         }
@@ -766,10 +789,18 @@ namespace vi_slam{
             // Setup optimizer
             g2o::SparseOptimizer optimizer;
             optimizer.setVerbose(false);
-            g2o::BlockSolver_7_3::LinearSolverType * linearSolver =
-                    new g2o::LinearSolverEigen<g2o::BlockSolver_7_3::PoseMatrixType>();
-            g2o::BlockSolver_7_3 * solver_ptr= new g2o::BlockSolver_7_3(linearSolver);
-            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+
+//            g2o::BlockSolver_7_3::LinearSolverType * linearSolver =
+//                    new g2o::LinearSolverEigen<g2o::BlockSolver_7_3::PoseMatrixType>();
+//            g2o::BlockSolver_7_3 * solver_ptr= new g2o::BlockSolver_7_3(linearSolver);
+//            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+
+            // G2O new version
+            typedef g2o::BlockSolver<g2o::BlockSolverTraits<7, 3>> BlockSolverType;
+            typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType;
+            // use LM
+            auto solver = new g2o::OptimizationAlgorithmLevenberg(
+                    g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
 
             solver->setUserLambdaInit(1e-16);
             optimizer.setAlgorithm(solver);
@@ -1017,7 +1048,7 @@ namespace vi_slam{
                 Eigen::Matrix<double,3,1> eigCorrectedP3Dw = correctedSwr.map(Srw.map(eigP3Dw));
 
                 cv::Mat cvCorrectedP3Dw = basics::toCvMat(eigCorrectedP3Dw);
-                pMP->SetWorldPos(cvCorrectedP3Dw);
+                pMP->setPos(cvCorrectedP3Dw);
 
                 pMP->UpdateNormalAndDepth();
             }
@@ -1026,13 +1057,22 @@ namespace vi_slam{
         int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches1, g2o::Sim3 &g2oS12, const float th2, const bool bFixScale)
         {
             g2o::SparseOptimizer optimizer;
-            g2o::BlockSolverX::LinearSolverType * linearSolver;
 
-            linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
+//            g2o::BlockSolverX::LinearSolverType * linearSolver;
+//
+//            linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
+//
+//            g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+//
+//            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
-            g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+            // G2O new version
+            typedef g2o::BlockSolver<g2o::BlockSolverX> BlockSolverType;
+            typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType;
+            // use LM
+            auto solver = new g2o::OptimizationAlgorithmLevenberg(
+                    g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
 
-            g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
             optimizer.setAlgorithm(solver);
 
             // Calibration
@@ -1093,7 +1133,7 @@ namespace vi_slam{
                 {
                     if(!pMP1->isBad() && !pMP2->isBad() && i2>=0)
                     {
-                        g2o::VertexSBAPointXYZ* vPoint1 = new g2o::VertexSBAPointXYZ();
+                        g2o::VertexPointXYZ* vPoint1 = new g2o::VertexPointXYZ();
                         cv::Mat P3D1w = pMP1->GetWorldPos();
                         cv::Mat P3D1c = R1w*P3D1w + t1w;
                         vPoint1->setEstimate(basics::toVector3d(P3D1c));
@@ -1101,7 +1141,7 @@ namespace vi_slam{
                         vPoint1->setFixed(true);
                         optimizer.addVertex(vPoint1);
 
-                        g2o::VertexSBAPointXYZ* vPoint2 = new g2o::VertexSBAPointXYZ();
+                        g2o::VertexPointXYZ* vPoint2 = new g2o::VertexPointXYZ();
                         cv::Mat P3D2w = pMP2->GetWorldPos();
                         cv::Mat P3D2c = R2w*P3D2w + t2w;
                         vPoint2->setEstimate(basics::toVector3d(P3D2c));

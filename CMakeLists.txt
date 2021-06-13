@@ -35,8 +35,8 @@ find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
 
 # G2O
-find_package(G2O REQUIRED)
-include_directories(${G2O_INCLUDE_DIRS})
+#find_package(G2O REQUIRED)
+#include_directories(${G2O_INCLUDE_DIRS})
 
 # ceres
 find_package(Ceres REQUIRED)
@@ -83,9 +83,15 @@ set(THIRD_PARTY_LIBS
         ${GFLAGS_LIBRARIES}
         ${CSPARSE_LIBRARY}
         pthread
-        g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
         vilib::vilib
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_core.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_stuff.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sba.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_csparse_extension.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_dense.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sim3.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_csparse.so
         )
 
 ############### source and test ######################

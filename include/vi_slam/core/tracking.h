@@ -20,9 +20,19 @@
 #include "vi_slam/core/loopclosing.h"
 #include "vi_slam/core/system.h"
 
+#include "vi_slam/display/viewer.h"
+#include "vi_slam/display/framedrawer.h"
+#include "vi_slam/display/mapdrawer.h"
+
 #include <mutex>
 
 namespace vi_slam{
+
+    namespace display{
+        class Viewer;
+        class FrameDrwaer;
+        class MapDrawer;
+    }
     namespace core{
 
         class System;
@@ -40,7 +50,7 @@ namespace vi_slam{
 
             void SetLocalMapper(LocalMapping* pLocalMapper);
             void SetLoopClosing(LoopClosing* pLoopClosing);
-            // void SetViewer(Viewer* pViewer);
+            void SetViewer(display::Viewer* pViewer);
 
             // Load new settings
             // The focal lenght should be similar or scale prediction will fail when projecting points
@@ -149,9 +159,9 @@ namespace vi_slam{
             System* mpSystem;
 
             //Drawers
-            // Viewer* mpViewer;
-            // FrameDrawer* mpFrameDrawer;
-            // MapDrawer* mpMapDrawer;
+            display::Viewer* mpViewer;
+            display::FrameDrawer* mpFrameDrawer;
+            display::MapDrawer* mpMapDrawer;
 
             //Map
             Map* mpMap;

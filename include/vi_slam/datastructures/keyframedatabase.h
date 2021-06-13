@@ -11,7 +11,7 @@
 
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/frame.h"
-#include "DBow3/DBoW3/src/Vocabulary.h"
+#include "DBoW3/DBoW3/src/Vocabulary.h"
 
 #include <mutex>
 

@@ -4,7 +4,7 @@
 
 #include "vi_slam/geometry/fast_cuda.h"
 #include "vi_slam/basics/config.h"
-#include "vi_slam/geometry/feature_match.h"
+#include "vi_slam/geometry/fmatcher.h"
 
 #include "vilib/preprocess/pyramid.h"
 #include "vilib/storage/pyramid_pool.h"

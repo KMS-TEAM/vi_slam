@@ -53,7 +53,7 @@ namespace vi_slam{
             } // destroy scoped mutex -> release mutex
 
             if(im.channels()<3) //this should be always true
-                cvtColor(im,im,CV_GRAY2BGR);
+                cvtColor(im,im,cv::COLOR_BGR2GRAY);
 
             //Draw
             if(state==Tracking::NOT_INITIALIZED) //INITIALIZING
@@ -149,7 +149,7 @@ namespace vi_slam{
         {
             unique_lock<mutex> lock(mMutex);
             pTracker->mImGray.copyTo(mIm);
-            mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
+            mvCurrentKeys=pTracker->mCurrentFrame.keypoints_;
             N = mvCurrentKeys.size();
             mvbVO = vector<bool>(N,false);
             mvbMap = vector<bool>(N,false);
@@ -158,7 +158,7 @@ namespace vi_slam{
 
             if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)
             {
-                mvIniKeys=pTracker->mInitialFrame.mvKeys;
+                mvIniKeys=pTracker->mInitialFrame.keypoints_;
                 mvIniMatches=pTracker->mvIniMatches;
             }
             else if(pTracker->mLastProcessedState==Tracking::OK)

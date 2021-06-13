@@ -8,17 +8,17 @@
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/geometry/fmatcher.h"
 
-#include "DBow3/DUtils/Random.h"
+#include "DBoW3/DUtils/Random.h"
 
 namespace vi_slam{
     namespace optimization{
-        Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale):
+        Sim3Solver::Sim3Solver(datastructures::KeyFrame *pKF1, datastructures::KeyFrame *pKF2, const vector<datastructures::MapPoint *> &vpMatched12, const bool bFixScale):
                 mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale)
         {
             mpKF1 = pKF1;
             mpKF2 = pKF2;
 
-            vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
+            vector<datastructures::MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
 
             mN1 = vpMatched12.size();
 
@@ -41,8 +41,8 @@ namespace vi_slam{
             {
                 if(vpMatched12[i1])
                 {
-                    MapPoint* pMP1 = vpKeyFrameMP1[i1];
-                    MapPoint* pMP2 = vpMatched12[i1];
+                    datastructures::MapPoint* pMP1 = vpKeyFrameMP1[i1];
+                    datastructures::MapPoint* pMP2 = vpMatched12[i1];
 
                     if(!pMP1)
                         continue;
@@ -110,7 +110,7 @@ namespace vi_slam{
             else
                 nIterations = ceil(log(1-mRansacProb)/log(1-pow(epsilon,3)));
 
-            mRansacMaxIts = max(1,min(nIterations,mRansacMaxIts));
+            mRansacMaxIts = std::max(1,std::min(nIterations,mRansacMaxIts));
 
             mnIterations = 0;
         }
@@ -192,7 +192,7 @@ namespace vi_slam{
 
         void Sim3Solver::ComputeCentroid(cv::Mat &P, cv::Mat &Pr, cv::Mat &C)
         {
-            cv::reduce(P,C,1,CV_REDUCE_SUM);
+            cv::reduce(P,C,1,cv::REDUCE_SUM);
             C = C/P.cols;
 
             for(int i=0; i<P.cols; i++)

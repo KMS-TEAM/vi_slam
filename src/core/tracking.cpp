@@ -8,9 +8,12 @@
 #include "vi_slam/basics/converter.h"
 #include "vi_slam/datastructures/map.h"
 #include "vi_slam/core/monoinitializer.h"
+#include "vi_slam/optimization/optimizer.h"
+#include "vi_slam/optimization/pnpsolver.h"
 
 #include <iostream>
 #include <mutex>
+#include <unistd.h>
 
 using namespace std;
 using namespace cv;
@@ -132,10 +135,10 @@ namespace vi_slam{
             mpLoopClosing=pLoopClosing;
         }
 
-//        void Tracking::SetViewer(Viewer *pViewer)
-//        {
-//            mpViewer=pViewer;
-//        }
+        void Tracking::SetViewer(display::Viewer *pViewer)
+        {
+            mpViewer=pViewer;
+        }
 
 
         cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
@@ -174,7 +177,7 @@ namespace vi_slam{
 
             Track();
 
-            return mCurrentFrame.mTcw.clone();
+            return mCurrentFrame.T_w_c_.clone();
         }
 
 
@@ -205,7 +208,7 @@ namespace vi_slam{
 
             Track();
 
-            return mCurrentFrame.mTcw.clone();
+            return mCurrentFrame.T_w_c_.clone();
         }
 
 
@@ -235,7 +238,7 @@ namespace vi_slam{
 
             Track();
 
-            return mCurrentFrame.mTcw.clone();
+            return mCurrentFrame.T_w_c_.clone();
         }
 
         void Tracking::Track()
@@ -278,7 +281,7 @@ namespace vi_slam{
                         // Local Mapping might have changed some MapPoints tracked in last frame
                         CheckReplacedInLastFrame();
 
-                        if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                        if(mVelocity.empty() || mCurrentFrame.id_<mnLastRelocFrameId+2)
                         {
                             bOK = TrackReferenceKeyFrame();
                         }
@@ -335,7 +338,7 @@ namespace vi_slam{
                                 bOKMM = TrackWithMotionModel();
                                 vpMPsMM = mCurrentFrame.mvpMapPoints;
                                 vbOutMM = mCurrentFrame.mvbOutlier;
-                                TcwMM = mCurrentFrame.mTcw.clone();
+                                TcwMM = mCurrentFrame.T_w_c_.clone();
                             }
                             bOKReloc = Relocalization();
 
@@ -395,12 +398,12 @@ namespace vi_slam{
                 if(bOK)
                 {
                     // Update motion model
-                    if(!mLastFrame.mTcw.empty())
+                    if(!mLastFrame.T_w_c_.empty())
                     {
                         cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
                         mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
                         mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
-                        mVelocity = mCurrentFrame.mTcw*LastTwc;
+                        mVelocity = mCurrentFrame.T_w_c_*LastTwc;
                     }
                     else
                         mVelocity = cv::Mat();
@@ -460,12 +463,12 @@ namespace vi_slam{
             }
 
             // Store frame pose information to retrieve the complete camera trajectory afterwards.
-            if(!mCurrentFrame.mTcw.empty())
+            if(!mCurrentFrame.T_w_c_.empty())
             {
-                cv::Mat Tcr = mCurrentFrame.mTcw*mCurrentFrame.mpReferenceKF->GetPoseInverse();
+                cv::Mat Tcr = mCurrentFrame.T_w_c_*mCurrentFrame.mpReferenceKF->GetPoseInverse();
                 mlRelativeFramePoses.push_back(Tcr);
                 mlpReferences.push_back(mpReferenceKF);
-                mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
+                mlFrameTimes.push_back(mCurrentFrame.time_stamp_);
                 mlbLost.push_back(mState==LOST);
             }
             else
@@ -491,7 +494,7 @@ namespace vi_slam{
                 KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
 
                 // Insert KeyFrame in the map
-                mpMap->AddKeyFrame(pKFini);
+                mpMap->insertKeyFrame(pKFini);
 
                 // Create MapPoints and asscoiate to KeyFrame
                 for(int i=0; i<mCurrentFrame.N;i++)
@@ -505,7 +508,7 @@ namespace vi_slam{
                         pKFini->AddMapPoint(pNewMP,i);
                         pNewMP->ComputeDistinctiveDescriptors();
                         pNewMP->UpdateNormalAndDepth();
-                        mpMap->AddMapPoint(pNewMP);
+                        mpMap->insertMapPoint(pNewMP);
 
                         mCurrentFrame.mvpMapPoints[i]=pNewMP;
                     }
@@ -516,7 +519,7 @@ namespace vi_slam{
                 mpLocalMapper->InsertKeyFrame(pKFini);
 
                 mLastFrame = Frame(mCurrentFrame);
-                mnLastKeyFrameId=mCurrentFrame.mnId;
+                mnLastKeyFrameId=mCurrentFrame.id_;
                 mpLastKeyFrame = pKFini;
 
                 mvpLocalKeyFrames.push_back(pKFini);
@@ -540,13 +543,13 @@ namespace vi_slam{
             if(!mpInitializer)
             {
                 // Set Reference Frame
-                if(mCurrentFrame.mvKeys.size()>100)
+                if(mCurrentFrame.keypoints_.size()>100)
                 {
                     mInitialFrame = Frame(mCurrentFrame);
                     mLastFrame = Frame(mCurrentFrame);
-                    mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
-                    for(size_t i=0; i<mCurrentFrame.mvKeysUn.size(); i++)
-                        mvbPrevMatched[i]=mCurrentFrame.mvKeysUn[i].pt;
+                    mvbPrevMatched.resize(mCurrentFrame.ukeypoints_.size());
+                    for(size_t i=0; i<mCurrentFrame.ukeypoints_.size(); i++)
+                        mvbPrevMatched[i]=mCurrentFrame.ukeypoints_[i].pt;
 
                     if(mpInitializer)
                         delete mpInitializer;
@@ -561,7 +564,7 @@ namespace vi_slam{
             else
             {
                 // Try to initialize
-                if((int)mCurrentFrame.mvKeys.size()<=100)
+                if((int)mCurrentFrame.keypoints_.size()<=100)
                 {
                     delete mpInitializer;
                     mpInitializer = static_cast<MonoInitializer*>(NULL);
@@ -570,7 +573,7 @@ namespace vi_slam{
                 }
 
                 // Find correspondences
-                ORBmatcher matcher(0.9,true);
+                geometry::FMatcher matcher(0.9,true);
                 int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
                 // Check if there are enough correspondences
@@ -619,8 +622,8 @@ namespace vi_slam{
             pKFcur->ComputeBoW();
 
             // Insert KFs in the map
-            mpMap->AddKeyFrame(pKFini);
-            mpMap->AddKeyFrame(pKFcur);
+            mpMap->insertKeyFrame(pKFini);
+            mpMap->insertKeyFrame(pKFcur);
 
             // Create MapPoints and asscoiate to keyframes
             for(size_t i=0; i<mvIniMatches.size();i++)
@@ -647,7 +650,7 @@ namespace vi_slam{
                 mCurrentFrame.mvbOutlier[mvIniMatches[i]] = false;
 
                 //Add to Map
-                mpMap->AddMapPoint(pMP);
+                mpMap->insertMapPoint(pMP);
             }
 
             // Update Connections
@@ -657,7 +660,7 @@ namespace vi_slam{
             // Bundle Adjustment
             cout << "New Map created with " << mpMap->MapPointsInMap() << " points" << endl;
 
-            Optimizer::GlobalBundleAdjustemnt(mpMap,20);
+            optimization::Optimizer::GlobalBundleAdjustemnt(mpMap,20);
 
             // Set median depth to 1
             float medianDepth = pKFini->ComputeSceneMedianDepth(2);
@@ -682,7 +685,7 @@ namespace vi_slam{
                 if(vpAllMapPoints[iMP])
                 {
                     MapPoint* pMP = vpAllMapPoints[iMP];
-                    pMP->SetWorldPos(pMP->GetWorldPos()*invMedianDepth);
+                    pMP->setPos(pMP->GetWorldPos()*invMedianDepth);
                 }
             }
 
@@ -690,7 +693,7 @@ namespace vi_slam{
             mpLocalMapper->InsertKeyFrame(pKFcur);
 
             mCurrentFrame.SetPose(pKFcur->GetPose());
-            mnLastKeyFrameId=mCurrentFrame.mnId;
+            mnLastKeyFrameId=mCurrentFrame.id_;
             mpLastKeyFrame = pKFcur;
 
             mvpLocalKeyFrames.push_back(pKFcur);
@@ -735,7 +738,7 @@ namespace vi_slam{
 
             // We perform first an ORB matching with the reference keyframe
             // If enough matches are found we setup a PnP solver
-            ORBmatcher matcher(0.7,true);
+            geometry::FMatcher matcher(0.7,true);
             vector<MapPoint*> vpMapPointMatches;
 
             int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -744,9 +747,9 @@ namespace vi_slam{
                 return false;
 
             mCurrentFrame.mvpMapPoints = vpMapPointMatches;
-            mCurrentFrame.SetPose(mLastFrame.mTcw);
+            mCurrentFrame.SetPose(mLastFrame.T_w_c_);
 
-            Optimizer::PoseOptimization(&mCurrentFrame);
+            optimization::Optimizer::PoseOptimization(&mCurrentFrame);
 
             // Discard outliers
             int nmatchesMap = 0;
@@ -761,7 +764,7 @@ namespace vi_slam{
                         mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
                         mCurrentFrame.mvbOutlier[i]=false;
                         pMP->mbTrackInView = false;
-                        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                        pMP->mnLastFrameSeen = mCurrentFrame.id_;
                         nmatches--;
                     }
                     else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
@@ -780,7 +783,7 @@ namespace vi_slam{
 
             mLastFrame.SetPose(Tlr*pRef->GetPose());
 
-            if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || !mbOnlyTracking)
+            if(mnLastKeyFrameId==mLastFrame.id_ || mSensor==System::MONOCULAR || !mbOnlyTracking)
                 return;
 
             // Create "visual odometry" MapPoints
@@ -840,13 +843,13 @@ namespace vi_slam{
 
         bool Tracking::TrackWithMotionModel()
         {
-            ORBmatcher matcher(0.9,true);
+            geometry::FMatcher matcher(0.9,true);
 
             // Update last frame pose according to its reference keyframe
             // Create "visual odometry" points if in Localization Mode
             UpdateLastFrame();
 
-            mCurrentFrame.SetPose(mVelocity*mLastFrame.mTcw);
+            mCurrentFrame.SetPose(mVelocity*mLastFrame.T_w_c_);
 
             fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
@@ -869,7 +872,7 @@ namespace vi_slam{
                 return false;
 
             // Optimize frame pose with all matches
-            Optimizer::PoseOptimization(&mCurrentFrame);
+            optimization::Optimizer::PoseOptimization(&mCurrentFrame);
 
             // Discard outliers
             int nmatchesMap = 0;
@@ -884,7 +887,7 @@ namespace vi_slam{
                         mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
                         mCurrentFrame.mvbOutlier[i]=false;
                         pMP->mbTrackInView = false;
-                        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                        pMP->mnLastFrameSeen = mCurrentFrame.id_;
                         nmatches--;
                     }
                     else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
@@ -911,7 +914,7 @@ namespace vi_slam{
             SearchLocalPoints();
 
             // Optimize Pose
-            Optimizer::PoseOptimization(&mCurrentFrame);
+            optimization::Optimizer::PoseOptimization(&mCurrentFrame);
             mnMatchesInliers = 0;
 
             // Update MapPoints Statistics
@@ -938,7 +941,7 @@ namespace vi_slam{
 
             // Decide if the tracking was succesful
             // More restrictive if there was a relocalization recently
-            if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
+            if(mCurrentFrame.id_<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
                 return false;
 
             if(mnMatchesInliers<30)
@@ -960,7 +963,7 @@ namespace vi_slam{
             const int nKFs = mpMap->KeyFramesInMap();
 
             // Do not insert keyframes if not enough frames have passed from last relocalisation
-            if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && nKFs>mMaxFrames)
+            if(mCurrentFrame.id_<mnLastRelocFrameId+mMaxFrames && nKFs>mMaxFrames)
                 return false;
 
             // Tracked MapPoints in the reference keyframe
@@ -1000,9 +1003,9 @@ namespace vi_slam{
                 thRefRatio = 0.9f;
 
             // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
-            const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
+            const bool c1a = mCurrentFrame.id_>=mnLastKeyFrameId+mMaxFrames;
             // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-            const bool c1b = (mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames && bLocalMappingIdle);
+            const bool c1b = (mCurrentFrame.id_>=mnLastKeyFrameId+mMinFrames && bLocalMappingIdle);
             //Condition 1c: tracking is weak
             const bool c1c =  mSensor!=System::MONOCULAR && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
             // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
@@ -1090,7 +1093,7 @@ namespace vi_slam{
                             pKF->AddMapPoint(pNewMP,i);
                             pNewMP->ComputeDistinctiveDescriptors();
                             pNewMP->UpdateNormalAndDepth();
-                            mpMap->AddMapPoint(pNewMP);
+                            mpMap->insertMapPoint(pNewMP);
 
                             mCurrentFrame.mvpMapPoints[i]=pNewMP;
                             nPoints++;
@@ -1110,7 +1113,7 @@ namespace vi_slam{
 
             mpLocalMapper->SetNotStop(false);
 
-            mnLastKeyFrameId = mCurrentFrame.mnId;
+            mnLastKeyFrameId = mCurrentFrame.id_;
             mpLastKeyFrame = pKF;
         }
 
@@ -1129,7 +1132,7 @@ namespace vi_slam{
                     else
                     {
                         pMP->IncreaseVisible();
-                        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                        pMP->mnLastFrameSeen = mCurrentFrame.id_;
                         pMP->mbTrackInView = false;
                     }
                 }
@@ -1141,7 +1144,7 @@ namespace vi_slam{
             for(vector<MapPoint*>::iterator vit=mvpLocalMapPoints.begin(), vend=mvpLocalMapPoints.end(); vit!=vend; vit++)
             {
                 MapPoint* pMP = *vit;
-                if(pMP->mnLastFrameSeen == mCurrentFrame.mnId)
+                if(pMP->mnLastFrameSeen == mCurrentFrame.id_)
                     continue;
                 if(pMP->isBad())
                     continue;
@@ -1155,12 +1158,12 @@ namespace vi_slam{
 
             if(nToMatch>0)
             {
-                ORBmatcher matcher(0.8);
+                geometry::FMatcher matcher(0.8);
                 int th = 1;
                 if(mSensor==System::RGBD)
                     th=3;
                 // If the camera has been relocalised recently, perform a coarser search
-                if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                if(mCurrentFrame.id_<mnLastRelocFrameId+2)
                     th=5;
                 matcher.SearchByProjection(mCurrentFrame,mvpLocalMapPoints,th);
             }
@@ -1190,12 +1193,12 @@ namespace vi_slam{
                     MapPoint* pMP = *itMP;
                     if(!pMP)
                         continue;
-                    if(pMP->mnTrackReferenceForFrame==mCurrentFrame.mnId)
+                    if(pMP->mnTrackReferenceForFrame==mCurrentFrame.id_)
                         continue;
                     if(!pMP->isBad())
                     {
                         mvpLocalMapPoints.push_back(pMP);
-                        pMP->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                        pMP->mnTrackReferenceForFrame=mCurrentFrame.id_;
                     }
                 }
             }
@@ -1248,7 +1251,7 @@ namespace vi_slam{
                 }
 
                 mvpLocalKeyFrames.push_back(it->first);
-                pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                pKF->mnTrackReferenceForFrame = mCurrentFrame.id_;
             }
 
 
@@ -1268,10 +1271,10 @@ namespace vi_slam{
                     KeyFrame* pNeighKF = *itNeighKF;
                     if(!pNeighKF->isBad())
                     {
-                        if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                        if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                         {
                             mvpLocalKeyFrames.push_back(pNeighKF);
-                            pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                            pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.id_;
                             break;
                         }
                     }
@@ -1283,10 +1286,10 @@ namespace vi_slam{
                     KeyFrame* pChildKF = *sit;
                     if(!pChildKF->isBad())
                     {
-                        if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                        if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                         {
                             mvpLocalKeyFrames.push_back(pChildKF);
-                            pChildKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                            pChildKF->mnTrackReferenceForFrame=mCurrentFrame.id_;
                             break;
                         }
                     }
@@ -1295,10 +1298,10 @@ namespace vi_slam{
                 KeyFrame* pParent = pKF->GetParent();
                 if(pParent)
                 {
-                    if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                    if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                     {
                         mvpLocalKeyFrames.push_back(pParent);
-                        pParent->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                        pParent->mnTrackReferenceForFrame=mCurrentFrame.id_;
                         break;
                     }
                 }
@@ -1328,9 +1331,9 @@ namespace vi_slam{
 
             // We perform first an ORB matching with each candidate
             // If enough matches are found we setup a PnP solver
-            ORBmatcher matcher(0.75,true);
+            geometry::FMatcher matcher(0.75,true);
 
-            vector<PnPsolver*> vpPnPsolvers;
+            vector<optimization::PnPSolver*> vpPnPsolvers;
             vpPnPsolvers.resize(nKFs);
 
             vector<vector<MapPoint*> > vvpMapPointMatches;
@@ -1356,7 +1359,7 @@ namespace vi_slam{
                     }
                     else
                     {
-                        PnPsolver* pSolver = new PnPsolver(mCurrentFrame,vvpMapPointMatches[i]);
+                        optimization::PnPSolver* pSolver = new optimization::PnPSolver(mCurrentFrame,vvpMapPointMatches[i]);
                         pSolver->SetRansacParameters(0.99,10,300,4,0.5,5.991);
                         vpPnPsolvers[i] = pSolver;
                         nCandidates++;
@@ -1367,7 +1370,7 @@ namespace vi_slam{
             // Alternatively perform some iterations of P4P RANSAC
             // Until we found a camera pose supported by enough inliers
             bool bMatch = false;
-            ORBmatcher matcher2(0.9,true);
+            geometry::FMatcher matcher2(0.9,true);
 
             while(nCandidates>0 && !bMatch)
             {
@@ -1381,7 +1384,7 @@ namespace vi_slam{
                     int nInliers;
                     bool bNoMore;
 
-                    PnPsolver* pSolver = vpPnPsolvers[i];
+                    optimization::PnPSolver* pSolver = vpPnPsolvers[i];
                     cv::Mat Tcw = pSolver->iterate(5,bNoMore,vbInliers,nInliers);
 
                     // If Ransac reachs max. iterations discard keyframe
@@ -1394,7 +1397,7 @@ namespace vi_slam{
                     // If a Camera Pose is computed, optimize
                     if(!Tcw.empty())
                     {
-                        Tcw.copyTo(mCurrentFrame.mTcw);
+                        Tcw.copyTo(mCurrentFrame.T_w_c_);
 
                         set<MapPoint*> sFound;
 
@@ -1411,7 +1414,7 @@ namespace vi_slam{
                                 mCurrentFrame.mvpMapPoints[j]=NULL;
                         }
 
-                        int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                        int nGood = optimization::Optimizer::PoseOptimization(&mCurrentFrame);
 
                         if(nGood<10)
                             continue;
@@ -1427,7 +1430,7 @@ namespace vi_slam{
 
                             if(nadditional+nGood>=50)
                             {
-                                nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                                nGood = optimization::Optimizer::PoseOptimization(&mCurrentFrame);
 
                                 // If many inliers but still not enough, search by projection again in a narrower window
                                 // the camera has been already optimized with many points
@@ -1442,7 +1445,7 @@ namespace vi_slam{
                                     // Final optimization
                                     if(nGood+nadditional>=50)
                                     {
-                                        nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                                        nGood = optimization::Optimizer::PoseOptimization(&mCurrentFrame);
 
                                         for(int io =0; io<mCurrentFrame.N; io++)
                                             if(mCurrentFrame.mvbOutlier[io])
@@ -1469,7 +1472,7 @@ namespace vi_slam{
             }
             else
             {
-                mnLastRelocFrameId = mCurrentFrame.mnId;
+                mnLastRelocFrameId = mCurrentFrame.id_;
                 return true;
             }
 
@@ -1519,8 +1522,8 @@ namespace vi_slam{
             mlFrameTimes.clear();
             mlbLost.clear();
 
-            //if(mpViewer)
-            //    mpViewer->Release();
+            if(mpViewer)
+                mpViewer->Release();
         }
 
         void Tracking::ChangeCalibration(const string &strSettingPath)
