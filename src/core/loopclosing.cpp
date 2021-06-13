@@ -473,7 +473,7 @@ namespace vi_slam{
                         Eigen::Matrix<double,3,1> eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oSiw.map(eigP3Dw));
 
                         cv::Mat cvCorrectedP3Dw = basics::toCvMat(eigCorrectedP3Dw);
-                        pMPi->SetWorldPos(cvCorrectedP3Dw);
+                        pMPi->setPos(cvCorrectedP3Dw);
                         pMPi->mnCorrectedByKF = mpCurrentKF->mnId;
                         pMPi->mnCorrectedReference = pKFi->mnId;
                         pMPi->UpdateNormalAndDepth();
@@ -691,7 +691,7 @@ namespace vi_slam{
                         if(pMP->mnBAGlobalForKF==nLoopKF)
                         {
                             // If optimized by Global BA, just update
-                            pMP->SetWorldPos(pMP->mPosGBA);
+                            pMP->setPos(pMP->mPosGBA);
                         }
                         else
                         {
@@ -711,7 +711,7 @@ namespace vi_slam{
                             cv::Mat Rwc = Twc.rowRange(0,3).colRange(0,3);
                             cv::Mat twc = Twc.rowRange(0,3).col(3);
 
-                            pMP->SetWorldPos(Rwc*Xc+twc);
+                            pMP->setPos(Rwc*Xc+twc);
                         }
                     }
 

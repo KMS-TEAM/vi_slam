@@ -28,13 +28,17 @@
 
 namespace vi_slam
 {
-    class core::Tracking;
-    class display::FrameDrawer;
-    class display::MapDrawer;
-    class core::System;
+
+    namespace core{
+        class System;
+        class Tracking;
+    };
 
     namespace display
     {
+
+        class FrameDrawer;
+        class MapDrawer;
 
         class PclViewer
         {
@@ -74,7 +78,7 @@ namespace vi_slam
         class Viewer
         {
         public:
-            Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const string &strSettingPath);
+            Viewer(core::System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, core::Tracking *pTracking, const string &strSettingPath);
 
             // Main thread function. Draw points, keyframes, the current camera pose and the last processed
             // frame. Drawing is refreshed according to the camera fps. We use Pangolin.
@@ -94,10 +98,10 @@ namespace vi_slam
 
             bool Stop();
 
-            System* mpSystem;
+            core::System* mpSystem;
             FrameDrawer* mpFrameDrawer;
             MapDrawer* mpMapDrawer;
-            Tracking* mpTracker;
+            core::Tracking* mpTracker;
 
             // 1/fps in ms
             double mT;

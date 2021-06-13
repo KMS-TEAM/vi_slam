@@ -12,6 +12,7 @@
 #include "vi_slam/core/loopclosing.h"
 
 #include "vi_slam/datastructures/map.h"
+#include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/datastructures/keyframedatabase.h"
 
 #include "vi_slam/display/viewer.h"
@@ -24,9 +25,17 @@ using namespace vi_slam::datastructures;
 
 namespace vi_slam{
 
-    class display::Viewer;
-    class display::FrameDrawer;
-    class datastructures::Map;
+    namespace datastructures{
+        class Map;
+        class MapPoint;
+        class KeyFrameDatabase;
+    }
+
+    namespace display{
+        class Viewer;
+        class FrameDrawer;
+        class MapDrawer;
+    }
 
     namespace core{
 
@@ -135,10 +144,10 @@ namespace vi_slam{
             LoopClosing* mpLoopCloser;
 
             // The viewer draws the map and the current camera pose. It uses Pangolin.
-            Viewer* mpViewer;
+            display::Viewer* mpViewer;
 
-            // FrameDrawer* mpFrameDrawer;
-            // MapDrawer* mpMapDrawer;
+            display::FrameDrawer* mpFrameDrawer;
+            display::MapDrawer* mpMapDrawer;
 
             // System threads: Local Mapping, Loop Closing, Viewer.
             // The Tracking thread "lives" in the main execution thread that creates the System object.
