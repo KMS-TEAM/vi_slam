@@ -37,7 +37,7 @@ namespace vi_slam{
 
                 typedef pair<set<datastructures::KeyFrame*>,int> ConsistentGroup;
                 typedef map<datastructures::KeyFrame*,g2o::Sim3,std::less<datastructures::KeyFrame*>,
-                        Eigen::aligned_allocator<std::pair<const datastructures::KeyFrame*, g2o::Sim3> > > KeyFrameAndPose;
+                        Eigen::aligned_allocator<std::pair<datastructures::KeyFrame* const, g2o::Sim3> > > KeyFrameAndPose;
 
             public:
 

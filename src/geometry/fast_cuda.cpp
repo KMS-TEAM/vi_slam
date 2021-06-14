@@ -2,6 +2,7 @@
 // Created by lacie on 26/05/2021.
 //
 
+/*
 #include "vi_slam/geometry/fast_cuda.h"
 #include "vi_slam/basics/config.h"
 #include "vi_slam/geometry/fmatcher.h"
@@ -137,3 +138,4 @@ namespace vi_slam{
         }
     }
 }
+*/

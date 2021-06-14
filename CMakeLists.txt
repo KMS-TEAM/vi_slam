@@ -35,8 +35,8 @@ find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
 
 # G2O
-#find_package(G2O REQUIRED)
-#include_directories(${G2O_INCLUDE_DIRS})
+find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIRS})
 
 # ceres
 find_package(Ceres REQUIRED)
@@ -65,8 +65,8 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 #vilib
-find_package(vilib REQUIRED)
-find_package(CUDA REQUIRED)
+#find_package(vilib REQUIRED)
+#find_package(CUDA REQUIRED)
 #message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 set(THIRD_PARTY_LIBS
@@ -83,17 +83,8 @@ set(THIRD_PARTY_LIBS
         ${GFLAGS_LIBRARIES}
         ${CSPARSE_LIBRARY}
         pthread
-        vilib::vilib
-        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_core.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_stuff.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sba.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_csparse_extension.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_dense.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sim3.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_csparse.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_eigen.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_slam3d.so
+        #vilib::vilib
+        g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
         )
 
 ############### source and test ######################
