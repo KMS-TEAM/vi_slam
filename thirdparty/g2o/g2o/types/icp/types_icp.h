@@ -32,7 +32,7 @@
 
 #include "g2o/core/base_vertex.h"
 #include "g2o/core/base_binary_edge.h"
-#include "g2o/core/base_variable_sized_edge.h"
+#include "g2o/core/base_multi_edge.h"
 #include "g2o/types/sba/types_sba.h"
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o_types_icp_api.h"
@@ -367,7 +367,7 @@ namespace g2o {
 
 // stereo projection
 // first two args are the measurement type, second two the connection classes
-  class G2O_TYPES_ICP_API Edge_XYZ_VSC : public  BaseBinaryEdge<3, Vector3, VertexPointXYZ, VertexSCam>
+  class G2O_TYPES_ICP_API Edge_XYZ_VSC : public  BaseBinaryEdge<3, Vector3, VertexSBAPointXYZ, VertexSCam>
 {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -381,7 +381,7 @@ namespace g2o {
     void computeError()
     {
       // from <Point> to <Cam>
-      const VertexPointXYZ *point = static_cast<const VertexPointXYZ*>(_vertices[0]);
+      const VertexSBAPointXYZ *point = static_cast<const VertexSBAPointXYZ*>(_vertices[0]);
       VertexSCam *cam = static_cast<VertexSCam*>(_vertices[1]);
       //cam->setAll();
 

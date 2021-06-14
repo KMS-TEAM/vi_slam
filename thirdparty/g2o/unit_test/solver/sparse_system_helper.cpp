@@ -34,7 +34,7 @@
 namespace g2o {
 namespace internal {
 
-static std::vector<int> readIndices(const std::string& indeces) {
+std::vector<int> readIndeces(const std::string& indeces) {
   std::stringstream tokens(indeces);
 
   int numElems = 0;
@@ -193,25 +193,22 @@ std::string denseInverseMatrixString() {
   return aux.str();
 }
 
-void fillTestMatrix(g2o::SparseBlockMatrixX& A) {
+g2o::SparseBlockMatrixX createTestMatrix() {
   std::stringstream input(sparseMatrixString());
   std::string token;
 
   // reading RBI
   input >> token >> token;
   std::getline(input, token);
-  std::vector<int> rowBlockIndices = readIndices(token);
+  std::vector<int> rowBlockIndeces = readIndeces(token);
   // reading CBI
   input >> token >> token;
   std::getline(input, token);
-  std::vector<int> colBlockIndices = readIndices(token);
+  std::vector<int> colBlockIndeces = readIndeces(token);
 
   // allocating the matrix and read the elements of the matrix
-  A.clear(true);
-  A.rowBlockIndices() = rowBlockIndices;
-  A.colBlockIndices() = colBlockIndices;
-  A.blockCols().resize(colBlockIndices.size());
-
+  g2o::SparseBlockMatrixX result(rowBlockIndeces.data(), colBlockIndeces.data(),
+                                 rowBlockIndeces.size(), colBlockIndeces.size());
   while (input >> token) {
     if (token != "BLOCK") {
       throw std::logic_error("Expected BLOCK as token");
@@ -219,8 +216,8 @@ void fillTestMatrix(g2o::SparseBlockMatrixX& A) {
     input >> token;
     int ri, ci;
     input >> ri >> ci;
-    auto sparseBlock = A.block(ri, ci, true);
-    sparseBlock->resize(A.rowsOfBlock(ri), A.colsOfBlock(ci));
+    auto sparseBlock = result.block(ri, ci, true);
+    sparseBlock->resize(result.rowsOfBlock(ri), result.colsOfBlock(ci));
     for (int rr = 0; rr < sparseBlock->rows(); rr++) {
       for (int cc = 0; cc < sparseBlock->cols(); cc++) {
         double value;
@@ -229,6 +226,7 @@ void fillTestMatrix(g2o::SparseBlockMatrixX& A) {
       }
     }
   }
+  return result;
 }
 
 g2o::MatrixX createTestMatrixInverse() {

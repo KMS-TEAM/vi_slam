@@ -52,6 +52,10 @@ TEST(IoSba, ReadWriteVertexCam) {
   readWriteVectorBasedVertex<VertexCam, RandomSBACam>();
 }
 
+TEST(IoSba, ReadWriteVertexSBAPointXYZ) {
+  readWriteVectorBasedVertex<VertexSBAPointXYZ>();
+}
+
 /*
  * EDGE Tests
  */

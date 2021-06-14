@@ -76,8 +76,8 @@ class LinearSolverEigen : public LinearSolverCCS<MatrixType> {
   };
 
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  LinearSolverEigen() : LinearSolverCCS<MatrixType>(), _init(true) {}
+  LinearSolverEigen()
+      : LinearSolverCCS<MatrixType>(), _init(true) {}
 
   virtual bool init() {
     _init = true;
@@ -147,7 +147,7 @@ class LinearSolverEigen : public LinearSolverCCS<MatrixType> {
         // fill the CCS structure of the Eigen SparseMatrix
         A.fillBlockStructure(auxBlockMatrix.outerIndexPtr(), auxBlockMatrix.innerIndexPtr());
         // determine ordering by AMD
-        using Ordering = Eigen::AMDOrdering<SparseMatrix::StorageIndex>;
+        using Ordering = Eigen::AMDOrdering<typename CholeskyDecomposition::StorageIndex>;
         Ordering ordering;
         ordering(auxBlockMatrix, blockP);
       }

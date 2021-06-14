@@ -42,13 +42,21 @@ namespace g2o {
 namespace {
 
 template <typename T>
-void readVector(const std::string& s, std::vector<T>& v) {
+void readVector(const std::string& s, const std::function<T(const char*, char**)>& parser, std::vector<T>& v) {
   v.clear();
 
-  std::vector<std::string> elements = strSplit(s, ",;");
-  for (const std::string& s: elements) {
-    T val = stringToType<T>(s);
-    v.emplace_back(val);
+  const char* c = s.c_str();
+  char* caux = const_cast<char*>(c);
+
+  bool hasNextValue = true;
+  while (hasNextValue) {
+    T value = parser(c, &caux);
+    if (c != caux) {
+      c = caux;
+      c++;
+      v.push_back(value);
+    } else
+      hasNextValue = false;
   }
 }
 
@@ -71,9 +79,9 @@ void parseArgument(const std::string& input, CommandArgs::CommandArgument& ca) {
 }
 
 template <typename T>
-void parseVector(const std::string& input, CommandArgs::CommandArgument& ca) {
+void parseVector(const std::string& input, CommandArgs::CommandArgument& ca, std::function<T(const char*, char**)> parser) {
   std::vector<T> aux;
-  readVector(input, aux);
+  readVector(input, parser, aux);
   bool convertStatus = aux.size() > 0;
   if (convertStatus) {
     std::vector<T>* data = static_cast<std::vector<T>*>(ca.data);
@@ -362,10 +370,16 @@ void CommandArgs::str2arg(const std::string& input, CommandArgument& ca) const {
       *data = input;
     } break;
     case CAT_VECTOR_INT: {
-      parseVector<int>(input, ca);
+      std::function<int(const char*, char**)> parser = [](const char* c, char** caux) -> int {
+        return static_cast<int>(strtol(c, caux, 10));
+      };
+      parseVector(input, ca, parser);
     } break;
     case CAT_VECTOR_DOUBLE: {
-      parseVector<double>(input, ca);
+      std::function<double(const char*, char**)> parser = [](const char* c, char** caux) -> double {
+        return strtod(c, caux);
+      };
+      parseVector(input, ca, parser);
     } break;
   }
 }

@@ -92,6 +92,8 @@ set(THIRD_PARTY_LIBS
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_dense.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sim3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_csparse.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_eigen.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_slam3d.so
         )
 
 ############### source and test ######################

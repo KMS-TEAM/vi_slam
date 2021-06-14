@@ -24,25 +24,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <iostream>
 #include <stdint.h>
 
-#include <iostream>
 #include <unordered_set>
 
-#include "g2o/core/optimization_algorithm_factory.h"
-#include "g2o/core/robust_kernel_impl.h"
 #include "g2o/core/sparse_optimizer.h"
+#include "g2o/core/block_solver.h"
+#include "g2o/core/solver.h"
+#include "g2o/core/robust_kernel_impl.h"
+#include "g2o/core/optimization_algorithm_levenberg.h"
+#include "g2o/solvers/dense/linear_solver_dense.h"
+#include "g2o/types/sba/types_six_dof_expmap.h"
 #include "g2o/solvers/structure_only/structure_only_solver.h"
 #include "g2o/stuff/sampler.h"
-#include "g2o/types/sba/types_six_dof_expmap.h"
 
 #if defined G2O_HAVE_CHOLMOD
-G2O_USE_OPTIMIZATION_LIBRARY(cholmod);
+#include "g2o/solvers/cholmod/linear_solver_cholmod.h"
 #else
-G2O_USE_OPTIMIZATION_LIBRARY(eigen);
+#include "g2o/solvers/eigen/linear_solver_eigen.h"
 #endif
-
-G2O_USE_OPTIMIZATION_LIBRARY(dense);
 
 using namespace Eigen;
 using namespace std;
@@ -99,20 +100,22 @@ int main(int argc, const char* argv[]){
 
   g2o::SparseOptimizer optimizer;
   optimizer.setVerbose(false);
-  string solverName = "lm_fix6_3";
+  std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> linearSolver;
   if (DENSE) {
-    solverName = "lm_dense6_3";
+    linearSolver = g2o::make_unique<g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>>();
   } else {
 #ifdef G2O_HAVE_CHOLMOD
-    solverName = "lm_fix6_3_cholmod";
+    using BaLinearSolver = g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>;
 #else
-    solverName = "lm_fix6_3";
+    using BaLinearSolver = g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>;
 #endif
+    linearSolver = g2o::make_unique<BaLinearSolver>();
   }
 
-  g2o::OptimizationAlgorithmProperty solverProperty;
-  optimizer.setAlgorithm(
-      g2o::OptimizationAlgorithmFactory::instance()->construct(solverName, solverProperty));
+  g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(
+    g2o::make_unique<g2o::BlockSolver_6_3>(std::move(linearSolver))
+  );
+  optimizer.setAlgorithm(solver);
 
   vector<Vector3d> true_points;
   for (size_t i=0;i<500; ++i)
@@ -162,8 +165,8 @@ int main(int argc, const char* argv[]){
   unordered_set<int> inliers;
 
   for (size_t i=0; i<true_points.size(); ++i){
-    g2o::VertexPointXYZ * v_p
-        = new g2o::VertexPointXYZ();
+    g2o::VertexSBAPointXYZ * v_p
+        = new g2o::VertexSBAPointXYZ();
     v_p->setId(point_id);
     v_p->setMarginalized(true);
     v_p->setEstimate(true_points.at(i)
@@ -250,8 +253,8 @@ int main(int argc, const char* argv[]){
       cerr << "Vertex " << it->first << " not in graph!" << endl;
       exit(-1);
     }
-    g2o::VertexPointXYZ * v_p
-        = dynamic_cast< g2o::VertexPointXYZ * > (v_it->second);
+    g2o::VertexSBAPointXYZ * v_p
+        = dynamic_cast< g2o::VertexSBAPointXYZ * > (v_it->second);
     if (v_p==0){
       cerr << "Vertex " << it->first << "is not a PointXYZ!" << endl;
       exit(-1);

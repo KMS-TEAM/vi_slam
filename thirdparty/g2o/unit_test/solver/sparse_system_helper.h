@@ -32,7 +32,7 @@ namespace internal {
  * Create a sparse matrix that allows us to test solving a linear system
  * This is a sparse matrix A of a system A*x = b.
  */
-void fillTestMatrix(g2o::SparseBlockMatrixX& A);
+g2o::SparseBlockMatrixX createTestMatrix();
 
 /**
  * return the inverse of A that is returned as sparse matrix by createTestMatrix

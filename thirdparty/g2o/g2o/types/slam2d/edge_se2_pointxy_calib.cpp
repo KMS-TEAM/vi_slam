@@ -29,7 +29,7 @@
 namespace g2o {
 
   EdgeSE2PointXYCalib::EdgeSE2PointXYCalib() :
-    BaseVariableSizedEdge<2, Vector2>()
+    BaseMultiEdge<2, Vector2>()
   {
     resize(3);
   }

@@ -30,35 +30,42 @@
 #include "base_vertex.h"
 
 namespace g2o {
-template <typename T>
-class BaseDynamicVertex : public BaseVertex<-1, T> {
- public:
-  inline virtual bool setDimension(int newDimension);
+  template <typename T>
+    class BaseDynamicVertex : public BaseVertex<-1, T>
+    {
+    public:
+      
+      inline virtual bool setDimension(int newDimension);
+    
+    protected:
+      
+      // This method is responsible for actually changing the dimension of the state
+      virtual bool setDimensionImpl(int newDimension) = 0;
 
- protected:
-  // This method is responsible for actually changing the dimension of the state
-  virtual bool setDimensionImpl(int newDimension) = 0;
+      using BaseVertex<-1, T>::_graph;
+      using BaseVertex<-1, T>::_dimension;
+      using BaseVertex<-1, T>::_b;
+      using BaseVertex<-1, T>::_edges;
+      using BaseVertex<-1, T>::setHessianIndex;
+      using BaseVertex<-1, T>::mapHessianMemory;
+      using BaseVertex<-1, T>::updateCache;
+      
+    };
 
-  using BaseVertex<-1, T>::_graph;
-  using BaseVertex<-1, T>::_dimension;
-  using BaseVertex<-1, T>::_b;
-  using BaseVertex<-1, T>::_edges;
-  using BaseVertex<-1, T>::setHessianIndex;
-  using BaseVertex<-1, T>::mapHessianMemory;
-  using BaseVertex<-1, T>::updateCache;
-};
-
-template <typename T>
-bool BaseDynamicVertex<T>::setDimension(int newDimension) {
+  template <typename T>
+    bool BaseDynamicVertex<T>::setDimension(int newDimension) {
   // Check the dimension is non-negative.
   assert(newDimension >= 0);
-  if (newDimension < 0) return false;
+  if (newDimension < 0)
+    return false;
 
   // Nothing to do if the dimension is unchanged.
-  if (newDimension == _dimension) return true;
+  if (newDimension == _dimension)
+    return true;
 
   // Change the state to the requested dimension
-  if (setDimensionImpl(newDimension) == false) return false;
+  if (setDimensionImpl(newDimension) == false)
+    return false;
 
   // Store the old dimension and assign the new
   int oldDimension = _dimension;
@@ -74,12 +81,12 @@ bool BaseDynamicVertex<T>::setDimension(int newDimension) {
   // graph, update the size of the Jacobian workspace just in case it
   // needs to grow.
   if ((newDimension > oldDimension) && (_graph != nullptr)) {
-    JacobianWorkspace& jacobianWorkspace = _graph->jacobianWorkspace();
-    for (auto e : _edges) jacobianWorkspace.updateSize(e);
-  }
+      JacobianWorkspace& jacobianWorkspace = _graph->jacobianWorkspace();
+      for (auto e : _edges)
+        jacobianWorkspace.updateSize(e);
+    }
 
   return true;
+ }
 }
-
-}  // namespace g2o
 #endif

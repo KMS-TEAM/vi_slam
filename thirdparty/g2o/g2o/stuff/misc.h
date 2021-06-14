@@ -226,6 +226,7 @@ struct ForceLinker
     ForceLinker(ForceLinkFunction function) { (function)(); }
 };
 
+
 } // end namespace
 
 // @}

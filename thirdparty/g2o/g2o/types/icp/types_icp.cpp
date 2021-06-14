@@ -243,7 +243,7 @@ namespace g2o {
   {
     VertexSCam *vc = static_cast<VertexSCam *>(_vertices[1]);
 
-    VertexPointXYZ *vp = static_cast<VertexPointXYZ *>(_vertices[0]);
+    VertexSBAPointXYZ *vp = static_cast<VertexSBAPointXYZ *>(_vertices[0]);
     Vector4 pt, trans;
     pt.head<3>() = vp->estimate();
     pt(3) = 1.0;

@@ -94,5 +94,4 @@ TEST(General, ClearAndRedo) {
 
     mOptimizer.clear();
   }
-  delete terminateAction;
 }

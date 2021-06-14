@@ -30,6 +30,14 @@
 
 namespace g2o {
 
+  DataQueue::DataQueue()
+  {
+  }
+
+  DataQueue::~DataQueue()
+  {
+  }
+
   RobotData* DataQueue::findClosestData(number_t timestamp) const
   {
     if (_buffer.rbegin()->first < timestamp)
@@ -48,7 +56,7 @@ namespace g2o {
 
   RobotData* DataQueue::before(number_t timestamp) const
   {
-    if (_buffer.size() == 0 || _buffer.begin()->first >= timestamp)
+    if (_buffer.size() == 0 || _buffer.begin()->first > timestamp)
       return nullptr;
     Buffer::const_iterator lb = _buffer.upper_bound(timestamp);
     --lb; // now it's the lower bound

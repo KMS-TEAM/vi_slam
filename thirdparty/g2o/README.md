@@ -57,10 +57,10 @@ library distributed with, for example, Ubuntu or Debian includes the GPL
 features. The supernodal factorization is considered by g2o, if it is
 available.
 
-Within the folder g2o/EXTERNAL we include software not written by us to
+Within the folder EXTERNAL we include software not written by us to
 guarantee easy compilation.
 
--   ceres: BSD (see g2o/EXTERNAL/ceres/LICENSE)
+-   ceres: BSD (see EXTERNAL/ceres/LICENSE)
     Headers to perform Automatic Differentiation
 
 -   freeglut: X Consortium (Copyright (c) 1999-2000 Pawel W. Olszta)
@@ -75,7 +75,6 @@ licenses for more details.
 
 ## Requirements
 
--   C++14 compiler (CI pipeline runs with gcc, clang and MSVC)
 -   cmake             <http://www.cmake.org>
 -   Eigen3            <http://eigen.tuxfamily.org>
 
