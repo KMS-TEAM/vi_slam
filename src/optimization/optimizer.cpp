@@ -5,13 +5,13 @@
 #include "vi_slam/optimization/optimizer.h"
 #include "vi_slam/basics/converter.h"
 
-#include "g2o/g2o/core/block_solver.h"
-#include "g2o/g2o/core/optimization_algorithm_levenberg.h"
-#include "g2o/g2o/solvers/eigen/linear_solver_eigen.h"
-#include "g2o/g2o/types/sim3/types_seven_dof_expmap.h"
-#include "g2o/g2o/core/robust_kernel_impl.h"
-#include "g2o/g2o/solvers/dense/linear_solver_dense.h"
-#include "g2o/g2o/types/sba/types_six_dof_expmap.h"
+#include <g2o/core/block_solver.h>
+#include <g2o/core/optimization_algorithm_levenberg.h>
+#include <g2o/solvers/eigen/linear_solver_eigen.h>
+#include <g2o/types/sim3/types_seven_dof_expmap.h>
+#include <g2o/core/robust_kernel_impl.h>
+#include <g2o/solvers/dense/linear_solver_dense.h>
+#include <g2o/types/sba/types_six_dof_expmap.h>
 
 #include <Eigen/StdVector>
 #include <mutex>
@@ -78,7 +78,7 @@ namespace vi_slam{
                 MapPoint* pMP = vpMP[i];
                 if(pMP->isBad())
                     continue;
-                g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
+                g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
                 vPoint->setEstimate(basics::toVector3d(pMP->GetWorldPos()));
                 const int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
@@ -206,7 +206,7 @@ namespace vi_slam{
 
                 if(pMP->isBad())
                     continue;
-                g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
+                g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
 
                 if(nLoopKF==0)
                 {
@@ -575,7 +575,7 @@ namespace vi_slam{
             for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
             {
                 MapPoint* pMP = *lit;
-                g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
+                g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
                 vPoint->setEstimate(basics::toVector3d(pMP->GetWorldPos()));
                 int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
@@ -774,7 +774,7 @@ namespace vi_slam{
             for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
             {
                 MapPoint* pMP = *lit;
-                g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
+                g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
                 pMP->setPos(basics::toCvMat(vPoint->estimate()));
                 pMP->UpdateNormalAndDepth();
             }
@@ -1133,7 +1133,7 @@ namespace vi_slam{
                 {
                     if(!pMP1->isBad() && !pMP2->isBad() && i2>=0)
                     {
-                        g2o::VertexPointXYZ* vPoint1 = new g2o::VertexPointXYZ();
+                        g2o::VertexSBAPointXYZ* vPoint1 = new g2o::VertexSBAPointXYZ();
                         cv::Mat P3D1w = pMP1->GetWorldPos();
                         cv::Mat P3D1c = R1w*P3D1w + t1w;
                         vPoint1->setEstimate(basics::toVector3d(P3D1c));
@@ -1141,7 +1141,7 @@ namespace vi_slam{
                         vPoint1->setFixed(true);
                         optimizer.addVertex(vPoint1);
 
-                        g2o::VertexPointXYZ* vPoint2 = new g2o::VertexPointXYZ();
+                        g2o::VertexSBAPointXYZ* vPoint2 = new g2o::VertexSBAPointXYZ();
                         cv::Mat P3D2w = pMP2->GetWorldPos();
                         cv::Mat P3D2c = R2w*P3D2w + t2w;
                         vPoint2->setEstimate(basics::toVector3d(P3D2c));

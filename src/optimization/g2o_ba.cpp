@@ -67,10 +67,10 @@ namespace vi_slam{
 
             // Points pos in world frame
             int index = 1;
-            vector<g2o::VertexPointXYZ *> g2o_points_3d;
+            vector<g2o::VertexSBAPointXYZ *> g2o_points_3d;
             for (const cv::Point3f *p : points_3d) // landmarks
             {
-                g2o::VertexPointXYZ *point = new g2o::VertexPointXYZ();
+                g2o::VertexSBAPointXYZ *point = new g2o::VertexSBAPointXYZ();
                 if (is_fix_map_pts)
                     point->setFixed(true);
                 point->setId(index++);
@@ -92,7 +92,7 @@ namespace vi_slam{
             {
                 g2o::EdgeProjectXYZ2UV *edge = new g2o::EdgeProjectXYZ2UV();
                 edge->setId(index);
-                edge->setVertex(0, dynamic_cast<g2o::VertexPointXYZ *>(optimizer.vertex(index)));
+                edge->setVertex(0, dynamic_cast<g2o::VertexSBAPointXYZ *>(optimizer.vertex(index)));
                 edge->setVertex(1, pose);
                 edge->setMeasurement(Eigen::Vector2d(p->x, p->y));
                 edge->setParameterId(0, 0);
@@ -201,14 +201,14 @@ namespace vi_slam{
             optimizer.addParameter(camera);
 
             // Points pos in world frame
-            std::unordered_map<int, g2o::VertexPointXYZ *> g2o_points_3d;
+            std::unordered_map<int, g2o::VertexSBAPointXYZ *> g2o_points_3d;
             std::unordered_map<int, int> pts3dID_to_vertexID;
             for (auto it = pts_3d.begin(); it != pts_3d.end(); it++) // landmarks
             {
                 int pt3d_id = it->first;
                 cv::Point3f *p = it->second;
 
-                g2o::VertexPointXYZ *point = new g2o::VertexPointXYZ();
+                g2o::VertexSBAPointXYZ *point = new g2o::VertexSBAPointXYZ();
                 point->setId(vertex_id);
                 if (is_fix_map_pts)
                     point->setFixed(true);
@@ -237,7 +237,7 @@ namespace vi_slam{
                     g2o::EdgeProjectXYZ2UV *edge = new g2o::EdgeProjectXYZ2UV();
                     edge->setId(edge_id++);
                     edge->setVertex(0, // XYZ point
-                                    dynamic_cast<g2o::VertexPointXYZ *>(optimizer.vertex(pts3dID_to_vertexID[pt3d_id])));
+                                    dynamic_cast<g2o::VertexSBAPointXYZ *>(optimizer.vertex(pts3dID_to_vertexID[pt3d_id])));
                     edge->setVertex(1, // camera pose
                                     dynamic_cast<g2o::VertexSE3Expmap *>(optimizer.vertex(ith_frame)));
 

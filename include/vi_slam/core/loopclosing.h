@@ -14,7 +14,7 @@
 #include "vi_slam/core/localmapping.h"
 #include "vi_slam/core/tracking.h"
 
-#include "g2o/g2o/types/sim3/types_seven_dof_expmap.h"
+#include <g2o/types/sim3/types_seven_dof_expmap.h>
 
 #include <mutex>
 #include <thread>
@@ -37,7 +37,7 @@ namespace vi_slam{
 
                 typedef pair<set<datastructures::KeyFrame*>,int> ConsistentGroup;
                 typedef map<datastructures::KeyFrame*,g2o::Sim3,std::less<datastructures::KeyFrame*>,
-                        Eigen::aligned_allocator<std::pair<const datastructures::KeyFrame*, g2o::Sim3> > > KeyFrameAndPose;
+                        Eigen::aligned_allocator<std::pair<datastructures::KeyFrame* const, g2o::Sim3> > > KeyFrameAndPose;
 
             public:
 

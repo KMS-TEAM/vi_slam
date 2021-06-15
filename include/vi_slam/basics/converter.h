@@ -8,9 +8,9 @@
 #include "../common_include.h"
 
 #include <Eigen/Dense>
-#include "g2o/g2o/types/slam3d/se3quat.h"
-#include "g2o/g2o/types/sba/types_six_dof_expmap.h"
-#include "g2o/g2o/types/sim3/types_seven_dof_expmap.h"
+#include <g2o/types/slam3d/se3quat.h>
+#include <g2o/types/sba/types_six_dof_expmap.h>
+#include <g2o/types/sim3/types_seven_dof_expmap.h>
 
 namespace vi_slam{
     namespace basics{
@@ -20,7 +20,7 @@ namespace vi_slam{
         static g2o::SE3Quat toSE3Quat(const g2o::Sim3 &gSim3);
 
         static cv::Mat toCvMat(const g2o::SE3Quat &SE3);
-        static cv::Mat toCvMat(const g2o::Sim3 &Sim3);
+        cv::Mat toCvMat(const g2o::Sim3 &Sim3);
         static cv::Mat toCvMat(const Eigen::Matrix<double,4,4> &m);
         static cv::Mat toCvMat(const Eigen::Matrix3d &m);
         static cv::Mat toCvMat(const Eigen::Matrix<double,3,1> &m);

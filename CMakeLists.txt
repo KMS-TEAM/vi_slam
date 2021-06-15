@@ -11,7 +11,7 @@ endif()
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
+set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -fPIC")
 set(CMAKE_CXX_FLAGS_RELEASE  "-std=c++14 -O3 -fopenmp -pthread")
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
@@ -21,6 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 ############### dependencies ######################
 # Eigen
 include_directories("/usr/include/eigen3")
+find_package (Eigen3 3.3 REQUIRED)
 
 # OpenCV
 find_package(OpenCV 4.2 REQUIRED)
@@ -35,8 +36,8 @@ find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
 
 # G2O
-#find_package(G2O REQUIRED)
-#include_directories(${G2O_INCLUDE_DIRS})
+find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIRS})
 
 # ceres
 find_package(Ceres REQUIRED)
@@ -71,6 +72,7 @@ find_package(CUDA REQUIRED)
 
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}
+        Eigen3::Eigen
         ${Sophus_LIBRARIES}
         ${Pangolin_LIBRARIES} GL GLU GLEW glut
         ${PCL_LIBRARIES}
@@ -85,15 +87,16 @@ set(THIRD_PARTY_LIBS
         pthread
         vilib::vilib
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_core.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_stuff.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sba.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_csparse_extension.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_dense.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_sim3.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_csparse.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_solver_eigen.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o/lib/libg2o_types_slam3d.so
+        g2o_core
+        g2o_stuff
+        g2o_types_sba
+        g2o_solver_csparse
+        g2o_csparse_extension
+        g2o_solver_dense
+        g2o_solver_eigen
+        g2o_types_sim3
+        g2o_types_slam3d
+        g2o_types_slam2d
         )
 
 ############### source and test ######################
