@@ -1,7 +1,4 @@
 file(GLOB_RECURSE SOURCES
-
-
-
         basics/basics.cpp
         basics/config.cpp
         basics/converter.cpp
