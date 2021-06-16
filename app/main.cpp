@@ -15,7 +15,7 @@
 
 #include "vi_slam/common_include.h"
 
-#include "vi_slam/vo/vo_io.h"
+#include "vi_slam/core/vo_io.h"
 #include "vi_slam/basics/config.h"
 #include "vi_slam/basics/yaml.h"
 #include "vi_slam/basics/basics.h"

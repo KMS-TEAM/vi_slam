@@ -27,8 +27,6 @@
 #include <opencv2/core/core.hpp>
 
 #include "vi_slam/core/system.h"
-#include "vi_slam/basics/converter.h"
-#include "vi_slam/geometry/camera.h"
 
 using namespace std;
 using namespace std::chrono;

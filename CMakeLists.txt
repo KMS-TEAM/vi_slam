@@ -84,7 +84,18 @@ set(THIRD_PARTY_LIBS
         ${CSPARSE_LIBRARY}
         pthread
         #vilib::vilib
-        g2o_core g2o_stuff g2o_types_sba g2o_solver_csparse g2o_csparse_extension
+        ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
+        g2o_core
+        g2o_stuff
+        g2o_types_sba
+        g2o_solver_csparse
+        g2o_csparse_extension
+        g2o_solver_dense
+        g2o_solver_eigen
+        g2o_types_sim3
+        g2o_types_slam3d
+        g2o_types_slam2d
+        fmt
         )
 
 ############### source and test ######################
@@ -92,6 +103,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdpar
 add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(app)
+add_subdirectory(Examples)
 
 ############# Lib Interface ####################
 
