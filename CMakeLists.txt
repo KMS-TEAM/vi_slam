@@ -37,7 +37,9 @@ include_directories(${Sophus_INCLUDE_DIRS})
 
 # G2O
 find_package(G2O REQUIRED)
-include_directories(${G2O_INCLUDE_DIRS})
+#include_directories(${G2O_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES("/usr/local/include/")
+LINK_directories("/usr/locla/lib")
 
 # ceres
 find_package(Ceres REQUIRED)
@@ -87,16 +89,16 @@ set(THIRD_PARTY_LIBS
         pthread
         vilib::vilib
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
-        g2o_core
-        g2o_stuff
-        g2o_types_sba
-        g2o_solver_csparse
-        g2o_csparse_extension
-        g2o_solver_dense
-        g2o_solver_eigen
-        g2o_types_sim3
-        g2o_types_slam3d
-        g2o_types_slam2d
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_core.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_stuff.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sba.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_solver_csparse.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_csparse_extension.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_solver_dense.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_solver_eigen.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sim3.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam3d.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam2d.so
         )
 
 ############### source and test ######################
