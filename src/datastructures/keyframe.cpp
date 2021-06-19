@@ -43,7 +43,7 @@ namespace vi_slam
 
         void KeyFrame::ComputeBoW() {
             if (mBowVec.empty() || mFeatVec.empty()) {
-                vector<cv::Mat> vCurrentDesc = vi_slam::basics::toDescriptorVector(mDescriptors);
+                vector<cv::Mat> vCurrentDesc = vi_slam::basics::converter::toDescriptorVector(mDescriptors);
                 // Feature vector associate features with nodes in the 4th level (from leaves up)
                 // We assume the vocabulary tree has 6 levels, change the 4 otherwise
                 mpORBvocabulary->transform(vCurrentDesc, mBowVec, mFeatVec, 4);

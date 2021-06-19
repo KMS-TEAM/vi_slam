@@ -61,7 +61,7 @@ namespace vi_slam{
                 if(pKF->isBad())
                     continue;
                 g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-                vSE3->setEstimate(basics::toSE3Quat(pKF->GetPose()));
+                vSE3->setEstimate(basics::converter::toSE3Quat(pKF->GetPose()));
                 vSE3->setId(pKF->mnId);
                 vSE3->setFixed(pKF->mnId==0);
                 optimizer.addVertex(vSE3);
@@ -79,7 +79,7 @@ namespace vi_slam{
                 if(pMP->isBad())
                     continue;
                 g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
-                vPoint->setEstimate(basics::toVector3d(pMP->GetWorldPos()));
+                vPoint->setEstimate(basics::converter::toVector3d(pMP->GetWorldPos()));
                 const int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
                 vPoint->setMarginalized(true);
@@ -186,12 +186,12 @@ namespace vi_slam{
                 g2o::SE3Quat SE3quat = vSE3->estimate();
                 if(nLoopKF==0)
                 {
-                    pKF->SetPose(basics::toCvMat(SE3quat));
+                    pKF->SetPose(basics::converter::toCvMat(SE3quat));
                 }
                 else
                 {
                     pKF->mTcwGBA.create(4,4,CV_32F);
-                    basics::toCvMat(SE3quat).copyTo(pKF->mTcwGBA);
+                    basics::converter::toCvMat(SE3quat).copyTo(pKF->mTcwGBA);
                     pKF->mnBAGlobalForKF = nLoopKF;
                 }
             }
@@ -210,13 +210,13 @@ namespace vi_slam{
 
                 if(nLoopKF==0)
                 {
-                    pMP->setPos(basics::toCvMat(vPoint->estimate()));
+                    pMP->setPos(basics::converter::toCvMat(vPoint->estimate()));
                     pMP->UpdateNormalAndDepth();
                 }
                 else
                 {
                     pMP->mPosGBA.create(3,1,CV_32F);
-                    basics::toCvMat(vPoint->estimate()).copyTo(pMP->mPosGBA);
+                    basics::converter::toCvMat(vPoint->estimate()).copyTo(pMP->mPosGBA);
                     pMP->mnBAGlobalForKF = nLoopKF;
                 }
             }
@@ -247,7 +247,7 @@ namespace vi_slam{
 
             // Set Frame vertex
             g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-            vSE3->setEstimate(basics::toSE3Quat(pFrame->T_w_c_));
+            vSE3->setEstimate(basics::converter::toSE3Quat(pFrame->T_w_c_));
             vSE3->setId(0);
             vSE3->setFixed(false);
             optimizer.addVertex(vSE3);
@@ -369,7 +369,7 @@ namespace vi_slam{
             for(size_t it=0; it<4; it++)
             {
 
-                vSE3->setEstimate(basics::toSE3Quat(pFrame->T_w_c_));
+                vSE3->setEstimate(basics::converter::toSE3Quat(pFrame->T_w_c_));
                 optimizer.initializeOptimization(0);
                 optimizer.optimize(its[it]);
 
@@ -439,7 +439,7 @@ namespace vi_slam{
             // Recover optimized pose and return number of inliers
             g2o::VertexSE3Expmap* vSE3_recov = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(0));
             g2o::SE3Quat SE3quat_recov = vSE3_recov->estimate();
-            cv::Mat pose = basics::toCvMat(SE3quat_recov);
+            cv::Mat pose = basics::converter::toCvMat(SE3quat_recov);
             pFrame->SetPose(pose);
 
             return nInitialCorrespondences-nBad;
@@ -527,7 +527,7 @@ namespace vi_slam{
             {
                 KeyFrame* pKFi = *lit;
                 g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-                vSE3->setEstimate(basics::toSE3Quat(pKFi->GetPose()));
+                vSE3->setEstimate(basics::converter::toSE3Quat(pKFi->GetPose()));
                 vSE3->setId(pKFi->mnId);
                 vSE3->setFixed(pKFi->mnId==0);
                 optimizer.addVertex(vSE3);
@@ -540,7 +540,7 @@ namespace vi_slam{
             {
                 KeyFrame* pKFi = *lit;
                 g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-                vSE3->setEstimate(basics::toSE3Quat(pKFi->GetPose()));
+                vSE3->setEstimate(basics::converter::toSE3Quat(pKFi->GetPose()));
                 vSE3->setId(pKFi->mnId);
                 vSE3->setFixed(true);
                 optimizer.addVertex(vSE3);
@@ -576,7 +576,7 @@ namespace vi_slam{
             {
                 MapPoint* pMP = *lit;
                 g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
-                vPoint->setEstimate(basics::toVector3d(pMP->GetWorldPos()));
+                vPoint->setEstimate(basics::converter::toVector3d(pMP->GetWorldPos()));
                 int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
                 vPoint->setMarginalized(true);
@@ -767,7 +767,7 @@ namespace vi_slam{
                 KeyFrame* pKF = *lit;
                 g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKF->mnId));
                 g2o::SE3Quat SE3quat = vSE3->estimate();
-                pKF->SetPose(basics::toCvMat(SE3quat));
+                pKF->SetPose(basics::converter::toCvMat(SE3quat));
             }
 
             //Points
@@ -775,7 +775,7 @@ namespace vi_slam{
             {
                 MapPoint* pMP = *lit;
                 g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->id_+maxKFid+1));
-                pMP->setPos(basics::toCvMat(vPoint->estimate()));
+                pMP->setPos(basics::converter::toCvMat(vPoint->estimate()));
                 pMP->UpdateNormalAndDepth();
             }
         }
@@ -835,8 +835,8 @@ namespace vi_slam{
                 }
                 else
                 {
-                    Eigen::Matrix<double,3,3> Rcw = basics::toMatrix3d(pKF->GetRotation());
-                    Eigen::Matrix<double,3,1> tcw = basics::toVector3d(pKF->GetTranslation());
+                    Eigen::Matrix<double,3,3> Rcw = basics::converter::toMatrix3d(pKF->GetRotation());
+                    Eigen::Matrix<double,3,1> tcw = basics::converter::toVector3d(pKF->GetTranslation());
                     g2o::Sim3 Siw(Rcw,tcw,1.0);
                     vScw[nIDi] = Siw;
                     VSim3->setEstimate(Siw);
@@ -1015,7 +1015,7 @@ namespace vi_slam{
 
                 eigt *=(1./s); //[R t/s;0 1]
 
-                cv::Mat Tiw = basics::toCvSE3(eigR,eigt);
+                cv::Mat Tiw = basics::converter::toCvSE3(eigR,eigt);
 
                 pKFi->SetPose(Tiw);
             }
@@ -1044,10 +1044,10 @@ namespace vi_slam{
                 g2o::Sim3 correctedSwr = vCorrectedSwc[nIDr];
 
                 cv::Mat P3Dw = pMP->GetWorldPos();
-                Eigen::Matrix<double,3,1> eigP3Dw = basics::toVector3d(P3Dw);
+                Eigen::Matrix<double,3,1> eigP3Dw = basics::converter::toVector3d(P3Dw);
                 Eigen::Matrix<double,3,1> eigCorrectedP3Dw = correctedSwr.map(Srw.map(eigP3Dw));
 
-                cv::Mat cvCorrectedP3Dw = basics::toCvMat(eigCorrectedP3Dw);
+                cv::Mat cvCorrectedP3Dw = basics::converter::toCvMat(eigCorrectedP3Dw);
                 pMP->setPos(cvCorrectedP3Dw);
 
                 pMP->UpdateNormalAndDepth();
@@ -1136,7 +1136,7 @@ namespace vi_slam{
                         g2o::VertexSBAPointXYZ* vPoint1 = new g2o::VertexSBAPointXYZ();
                         cv::Mat P3D1w = pMP1->GetWorldPos();
                         cv::Mat P3D1c = R1w*P3D1w + t1w;
-                        vPoint1->setEstimate(basics::toVector3d(P3D1c));
+                        vPoint1->setEstimate(basics::converter::toVector3d(P3D1c));
                         vPoint1->setId(id1);
                         vPoint1->setFixed(true);
                         optimizer.addVertex(vPoint1);
@@ -1144,7 +1144,7 @@ namespace vi_slam{
                         g2o::VertexSBAPointXYZ* vPoint2 = new g2o::VertexSBAPointXYZ();
                         cv::Mat P3D2w = pMP2->GetWorldPos();
                         cv::Mat P3D2c = R2w*P3D2w + t2w;
-                        vPoint2->setEstimate(basics::toVector3d(P3D2c));
+                        vPoint2->setEstimate(basics::converter::toVector3d(P3D2c));
                         vPoint2->setId(id2);
                         vPoint2->setFixed(true);
                         optimizer.addVertex(vPoint2);

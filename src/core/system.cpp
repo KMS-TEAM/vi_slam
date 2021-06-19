@@ -357,7 +357,7 @@ namespace vi_slam{
                 cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
                 cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
 
-                vector<float> q = basics::toQuaternion(Rwc);
+                vector<float> q = basics::converter::toQuaternion(Rwc);
 
                 f << setprecision(6) << *lT << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
             }
@@ -391,7 +391,7 @@ namespace vi_slam{
                     continue;
 
                 cv::Mat R = pKF->GetRotation().t();
-                vector<float> q = basics::toQuaternion(R);
+                vector<float> q = basics::converter::toQuaternion(R);
                 cv::Mat t = pKF->GetCameraCenter();
                 f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
                   << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;

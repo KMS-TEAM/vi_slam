@@ -301,7 +301,7 @@ namespace vi_slam{
                         const float s = pSolver->GetEstimatedScale();
                         matcher.SearchBySim3(mpCurrentKF,pKF,vpMapPointMatches,s,R,t,7.5);
 
-                        g2o::Sim3 gScm(basics::toMatrix3d(R),basics::toVector3d(t),s);
+                        g2o::Sim3 gScm(basics::converter::toMatrix3d(R),basics::converter::toVector3d(t),s);
                         const int nInliers = optimization::Optimizer::OptimizeSim3(mpCurrentKF, pKF, vpMapPointMatches, gScm, 10, mbFixScale);
 
                         // If optimization is succesful stop ransacs and continue
@@ -309,9 +309,9 @@ namespace vi_slam{
                         {
                             bMatch = true;
                             mpMatchedKF = pKF;
-                            g2o::Sim3 gSmw(basics::toMatrix3d(pKF->GetRotation()),basics::toVector3d(pKF->GetTranslation()),1.0);
+                            g2o::Sim3 gSmw(basics::converter::toMatrix3d(pKF->GetRotation()),basics::converter::toVector3d(pKF->GetTranslation()),1.0);
                             mg2oScw = gScm*gSmw;
-                            mScw = basics::toCvMat(mg2oScw);
+                            mScw = basics::converter::toCvMat(mg2oScw);
 
                             mvpCurrentMatchedPoints = vpMapPointMatches;
                             break;
@@ -434,7 +434,7 @@ namespace vi_slam{
                         cv::Mat Tic = Tiw*Twc;
                         cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
                         cv::Mat tic = Tic.rowRange(0,3).col(3);
-                        g2o::Sim3 g2oSic(basics::toMatrix3d(Ric),basics::toVector3d(tic),1.0);
+                        g2o::Sim3 g2oSic(basics::converter::toMatrix3d(Ric),basics::converter::toVector3d(tic),1.0);
                         g2o::Sim3 g2oCorrectedSiw = g2oSic*mg2oScw;
                         //Pose corrected with the Sim3 of the loop closure
                         CorrectedSim3[pKFi]=g2oCorrectedSiw;
@@ -442,7 +442,7 @@ namespace vi_slam{
 
                     cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
                     cv::Mat tiw = Tiw.rowRange(0,3).col(3);
-                    g2o::Sim3 g2oSiw(basics::toMatrix3d(Riw),basics::toVector3d(tiw),1.0);
+                    g2o::Sim3 g2oSiw(basics::converter::toMatrix3d(Riw),basics::converter::toVector3d(tiw),1.0);
                     //Pose without correction
                     NonCorrectedSim3[pKFi]=g2oSiw;
                 }
@@ -469,10 +469,10 @@ namespace vi_slam{
 
                         // Project with non-corrected pose and project back with corrected pose
                         cv::Mat P3Dw = pMPi->GetWorldPos();
-                        Eigen::Matrix<double,3,1> eigP3Dw = basics::toVector3d(P3Dw);
+                        Eigen::Matrix<double,3,1> eigP3Dw = basics::converter::toVector3d(P3Dw);
                         Eigen::Matrix<double,3,1> eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oSiw.map(eigP3Dw));
 
-                        cv::Mat cvCorrectedP3Dw = basics::toCvMat(eigCorrectedP3Dw);
+                        cv::Mat cvCorrectedP3Dw = basics::converter::toCvMat(eigCorrectedP3Dw);
                         pMPi->setPos(cvCorrectedP3Dw);
                         pMPi->mnCorrectedByKF = mpCurrentKF->mnId;
                         pMPi->mnCorrectedReference = pKFi->mnId;
@@ -486,7 +486,7 @@ namespace vi_slam{
 
                     eigt *=(1./s); //[R t/s;0 1]
 
-                    cv::Mat correctedTiw = basics::toCvSE3(eigR,eigt);
+                    cv::Mat correctedTiw = basics::converter::toCvSE3(eigR,eigt);
 
                     pKFi->SetPose(correctedTiw);
 
@@ -572,7 +572,7 @@ namespace vi_slam{
                 KeyFrame* pKF = mit->first;
 
                 g2o::Sim3 g2oScw = mit->second;
-                cv::Mat cvScw = basics::toCvMat(g2oScw);
+                cv::Mat cvScw = basics::converter::toCvMat(g2oScw);
 
                 vector<MapPoint*> vpReplacePoints(mvpLoopMapPoints.size(),static_cast<MapPoint*>(NULL));
                 matcher.Fuse(pKF,cvScw,mvpLoopMapPoints,4,vpReplacePoints);

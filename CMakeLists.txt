@@ -103,7 +103,7 @@ set(THIRD_PARTY_LIBS
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
 add_subdirectory(test)
-add_subdirectory(app)
+#add_subdirectory(app)
 
 ############# Lib Interface ####################
 
