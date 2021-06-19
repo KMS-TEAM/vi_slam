@@ -19,7 +19,7 @@ namespace vi_slam
                 mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
                 mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),
                 mnLoopQuery(0), mnLoopWords(0), mnRelocQuery(0), mnRelocWords(0), mnBAGlobalForKF(0),
-                fx(F.camera_->fx_), fy(F.camera_->fy_), cx(F.camera_->cx_), cy(F.camera_->cy_), invfx(F.camera_->invfx), invfy(F.camera_->invfy),
+                fx(F.camera_->fx_), fy(F.camera_->fy_), cx(F.camera_->cx_), cy(F.camera_->cy_), invfx(F.invfx), invfy(F.invfy),
                 mbf(F.camera_->mbf), mb(F.camera_->mb), mThDepth(F.camera_->mThDepth), N(F.N), mvKeys(F.keypoints_), mvKeysUn(F.ukeypoints_),
                 mvuRight(F.mvuRight), mvDepth(F.mvDepth), mDescriptors(F.descriptors_.clone()),
                 mBowVec(F.mBowVec), mFeatVec(F.mFeatVec), mnScaleLevels(F.mnScaleLevels),
@@ -43,7 +43,7 @@ namespace vi_slam
 
         void KeyFrame::ComputeBoW() {
             if (mBowVec.empty() || mFeatVec.empty()) {
-                vector<cv::Mat> vCurrentDesc = vi_slam::basics::toDescriptorVector(mDescriptors);
+                vector<cv::Mat> vCurrentDesc = vi_slam::basics::converter::toDescriptorVector(mDescriptors);
                 // Feature vector associate features with nodes in the 4th level (from leaves up)
                 // We assume the vocabulary tree has 6 levels, change the 4 otherwise
                 mpORBvocabulary->transform(vCurrentDesc, mBowVec, mFeatVec, 4);

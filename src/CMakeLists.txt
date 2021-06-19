@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCES
+add_library(vi_slam SHARED
         basics/basics.cpp
         basics/config.cpp
         basics/converter.cpp
@@ -15,11 +15,11 @@ file(GLOB_RECURSE SOURCES
         core/vo.cpp
         core/vo_io.cpp
 
-        datastructure/frame.cpp
-        datastructure/keyframe.cpp
-        datastructure/keyframedatabase.cpp
-        datastructure/map.cpp
-        datastructure/mappoint.cpp
+        datastructures/frame.cpp
+        datastructures/keyframe.cpp
+        datastructures/keyframedatabase.cpp
+        datastructures/map.cpp
+        datastructures/mappoint.cpp
 
         display/display_lib.cpp
         display/framedrawer.cpp
@@ -36,11 +36,7 @@ file(GLOB_RECURSE SOURCES
         optimization/g2o_ba.cpp
         optimization/optimizer.cpp
         optimization/pnpsolver.cpp
-        optimization/sim3solver.cpp
-        )
-
-add_library(vi_slam SHARED
-     ${SOURCES}   )
+        optimization/sim3solver.cpp)
 
 target_link_libraries( vi_slam
         #vilib::vilib

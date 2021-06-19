@@ -491,7 +491,7 @@ namespace vi_slam{
                 mCurrentFrame.SetPose(cv::Mat::eye(4,4,CV_32F));
 
                 // Create KeyFrame
-                KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+                KeyFrame* pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
                 // Insert KeyFrame in the map
                 mpMap->insertKeyFrame(pKFini);
@@ -614,8 +614,8 @@ namespace vi_slam{
         void Tracking::CreateInitialMapMonocular()
         {
             // Create KeyFrames
-            KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
-            KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+            KeyFrame* pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+            KeyFrame* pKFcur = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
 
             pKFini->ComputeBoW();
@@ -1042,7 +1042,7 @@ namespace vi_slam{
             if(!mpLocalMapper->SetNotStop(true))
                 return;
 
-            KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+            KeyFrame* pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
             mpReferenceKF = pKF;
             mCurrentFrame.mpReferenceKF = pKF;

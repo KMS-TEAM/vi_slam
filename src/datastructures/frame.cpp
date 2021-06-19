@@ -273,7 +273,7 @@ namespace vi_slam{
         void Frame::ComputeBoW() {
             if(mBowVec.empty())
             {
-                vector<cv::Mat> vCurrentDesc = vi_slam::basics::toDescriptorVector(descriptors_);
+                vector<cv::Mat> vCurrentDesc = vi_slam::basics::converter::toDescriptorVector(descriptors_);
                 mpVocaburary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
             }
         }
