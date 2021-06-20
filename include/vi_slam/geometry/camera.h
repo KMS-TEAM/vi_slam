@@ -26,19 +26,6 @@ namespace vi_slam{
             typedef std::shared_ptr<Camera> Ptr;
             double fx_, fy_, cx_, cy_;
             cv::Mat K_;
-            static double invfx;
-            static double invfy;
-            cv::Mat mDistCoef;
-
-            // Stereo baseline multiplied by fx.
-            float mbf;
-
-            // Stereo baseline in meters.
-            float mb;
-
-            // Threshold close/far points. Close points are inserted from 1 view.
-            // Far points are inserted as in the monocular case from 2 views.
-            float mThDepth;
 
         public:
             Camera(double fx, double fy, double cx, double cy) : fx_(fx), fy_(fy), cx_(cx), cy_(cy){

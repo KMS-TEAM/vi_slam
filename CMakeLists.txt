@@ -67,6 +67,9 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+find_package(fmt REQUIRED)
+include_directories(${fmt_INCLUDE_DIRS})
+
 #vilib
 find_package(vilib REQUIRED)
 find_package(CUDA REQUIRED)
@@ -88,6 +91,7 @@ set(THIRD_PARTY_LIBS
         ${CSPARSE_LIBRARY}
         pthread
         vilib::vilib
+        fmt::fmt-header-only
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_core.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_stuff.so
@@ -105,7 +109,7 @@ set(THIRD_PARTY_LIBS
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
 add_subdirectory(test)
-#add_subdirectory(app)
+add_subdirectory(app)
 
 ############# Lib Interface ####################
 

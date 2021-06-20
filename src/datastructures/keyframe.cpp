@@ -19,16 +19,16 @@ namespace vi_slam
                 mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
                 mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0),
                 mnLoopQuery(0), mnLoopWords(0), mnRelocQuery(0), mnRelocWords(0), mnBAGlobalForKF(0),
-                fx(F.camera_->fx_), fy(F.camera_->fy_), cx(F.camera_->cx_), cy(F.camera_->cy_), invfx(F.camera_->invfx), invfy(F.camera_->invfy),
-                mbf(F.camera_->mbf), mb(F.camera_->mb), mThDepth(F.camera_->mThDepth), N(F.N), mvKeys(F.keypoints_), mvKeysUn(F.ukeypoints_),
+                fx(F.fx), fy(F.fy), cx(F.cx), cy(F.cy), invfx(F.invfx), invfy(F.invfy),
+                mbf(F.mbf), mb(F.mb), mThDepth(F.mThDepth), N(F.N), mvKeys(F.keypoints_), mvKeysUn(F.ukeypoints_),
                 mvuRight(F.mvuRight), mvDepth(F.mvDepth), mDescriptors(F.descriptors_.clone()),
                 mBowVec(F.mBowVec), mFeatVec(F.mFeatVec), mnScaleLevels(F.mnScaleLevels),
                 mfScaleFactor(F.mfScaleFactor),
                 mfLogScaleFactor(F.mfLogScaleFactor), mvScaleFactors(F.mvScaleFactors), mvLevelSigma2(F.mvLevelSigma2),
                 mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
-                mnMaxY(F.mnMaxY), mK(F.camera_->K_), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
+                mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
                 mpORBvocabulary(F.mpVocaburary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
-                mbToBeErased(false), mbBad(false), mHalfBaseline(F.camera_->mb / 2), mpMap(pMap) {
+                mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb / 2), mpMap(pMap) {
             mnId = nNextId++;
 
             mGrid.resize(mnGridCols);
