@@ -18,10 +18,10 @@ namespace vi_slam{
         {
             // Output welcome message
             cout << endl <<
-                 "ORB-SLAM2 Copyright (C) 2014-2016 Raul Mur-Artal, University of Zaragoza." << endl <<
-                 "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
-                 "This is free software, and you are welcome to redistribute it" << endl <<
-                 "under certain conditions. See LICENSE.txt." << endl << endl;
+                 "Vi_SLAM from KMS Team" << endl <<
+                 "This is based on ORB_SLAM and SLAMBOOK" << endl  <<
+                 "P/S: Con Jun" << endl << endl;
+
 
             cout << "Input sensor was set to: ";
 
@@ -64,8 +64,8 @@ namespace vi_slam{
             mpMap = new Map();
 
             //Create Drawers. These are used by the Viewer
-            // mpFrameDrawer = new FrameDrawer(mpMap);
-            // mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
+            mpFrameDrawer = new vi_slam::display::FrameDrawer(mpMap);
+            mpMapDrawer = new vi_slam::display::MapDrawer(mpMap, strSettingsFile);
 
             //Initialize the Tracking thread
             //(it will live in the main thread of execution, the one that called this constructor)
@@ -81,12 +81,12 @@ namespace vi_slam{
             mptLoopClosing = new thread(&core::LoopClosing::Run, mpLoopCloser);
 
             //Initialize the Viewer thread and launch
-            //if(bUseViewer)
-            //{
-            //    mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
-            //    mptViewer = new thread(&Viewer::Run, mpViewer);
-            //    mpTracker->SetViewer(mpViewer);
-            //}
+            if(bUseViewer)
+            {
+               mpViewer = new vi_slam::display::Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+               mptViewer = new thread(&vi_slam::display::Viewer::Run, mpViewer);
+               mpTracker->SetViewer(mpViewer);
+            }
 
             //Set pointers between threads
             mpTracker->SetLocalMapper(mpLocalMapper);
@@ -288,12 +288,12 @@ namespace vi_slam{
         {
             mpLocalMapper->RequestFinish();
             mpLoopCloser->RequestFinish();
-            //if(mpViewer)
-            //{
-            //    mpViewer->RequestFinish();
-            //    while(!mpViewer->isFinished())
-            //        usleep(5000);
-            //}
+            if(mpViewer)
+            {
+               mpViewer->RequestFinish();
+               while(!mpViewer->isFinished())
+                   usleep(5000);
+            }
 
             // Wait until all thread have effectively stopped
             while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
@@ -301,8 +301,8 @@ namespace vi_slam{
                 usleep(5000);
             }
 
-            //if(mpViewer)
-            //    pangolin::BindToContext("ORB-SLAM2: Map Viewer");
+            if(mpViewer)
+               pangolin::BindToContext("Vi_SLAM: Map Viewer");
         }
 
         void System::SaveTrajectoryTUM(const string &filename)

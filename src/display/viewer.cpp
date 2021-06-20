@@ -300,7 +300,7 @@ namespace vi_slam
             mbFinished = false;
             mbStopped = false;
 
-            pangolin::CreateWindowAndBind("ORB-SLAM2: Map Viewer",1024,768);
+            pangolin::CreateWindowAndBind("Vi_SLAM: Map Viewer",1024,768);
 
             // 3D Mouse handler requires depth testing to be enabled
             glEnable(GL_DEPTH_TEST);
@@ -331,7 +331,7 @@ namespace vi_slam
             pangolin::OpenGlMatrix Twc;
             Twc.SetIdentity();
 
-            cv::namedWindow("ORB-SLAM2: Current Frame");
+            cv::namedWindow("Vi_SLAM: Current Frame");
 
             bool bFollow = true;
             bool bLocalizationMode = false;
@@ -379,7 +379,7 @@ namespace vi_slam
                 pangolin::FinishFrame();
 
                 cv::Mat im = mpFrameDrawer->DrawFrame();
-                cv::imshow("ORB-SLAM2: Current Frame",im);
+                cv::imshow("Vi_SLAM: Current Frame",im);
                 cv::waitKey(mT);
 
                 if(menuReset)

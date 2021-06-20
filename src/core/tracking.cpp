@@ -408,7 +408,7 @@ namespace vi_slam{
                     else
                         mVelocity = cv::Mat();
 
-                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                     // Clean VO matches
                     for(int i=0; i<mCurrentFrame.N; i++)
@@ -531,7 +531,7 @@ namespace vi_slam{
 
                 mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                 mState=OK;
             }
