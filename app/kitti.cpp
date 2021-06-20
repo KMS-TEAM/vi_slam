@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilenames, vector<double> &vTimestamps)
 {
     ifstream fTimes;
-    string strPathTimeFile = strPathToSequence + "/times_2.txt";
+    string strPathTimeFile = strPathToSequence + "/times.txt";
     fTimes.open(strPathTimeFile.c_str());
     while(!fTimes.eof())
     {
@@ -119,7 +119,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilena
         }
     }
 
-    string strPrefixLeft = strPathToSequence + "/image_2/";
+    string strPrefixLeft = strPathToSequence + "/image_0/";
 
     const int nTimes = vTimestamps.size();
     vstrImageFilenames.resize(nTimes);

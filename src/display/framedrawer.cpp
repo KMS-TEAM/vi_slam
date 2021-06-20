@@ -147,14 +147,20 @@ namespace vi_slam{
 
         void FrameDrawer::Update(Tracking *pTracker)
         {
+            std::cout << "Bug !!!!!!!!" << std::endl;
             unique_lock<mutex> lock(mMutex);
+            
             pTracker->mImGray.copyTo(mIm);
-            mvCurrentKeys=pTracker->mCurrentFrame.keypoints_;
+            
+            mvCurrentKeys = pTracker->mCurrentFrame.keypoints_;
+            
             N = mvCurrentKeys.size();
+            std::cout << "Current Keypoints: " << N << std::endl;
             mvbVO = vector<bool>(N,false);
             mvbMap = vector<bool>(N,false);
             mbOnlyTracking = pTracker->mbOnlyTracking;
 
+            
 
             if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)
             {

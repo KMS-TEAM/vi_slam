@@ -221,20 +221,21 @@ namespace vi_slam{
                 if(mbRGB)
                     cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
                 else
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+                    cvtColor(mImGray,mImGray,COLOR_BGR2GRAY);
             }
             else if(mImGray.channels()==4)
             {
                 if(mbRGB)
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+                    cvtColor(mImGray,mImGray,COLOR_RGBA2GRAY);
                 else
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+                    cvtColor(mImGray,mImGray,COLOR_BGRA2GRAY);
             }
 
             if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
                 mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
             else
                 mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+
 
             Track();
 
@@ -243,6 +244,9 @@ namespace vi_slam{
 
         void Tracking::Track()
         {
+
+            std::cout << mCurrentFrame.rgb_img_.size() << std::endl; 
+
             if(mState==NO_IMAGES_YET)
             {
                 mState = NOT_INITIALIZED;
@@ -257,10 +261,15 @@ namespace vi_slam{
             {
                 if(mSensor==System::STEREO || mSensor==System::RGBD)
                     StereoInitialization();
-                else
+                else{
+                    std::cout << "Check Mono Intit" << std::endl;
                     MonocularInitialization();
+                    std::cout << "Checked Mono Intit" << std::endl;
+                }
 
-                //mpFrameDrawer->Update(this);
+                std::cout << this->mImGray.size() << std::endl;
+                mpFrameDrawer->Update(this);
+                
 
                 if(mState!=OK)
                     return;
@@ -692,17 +701,20 @@ namespace vi_slam{
             mpLocalMapper->InsertKeyFrame(pKFini);
             mpLocalMapper->InsertKeyFrame(pKFcur);
 
-            mCurrentFrame.SetPose(pKFcur->GetPose());
-            mnLastKeyFrameId=mCurrentFrame.id_;
-            mpLastKeyFrame = pKFcur;
+            
 
             mvpLocalKeyFrames.push_back(pKFcur);
             mvpLocalKeyFrames.push_back(pKFini);
+            
             mvpLocalMapPoints=mpMap->GetAllMapPoints();
             mpReferenceKF = pKFcur;
             mCurrentFrame.mpReferenceKF = pKFcur;
 
             mLastFrame = Frame(mCurrentFrame);
+
+            mCurrentFrame.SetPose(pKFcur->GetPose());
+            mnLastKeyFrameId=mCurrentFrame.id_;
+            mpLastKeyFrame = pKFcur;
 
             mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 

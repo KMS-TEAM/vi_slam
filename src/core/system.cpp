@@ -242,6 +242,8 @@ namespace vi_slam{
                     mbReset = false;
                 }
             }
+            // cv::imshow("check", im);
+            // cv::waitKey(0);
 
             cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
 
