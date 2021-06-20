@@ -392,7 +392,7 @@ namespace vi_slam{
                     mState=LOST;
 
                 // Update drawer
-                //mpFrameDrawer->Update(this);
+                mpFrameDrawer->Update(this);
 
                 // If tracking were good, check if we insert a keyframe
                 if(bOK)
@@ -408,7 +408,7 @@ namespace vi_slam{
                     else
                         mVelocity = cv::Mat();
 
-                    //mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
                     // Clean VO matches
                     for(int i=0; i<mCurrentFrame.N; i++)
@@ -531,7 +531,7 @@ namespace vi_slam{
 
                 mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-                //mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
                 mState=OK;
             }
@@ -706,7 +706,7 @@ namespace vi_slam{
 
             mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
-            //mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
+            mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
 
             mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
