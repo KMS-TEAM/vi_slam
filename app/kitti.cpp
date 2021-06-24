@@ -19,18 +19,18 @@ int main(int argc, char **argv)
     if(argc != 4)
     {
         cerr << endl << "Usage: ./mono_kitti path_to_vocabulary path_to_settings path_to_sequence" << endl;
-        return 1;
+        //return 1;
     }
 
     // Retrieve paths to images
     vector<string> vstrImageFilenames;
     vector<double> vTimestamps;
-    LoadImages(string(argv[3]), vstrImageFilenames, vTimestamps);
+    LoadImages(string("/home/cit-industry/Github/00"), vstrImageFilenames, vTimestamps);
 
     int nImages = vstrImageFilenames.size();
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    vi_slam::core::System SLAM(argv[1],argv[2],vi_slam::core::System::MONOCULAR,true);
+    vi_slam::core::System SLAM("/home/cit-industry/Github/vi_slam/Vocabulary/ORBvoc.txt","/home/cit-industry/Github/vi_slam/config/KITTI00-02.yaml",vi_slam::core::System::MONOCULAR,true);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
