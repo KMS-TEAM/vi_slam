@@ -7,6 +7,7 @@
 #include "vi_slam/core/tracking.h"
 
 #include <mutex>
+#include <pthread.h>
 
 namespace vi_slam{
     namespace display{
@@ -148,6 +149,7 @@ namespace vi_slam{
         void FrameDrawer::Update(Tracking *pTracker)
         {
             std::cout << "Bug !!!!!!!!" << std::endl;
+            // mMutex = PTHREAD_MUTEX_INITIALIZER;
             unique_lock<mutex> lock(mMutex);
             
             pTracker->mImGray.copyTo(mIm);

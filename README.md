@@ -12,7 +12,7 @@ sudo apt-get install libsuitesparse-dev
 - g2o
 Version: [20201223_git](https://github.com/RainerKuemmerle/g2o/releases/tag/20201223_git)
 
-### OpenCV 
+### OpenCV (without CUDA)
 
 Version: [4.2.0](https://github.com/opencv/opencv/releases/tag/4.2.0)
 

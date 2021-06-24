@@ -21,9 +21,11 @@ using namespace vi_slam;
 
 namespace vi_slam{
     namespace core{
-        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
+        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, display::FrameDrawer *pFrameDrawer, display::MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
                 mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
-                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0)
+                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0),
+                mpViewer(NULL),
+                mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer)
         {
             // Load camera parameters from settings file
 
