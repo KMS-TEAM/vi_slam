@@ -1,12 +1,9 @@
-//
-// Created by lacie on 13/06/2021.
-//
-
 #include "vi_slam/common_include.h"
 #include "vi_slam/display/framedrawer.h"
 #include "vi_slam/core/tracking.h"
 
 #include <mutex>
+#include <pthread.h>
 
 namespace vi_slam{
     namespace display{
@@ -147,13 +144,20 @@ namespace vi_slam{
 
         void FrameDrawer::Update(Tracking *pTracker)
         {
+            std::cout << "Bug !!!!!!!!" << std::endl;
+            // mMutex = PTHREAD_MUTEX_INITIALIZER;
             unique_lock<mutex> lock(mMutex);
+
             pTracker->mImGray.copyTo(mIm);
-            mvCurrentKeys=pTracker->mCurrentFrame.keypoints_;
+
+            mvCurrentKeys = pTracker->mCurrentFrame.keypoints_;
+
             N = mvCurrentKeys.size();
+            std::cout << "Current Keypoints: " << N << std::endl;
             mvbVO = vector<bool>(N,false);
             mvbMap = vector<bool>(N,false);
             mbOnlyTracking = pTracker->mbOnlyTracking;
+
 
 
             if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)

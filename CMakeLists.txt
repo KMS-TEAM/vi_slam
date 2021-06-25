@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.0)
 project(vi_slam)
 
+include(CheckLanguage)
+check_language(CUDA)
+if (CMAKE_CUDA_COMPILER)
+    project(vi_slam LANGUAGES CXX CUDA)
+else()
+    project(vi_slam LANGUAGES CXX)
+endif()
 
 set(CMAKE_BUILD_TYPE Release)
 
@@ -63,7 +70,10 @@ add_definitions(${PCL_DEFINITIONS})
 find_package(fmt REQUIRED)
 include_directories(${fmt_INCLUDE_DIRS})
 
-
+#vilib
+#find_package(vilib REQUIRED)
+#find_package(CUDA REQUIRED)
+#message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}
@@ -93,16 +103,10 @@ set(THIRD_PARTY_LIBS
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sim3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam3d.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam2d.so
-        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_viewer.so
         )
 
 ############### source and test ######################
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
-add_subdirectory(test)
+#add_subdirectory(test)
 add_subdirectory(app)
-
-############# Lib Interface ####################
-
-
-
