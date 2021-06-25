@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     int nImages = vstrImageFilenames.size();
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    vi_slam::core::System SLAM("/home/cit-industry/Github/vi_slam/Vocabulary/ORBvoc.txt","/home/cit-industry/Github/vi_slam/config/KITTI00-02.yaml",vi_slam::core::System::MONOCULAR,true);
+    vi_slam::core::System SLAM("/home/cit-industry/Github/vi_slam/Vocabulary/vocabulary.txt","/home/cit-industry/Github/vi_slam/config/KITTI00-02.yaml",vi_slam::core::System::MONOCULAR,true);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
@@ -119,7 +119,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilena
         }
     }
 
-    string strPrefixLeft = strPathToSequence + "/image_1/";
+    string strPrefixLeft = strPathToSequence + "/image_0/";
     std::cout << strPrefixLeft << std::endl;
     const int nTimes = vTimestamps.size();
     vstrImageFilenames.resize(nTimes);

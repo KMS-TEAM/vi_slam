@@ -251,7 +251,7 @@ namespace vi_slam{
         void Tracking::Track()
         {
 
-            std::cout << mCurrentFrame.rgb_img_.size() << std::endl; 
+            std::cout << "LOL: " << mCurrentFrame.rgb_img_.size() << std::endl;
 
             if(mState==NO_IMAGES_YET)
             {
@@ -273,7 +273,7 @@ namespace vi_slam{
                     //std::cout << "Checked Mono Intit" << std::endl;
                 }
 
-                std::cout << this->mImGray.size() << std::endl;
+                // std::cout << this->mImGray.size() << std::endl;
                 mpFrameDrawer->Update(this);
                 
 
