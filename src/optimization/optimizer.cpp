@@ -311,6 +311,7 @@ namespace vi_slam{
 
                             vpEdgesMono.push_back(e);
                             vnIndexEdgeMono.push_back(i);
+
                         }
                         else  // Stereo observation
                         {
@@ -349,6 +350,7 @@ namespace vi_slam{
 
                             vpEdgesStereo.push_back(e);
                             vnIndexEdgeStereo.push_back(i);
+
                         }
                     }
 
@@ -401,6 +403,9 @@ namespace vi_slam{
 
                     if(it==2)
                         e->setRobustKernel(0);
+
+                    if((nInitialCorrespondences-nBad)<5)
+                        break;
                 }
 
                 for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
@@ -430,6 +435,9 @@ namespace vi_slam{
 
                     if(it==2)
                         e->setRobustKernel(0);
+
+                    if((nInitialCorrespondences-nBad)<5)
+                        break;
                 }
 
                 if(optimizer.edges().size()<10)
