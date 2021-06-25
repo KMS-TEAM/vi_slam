@@ -41,7 +41,7 @@ namespace vi_slam{
             //g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 
             // G2O new version
-            typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType;
+            typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> BlockSolverType;
             typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType;
             // use LM
             auto solver = new g2o::OptimizationAlgorithmLevenberg(

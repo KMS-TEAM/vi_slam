@@ -69,7 +69,7 @@ namespace vi_slam{
 
             //Initialize the Tracking thread
             //(it will live in the main thread of execution, the one that called this constructor)
-            mpTracker = new Tracking(this, mpVocabulary,
+            mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                                      mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
 
             //Initialize the Local Mapping thread and launch

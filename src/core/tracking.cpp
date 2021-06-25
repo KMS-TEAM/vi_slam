@@ -21,9 +21,11 @@ using namespace vi_slam;
 
 namespace vi_slam{
     namespace core{
-        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
+        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, display::FrameDrawer *pFrameDrawer, display::MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
                 mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
-                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0)
+                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0),
+                mpViewer(NULL),
+                mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer)
         {
             // Load camera parameters from settings file
 
@@ -218,6 +220,7 @@ namespace vi_slam{
 
             if(mImGray.channels()==3)
             {
+                std::cout << "Check !!!" << std::endl;
                 if(mbRGB)
                     cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
                 else
@@ -231,10 +234,13 @@ namespace vi_slam{
                     cvtColor(mImGray,mImGray,COLOR_BGRA2GRAY);
             }
 
-            if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+            if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET) {
+                std::cerr << "Intit Failed" << std::endl;
                 mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-            else
+            }
+            else {
                 mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+            }
 
 
             Track();
@@ -262,9 +268,9 @@ namespace vi_slam{
                 if(mSensor==System::STEREO || mSensor==System::RGBD)
                     StereoInitialization();
                 else{
-                    std::cout << "Check Mono Intit" << std::endl;
+                    //std::cout << "Check Mono Intit" << std::endl;
                     MonocularInitialization();
-                    std::cout << "Checked Mono Intit" << std::endl;
+                    //std::cout << "Checked Mono Intit" << std::endl;
                 }
 
                 std::cout << this->mImGray.size() << std::endl;

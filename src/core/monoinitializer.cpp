@@ -17,7 +17,7 @@ namespace vi_slam{
 
         MonoInitializer::MonoInitializer(const datastructures::Frame &ReferenceFrame, float sigma, int iterations)
         {
-            mK = ReferenceFrame.camera_->K_.clone();
+            mK = ReferenceFrame.mK.clone();
 
             mvKeys1 = ReferenceFrame.ukeypoints_;
 

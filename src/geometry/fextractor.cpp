@@ -1031,7 +1031,7 @@ namespace vi_slam{
                 computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
         }
 
-        void FExtractor::compute(cv::InputArray image, cv::InputArray mask, std::vector<cv::KeyPoint> &keypoints,
+        void FExtractor::compute(cv::InputArray image, cv::InputArray mask, std::vector<cv::KeyPoint> &keypointsoutput,
                                  cv::OutputArray descriptors)
         {
             if(image.empty())
@@ -1043,8 +1043,11 @@ namespace vi_slam{
             // Pre-compute the scale pyramid
             ComputePyramid(image_);
 
+            std::cerr << "Check features number config: " << nfeatures << std::endl;
+
             vector < vector<KeyPoint> > allKeypoints;
             ComputeKeyPointsOctTree(allKeypoints);
+            // std::cerr << "Check Keypoint Oct Tree: " << allKeypoints.size() << std::endl;
             //ComputeKeyPointsOld(allKeypoints);
 
             Mat descriptors_;
@@ -1060,15 +1063,16 @@ namespace vi_slam{
                 descriptors_ = descriptors.getMat();
             }
 
-            keypoints.clear();
-            keypoints.reserve(nkeypoints);
+
+            keypointsoutput.clear();
+            keypointsoutput.reserve(nkeypoints);
 
             int offset = 0;
             for (int level = 0; level < nlevels; ++level)
             {
                 vector<KeyPoint>& keypoints = allKeypoints[level];
                 int nkeypointsLevel = (int)keypoints.size();
-
+                std::cerr << "Check somthing: " << nkeypointsLevel << " " << level << std::endl;
                 if(nkeypointsLevel==0)
                     continue;
 
@@ -1079,6 +1083,7 @@ namespace vi_slam{
                 // Compute the descriptors
                 Mat desc = descriptors_.rowRange(offset, offset + nkeypointsLevel);
                 computeDescriptors(workingMat, keypoints, desc, pattern);
+                std::cerr << "Check descriptor: " << desc.size() << std::endl;
 
                 offset += nkeypointsLevel;
 
@@ -1086,13 +1091,14 @@ namespace vi_slam{
                 if (level != 0)
                 {
                     float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
-                    for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
-                                 keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint)
-                        keypoint->pt *= scale;
+                    for (vector<KeyPoint>::iterator _keypoint = keypoints.begin(),
+                                 keypointEnd = keypoints.end(); _keypoint != keypointEnd; ++_keypoint)
+                        _keypoint->pt *= scale;
                 }
                 // And add the keypoints to the output
-                keypoints.insert(keypoints.end(), keypoints.begin(), keypoints.end());
+                keypointsoutput.insert(keypointsoutput.end(), keypoints.begin(), keypoints.end());
             }
+            std::cerr << "Check keypoint ORB: " << keypointsoutput.size() << std::endl;
         }
 
         void FExtractor::ComputePyramid(cv::Mat image)
