@@ -26,8 +26,8 @@ namespace vi_slam{
             typedef std::shared_ptr<Camera> Ptr;
             double fx_, fy_, cx_, cy_;
             cv::Mat K_;
-            static double invfx;
-            static double invfy;
+            double invfx;
+            double invfy;
             cv::Mat mDistCoef;
 
             // Stereo baseline multiplied by fx.

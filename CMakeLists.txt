@@ -1,13 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(vi_slam)
 
-include(CheckLanguage)
-check_language(CUDA)
-if (CMAKE_CUDA_COMPILER)
-    project(vi_slam LANGUAGES CXX CUDA)
-else()
-    project(vi_slam LANGUAGES CXX)
-endif()
 
 set(CMAKE_BUILD_TYPE Release)
 
@@ -37,7 +30,9 @@ include_directories(${Sophus_INCLUDE_DIRS})
 
 # G2O
 find_package(G2O REQUIRED)
-include_directories(${G2O_INCLUDE_DIRS})
+#include_directories(${G2O_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES("/usr/local/include/")
+LINK_directories("/usr/locla/lib")
 
 # ceres
 find_package(Ceres REQUIRED)
@@ -65,10 +60,10 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-#vilib
-find_package(vilib REQUIRED)
-find_package(CUDA REQUIRED)
-#message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
+find_package(fmt REQUIRED)
+include_directories(${fmt_INCLUDE_DIRS})
+
+
 
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}
@@ -85,25 +80,27 @@ set(THIRD_PARTY_LIBS
         ${GFLAGS_LIBRARIES}
         ${CSPARSE_LIBRARY}
         pthread
-        vilib::vilib
+        #vilib::vilib
+        fmt::fmt-header-only
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
-        g2o_core
-        g2o_stuff
-        g2o_types_sba
-        g2o_solver_csparse
-        g2o_csparse_extension
-        g2o_solver_dense
-        g2o_solver_eigen
-        g2o_types_sim3
-        g2o_types_slam3d
-        g2o_types_slam2d
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_core.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_stuff.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sba.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_solver_csparse.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_csparse_extension.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_solver_dense.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_solver_eigen.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sim3.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam3d.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam2d.so
+        ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_viewer.so
         )
 
 ############### source and test ######################
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
 add_subdirectory(test)
-#add_subdirectory(app)
+add_subdirectory(app)
 
 ############# Lib Interface ####################
 

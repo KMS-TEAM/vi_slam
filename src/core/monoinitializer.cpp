@@ -93,10 +93,10 @@ namespace vi_slam{
                                                            ref(mMaxIterations), ref(mSigma), ref(mvSets));
 
             std::thread threadF(&geometry::FindFundamental, ref(mvKeys1), ref(mvKeys2),
-                                                            ref(vbMatchesInliersF),
-                                                            ref(mvMatches12),
-                                                            ref(SF), ref(F),
-                                                            ref(mMaxIterations), ref(mSigma), ref(mvSets));
+                                ref(vbMatchesInliersF),
+                                ref(mvMatches12),
+                                ref(mMaxIterations), ref(mSigma),
+                                ref(SF), ref(F), ref(mvSets));
 
             // Wait until both threads have finished
             threadH.join();

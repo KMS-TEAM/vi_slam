@@ -126,8 +126,8 @@ namespace vi_slam{
                              vector<cv::KeyPoint> &mvKeys2,
                              vector<bool> &vbMatchesInliers,
                              vector<Match> &mvMatches12,
-                             float &score, cv::Mat &F21,
                              int mMaxIterations, float mSigma,
+                             float &score, cv::Mat &F21,
                              vector<vector<size_t> > mvSets);
 
         cv::Mat ComputeH21(const vector<cv::Point2f> &vP1, const vector<cv::Point2f> &vP2);
