@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     // Retrieve paths to images
     vector<string> vstrImageFilenames;
     vector<double> vTimestamps;
-    LoadImages(string("/home/cit-industry/Github/00"), vstrImageFilenames, vTimestamps);
+    LoadImages(string("/home/cit-industry/Github/Data/00_gray"), vstrImageFilenames, vTimestamps);
 
     int nImages = vstrImageFilenames.size();
 
@@ -119,8 +119,8 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageFilena
         }
     }
 
-    string strPrefixLeft = strPathToSequence + "/image_0/";
-
+    string strPrefixLeft = strPathToSequence + "/image_1/";
+    std::cout << strPrefixLeft << std::endl;
     const int nTimes = vTimestamps.size();
     vstrImageFilenames.resize(nTimes);
 

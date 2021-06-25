@@ -220,6 +220,7 @@ namespace vi_slam{
 
             if(mImGray.channels()==3)
             {
+                std::cout << "Check !!!" << std::endl;
                 if(mbRGB)
                     cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
                 else
@@ -264,9 +265,9 @@ namespace vi_slam{
                 if(mSensor==System::STEREO || mSensor==System::RGBD)
                     StereoInitialization();
                 else{
-                    std::cout << "Check Mono Intit" << std::endl;
+                    //std::cout << "Check Mono Intit" << std::endl;
                     MonocularInitialization();
-                    std::cout << "Checked Mono Intit" << std::endl;
+                    //std::cout << "Checked Mono Intit" << std::endl;
                 }
 
                 std::cout << this->mImGray.size() << std::endl;
