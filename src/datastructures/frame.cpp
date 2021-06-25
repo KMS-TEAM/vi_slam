@@ -173,6 +173,8 @@ namespace vi_slam{
 
             N = keypoints_.size();
 
+            std::cerr << "Check keypoint: " << N << std::endl;
+
             if(keypoints_.empty())
                 return;
 
@@ -237,10 +239,13 @@ namespace vi_slam{
 
         void Frame::ExtractORB(int flag, const cv::Mat &im)
         {
-            if(flag==0)
-                mpORBextractorLeft->compute(im,cv::Mat(),keypoints_,descriptors_);
-            else
-                mpORBextractorRight->compute(im,cv::Mat(),keypointsRight_,descriptorsRight_);
+            if(flag==0) {
+                std::cerr << "Check Image: " << im.size() << std::endl;
+                mpORBextractorLeft->compute(im, cv::Mat(), keypoints_, descriptors_);
+            }
+            else {
+                mpORBextractorRight->compute(im, cv::Mat(), keypointsRight_, descriptorsRight_);
+            }
         }
 
         cv::Point2f Frame::projectWorldPointToImage(const cv::Point3f &p_world)

@@ -234,10 +234,13 @@ namespace vi_slam{
                     cvtColor(mImGray,mImGray,COLOR_BGRA2GRAY);
             }
 
-            if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+            if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET) {
+                std::cerr << "Intit Failed" << std::endl;
                 mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-            else
+            }
+            else {
                 mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+            }
 
 
             Track();
