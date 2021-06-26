@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     int nImages = vstrImageFilenames.size();
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    vi_slam::core::System SLAM("/home/cit-industry/Github/vi_slam/Vocabulary/vocabulary.txt","/home/cit-industry/Github/vi_slam/config/KITTI00-02.yaml",vi_slam::core::System::MONOCULAR,true);
+    vi_slam::core::System SLAM("/home/cit-industry/Github/vi_slam/Vocabulary/vocabulary.txt","/home/cit-industry/Github/vi_slam/config/KITTI00-Mono.yaml",vi_slam::core::System::MONOCULAR,true);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
