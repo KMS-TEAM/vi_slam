@@ -5,7 +5,8 @@
 #ifndef VI_SLAM_LOOPCLOSING_H
 #define VI_SLAM_LOOPCLOSING_H
 
-#include "../common_include.h"
+#include "vi_slam/common_include.h"
+#include "vi_slam/core/core_commons.h"
 
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/map.h"
@@ -13,6 +14,8 @@
 
 #include "vi_slam/core/localmapping.h"
 #include "vi_slam/core/tracking.h"
+
+#include "vi_slam/optimization/gtsamtransformer.h"
 
 #include <g2o/types/sim3/types_seven_dof_expmap.h>
 
@@ -27,6 +30,11 @@ namespace vi_slam{
         class KeyFrameDatabase;
     }
 
+    namespace optimization{
+        class GtsamTransformer;
+        class Optimizer;
+    }
+
     namespace core{
 
         class Tracking;
@@ -36,12 +44,12 @@ namespace vi_slam{
             public:
 
                 typedef pair<set<datastructures::KeyFrame*>,int> ConsistentGroup;
-                typedef map<datastructures::KeyFrame*,g2o::Sim3,std::less<datastructures::KeyFrame*>,
-                        Eigen::aligned_allocator<std::pair<datastructures::KeyFrame* const, g2o::Sim3> > > KeyFrameAndPose;
+//                typedef map<datastructures::KeyFrame*,g2o::Sim3,std::less<datastructures::KeyFrame*>,
+//                        Eigen::aligned_allocator<std::pair<datastructures::KeyFrame* const, g2o::Sim3> > > KeyFrameAndPose;
 
             public:
 
-                LoopClosing(datastructures::Map* pMap, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale);
+                LoopClosing(datastructures::Map* pMap, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale, vi_slam::optimization::GtsamTransformer *gtsam_transformer = nullptr);
 
                 void SetTracker(Tracking* pTracker);
 
@@ -80,7 +88,7 @@ namespace vi_slam{
 
                 bool ComputeSim3();
 
-                void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap);
+                void SearchAndFuse(const vi_slam::core::KeyFrameAndPose &CorrectedPosesMap);
 
                 void CorrectLoop();
 
@@ -133,6 +141,8 @@ namespace vi_slam{
                 bool mbFixScale;
 
                 bool mnFullBAIdx;
+
+                vi_slam::optimization::GtsamTransformer *gtsam_transformer_;
         };
     }
 }

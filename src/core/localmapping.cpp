@@ -13,9 +13,9 @@
 
 namespace vi_slam{
     namespace core{
-        LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
+        LocalMapping::LocalMapping(Map *pMap, const float bMonocular, vi_slam::optimization::GtsamTransformer *gtsam_transformer):
                 mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
-                mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
+                mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true), gtsam_transformer_(gtsam_transformer)
         {
         }
 
@@ -63,7 +63,7 @@ namespace vi_slam{
                     {
                         // Local BA
                         if(mpMap->KeyFramesInMap()>2)
-                            optimization::Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                            optimization::Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap, gtsam_transformer_);
 
                         // Check redundant local Keyframes
                         KeyFrameCulling();

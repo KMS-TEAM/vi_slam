@@ -13,7 +13,7 @@
 namespace vi_slam{
     namespace core{
         System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
-                       const bool bUseViewer):mSensor(sensor), mpViewer(static_cast<display::Viewer*>(NULL)), mbReset(false),mbActivateLocalizationMode(false),
+                       const bool bUseViewer, const vi_slam::optimization::GtsamTransformer::UpdateType gtsam_type):mSensor(sensor), mpViewer(static_cast<display::Viewer*>(NULL)), mbReset(false),mbActivateLocalizationMode(false),
                                               mbDeactivateLocalizationMode(false)
         {
             // Output welcome message
@@ -31,6 +31,13 @@ namespace vi_slam{
                 cout << "Stereo" << endl;
             else if(mSensor==RGBD)
                 cout << "RGB-D" << endl;
+
+            cout << "GTSAM Transformer type: ";
+            if (gtsam_type==vi_slam::optimization::GtsamTransformer::BATCH)
+                cout << "Batch" << endl;
+            else if (gtsam_type==vi_slam::optimization::GtsamTransformer::INCREMENTAL)
+                cout << "Incremental" << endl;
+            gtsam_transformer_.setUpdateType(gtsam_type);
 
             //Check settings file
             cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
@@ -73,7 +80,7 @@ namespace vi_slam{
                                      mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
 
             //Initialize the Local Mapping thread and launch
-            mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
+            mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR, &gtsam_transformer_);
             mptLocalMapping = new thread(&core::LocalMapping::Run,mpLocalMapper);
 
             //Initialize the Loop Closing thread and launch
