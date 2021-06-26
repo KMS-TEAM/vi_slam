@@ -30,7 +30,7 @@ namespace vi_slam{
 
     namespace display{
         class Viewer;
-        class FrameDrwaer;
+        class FrameDrawer;
         class MapDrawer;
     }
     namespace core{
@@ -40,7 +40,7 @@ namespace vi_slam{
         class Tracking {
 
         public:
-            Tracking(System* pSys, DBoW3::Vocabulary* pVoc, Map* pMap,
+            Tracking(System* pSys, DBoW3::Vocabulary* pVoc, vi_slam::display::FrameDrawer* pFrameDrawer, vi_slam::display::MapDrawer* pMapDrawer,Map* pMap,
                      KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
 
             // Preprocess the input and call Track(). Extract features and performs stereo matching.

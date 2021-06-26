@@ -21,9 +21,10 @@ using namespace vi_slam;
 
 namespace vi_slam{
     namespace core{
-        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
+        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, display::FrameDrawer *pFrameDrawer, display::MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
                 mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
-                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0)
+                mpKeyFrameDB(pKFDB), mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpMap(pMap), mnLastRelocFrameId(0),
+                mpViewer(NULL), mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer)
         {
             // Load camera parameters from settings file
 
@@ -214,6 +215,7 @@ namespace vi_slam{
 
         cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
         {
+            //std::cerr << "Image size: " << im.size() << std::endl;
             mImGray = im;
 
             if(mImGray.channels()==3)
@@ -221,7 +223,7 @@ namespace vi_slam{
                 if(mbRGB)
                     cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
                 else
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+                    cvtColor(mImGray,mImGray,COLOR_BGR2GRAY);
             }
             else if(mImGray.channels()==4)
             {
@@ -230,6 +232,7 @@ namespace vi_slam{
                 else
                     cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
             }
+            //std::cerr << "Image size: " << mImGray.size() << std::endl;
 
             if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
                 mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
@@ -408,7 +411,7 @@ namespace vi_slam{
                     else
                         mVelocity = cv::Mat();
 
-                    //mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                     // Clean VO matches
                     for(int i=0; i<mCurrentFrame.N; i++)
@@ -531,7 +534,7 @@ namespace vi_slam{
 
                 mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
-                //mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                 mState=OK;
             }
@@ -692,9 +695,6 @@ namespace vi_slam{
             mpLocalMapper->InsertKeyFrame(pKFini);
             mpLocalMapper->InsertKeyFrame(pKFcur);
 
-            mCurrentFrame.SetPose(pKFcur->GetPose());
-            mnLastKeyFrameId=mCurrentFrame.id_;
-            mpLastKeyFrame = pKFcur;
 
             mvpLocalKeyFrames.push_back(pKFcur);
             mvpLocalKeyFrames.push_back(pKFini);
@@ -704,6 +704,9 @@ namespace vi_slam{
 
             mLastFrame = Frame(mCurrentFrame);
 
+            mCurrentFrame.SetPose(pKFcur->GetPose());
+            mnLastKeyFrameId=mCurrentFrame.id_;
+            mpLastKeyFrame = pKFcur;
             mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
             //mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());

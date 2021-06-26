@@ -168,10 +168,13 @@ namespace vi_slam{
             mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
             mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
+
+
             // ORB extraction
             ExtractORB(0,imGray);
 
             N = keypoints_.size();
+            std::cerr << "Image size: " << N << std::endl;
 
             if(keypoints_.empty())
                 return;

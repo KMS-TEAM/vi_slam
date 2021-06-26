@@ -1031,7 +1031,7 @@ namespace vi_slam{
                 computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
         }
 
-        void FExtractor::compute(cv::InputArray image, cv::InputArray mask, std::vector<cv::KeyPoint> &keypoints,
+        void FExtractor::compute(cv::InputArray image, cv::InputArray mask, std::vector<cv::KeyPoint> &keypointsoutput,
                                  cv::OutputArray descriptors)
         {
             if(image.empty())
@@ -1060,8 +1060,8 @@ namespace vi_slam{
                 descriptors_ = descriptors.getMat();
             }
 
-            keypoints.clear();
-            keypoints.reserve(nkeypoints);
+            keypointsoutput.clear();
+            keypointsoutput.reserve(nkeypoints);
 
             int offset = 0;
             for (int level = 0; level < nlevels; ++level)
@@ -1091,7 +1091,7 @@ namespace vi_slam{
                         keypoint->pt *= scale;
                 }
                 // And add the keypoints to the output
-                keypoints.insert(keypoints.end(), keypoints.begin(), keypoints.end());
+                keypointsoutput.insert(keypointsoutput.end(), keypoints.begin(), keypoints.end());
             }
         }
 

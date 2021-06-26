@@ -1,7 +1,3 @@
-//
-// Created by lacie on 25/05/2021.
-//
-
 /* @brief
  * A class "PclViewer" for displaying 3D points and camera position by using PCL library.
  *

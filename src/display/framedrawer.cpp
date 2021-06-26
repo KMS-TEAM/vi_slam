@@ -7,7 +7,7 @@
 #include "vi_slam/core/tracking.h"
 
 #include <mutex>
-
+#include <pthread.h>
 namespace vi_slam{
     namespace display{
         FrameDrawer::FrameDrawer(Map* pMap):mpMap(pMap)
@@ -53,7 +53,7 @@ namespace vi_slam{
             } // destroy scoped mutex -> release mutex
 
             if(im.channels()<3) //this should be always true
-                cvtColor(im,im,cv::COLOR_BGR2GRAY);
+                cvtColor(im,im,cv::COLOR_GRAY2BGR);
 
             //Draw
             if(state==Tracking::NOT_INITIALIZED) //INITIALIZING
@@ -149,7 +149,7 @@ namespace vi_slam{
         {
             unique_lock<mutex> lock(mMutex);
             pTracker->mImGray.copyTo(mIm);
-            mvCurrentKeys=pTracker->mCurrentFrame.keypoints_;
+            mvCurrentKeys = pTracker->mCurrentFrame.keypoints_;
             N = mvCurrentKeys.size();
             mvbVO = vector<bool>(N,false);
             mvbMap = vector<bool>(N,false);
