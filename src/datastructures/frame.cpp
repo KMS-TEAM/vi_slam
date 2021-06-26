@@ -422,8 +422,8 @@ namespace vi_slam{
 
         void Frame::UndistortKeyPoints()
         {
-            std::cerr << "Check Undistort: " << keypoints_.size() << std::endl;
-            std::cout << mDistCoef << std::endl;
+            // std::cerr << "Check Undistort: " << keypoints_.size() << std::endl;
+            // std::cout << mDistCoef << std::endl;
             if(mDistCoef.at<float>(0)==0.0)
             {
                 ukeypoints_=keypoints_;

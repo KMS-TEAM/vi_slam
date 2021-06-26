@@ -14,15 +14,31 @@
 #include "vi_slam/core/loopclosing.h"
 #include "vi_slam/core/tracking.h"
 
+#include "vi_slam/optimization/gtsamtransformer.h"
+#include "vi_slam/optimization/gtsamserialization.h"
+
 #include <mutex>
 
 using namespace vi_slam::datastructures;
 
 namespace vi_slam{
+
+    namespace datastructures{
+        class Map;
+    }
+
+    namespace optimization{
+        class GtsamTransformer;
+    }
+
     namespace core{
+
+        class Tracking;
+        class LoopClosing;
+
         class LocalMapping {
         public:
-            LocalMapping(Map* pMap, const float bMonocular);
+            LocalMapping(Map* pMap, const float bMonocular, vi_slam::optimization::GtsamTransformer *gtsam_transformer = nullptr);
 
             void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -103,6 +119,8 @@ namespace vi_slam{
 
             bool mbAcceptKeyFrames;
             std::mutex mMutexAccept;
+
+            vi_slam::optimization::GtsamTransformer *gtsam_transformer_;
         };
     }
 }

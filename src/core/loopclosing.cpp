@@ -14,10 +14,10 @@
 
 namespace vi_slam{
     namespace core{
-        LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, DBoW3::Vocabulary *pVoc, const bool bFixScale):
+        LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, DBoW3::Vocabulary *pVoc, const bool bFixScale, vi_slam::optimization::GtsamTransformer *gtsam_transformer):
                 mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
                 mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
-                mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
+                mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0), gtsam_transformer_(gtsam_transformer)
         {
             mnCovisibilityConsistencyTh = 3;
         }
@@ -626,7 +626,7 @@ namespace vi_slam{
             cout << "Starting Global Bundle Adjustment" << endl;
 
             int idx =  mnFullBAIdx;
-            optimization::Optimizer::GlobalBundleAdjustemnt(mpMap,10,&mbStopGBA,nLoopKF,false);
+            optimization::Optimizer::GlobalBundleAdjustemnt(mpMap,10,&mbStopGBA,nLoopKF,false, gtsam_transformer_);
 
             // Update all MapPoints and KeyFrames
             // Local Mapping was active during BA, that means that there might be new keyframes

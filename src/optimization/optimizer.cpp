@@ -18,16 +18,16 @@
 
 namespace vi_slam{
     namespace optimization{
-        void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
+        void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust, GtsamTransformer *gtsam_transformer)
         {
             vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
             vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
-            BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
+            BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust, gtsam_transformer);
         }
 
 
         void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
-                                         int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
+                                         int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust, GtsamTransformer *gtsam_transformer)
         {
             vector<bool> vbNotIncludedMP;
             vbNotIncludedMP.resize(vpMP.size());
@@ -220,7 +220,7 @@ namespace vi_slam{
                     pMP->mnBAGlobalForKF = nLoopKF;
                 }
             }
-
+            gtsam_transformer->transformGraphToGtsam(vpKFs, vpMP);
         }
 
         int Optimizer::PoseOptimization(Frame *pFrame)
@@ -453,8 +453,11 @@ namespace vi_slam{
             return nInitialCorrespondences-nBad;
         }
 
-        void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap)
+        void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, GtsamTransformer *gtsam_transformer)
         {
+            auto vpKFs = pMap->GetAllKeyFrames();
+            auto vpMP = pMap->GetAllMapPoints();
+
             // Local KeyFrames: First Breath Search from Current Keyframe
             list<KeyFrame*> lLocalKeyFrames;
 
@@ -786,12 +789,13 @@ namespace vi_slam{
                 pMP->setPos(basics::converter::toCvMat(vPoint->estimate()));
                 pMP->UpdateNormalAndDepth();
             }
+            gtsam_transformer->transformGraphToGtsam(vpKFs, vpMP);
         }
 
 
         void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
-                                               const core::LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-                                               const core::LoopClosing::KeyFrameAndPose &CorrectedSim3,
+                                               const KeyFrameAndPose &NonCorrectedSim3,
+                                               const KeyFrameAndPose &CorrectedSim3,
                                                const map<KeyFrame *, set<KeyFrame *> > &LoopConnections, const bool &bFixScale)
         {
             // Setup optimizer
@@ -1266,6 +1270,22 @@ namespace vi_slam{
             g2oS12= vSim3_recov->estimate();
 
             return nIn;
+        }
+
+        void Optimizer::printActiveGraph(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP) {
+            std::cout << "================== Vi-SLAM GRAPH ==================" << std::endl;
+            std::cout << "====================== FACTORS =====================" << std::endl;
+            for (size_t i = 0; i < vpKFs.size(); i++) {
+                KeyFrame *pKF = vpKFs[i];
+                if (pKF->isBad())
+                    continue;
+                auto spMP = pKF->GetMapPoints();
+                for (const auto &it: spMP) {
+                    if (it->isBad())
+                        continue;
+                    std::cout << "x" << pKF->mnId << "-l" << it->id_<< std::endl;
+                }
+            }
         }
     }
 }

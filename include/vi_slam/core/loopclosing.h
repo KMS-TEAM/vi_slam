@@ -14,6 +14,8 @@
 #include "vi_slam/core/localmapping.h"
 #include "vi_slam/core/tracking.h"
 
+#include "vi_slam/optimization/gtsamtransformer.h"
+
 #include <g2o/types/sim3/types_seven_dof_expmap.h>
 
 #include <mutex>
@@ -25,6 +27,10 @@ namespace vi_slam{
         class KeyFrame;
         class Map;
         class KeyFrameDatabase;
+    }
+
+    namespace optimization{
+        class GtsamTransformer;
     }
 
     namespace core{
@@ -41,7 +47,7 @@ namespace vi_slam{
 
             public:
 
-                LoopClosing(datastructures::Map* pMap, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale);
+                LoopClosing(datastructures::Map* pMap, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale, vi_slam::optimization::GtsamTransformer *gtsam_transformer = nullptr);
 
                 void SetTracker(Tracking* pTracker);
 
@@ -133,6 +139,8 @@ namespace vi_slam{
                 bool mbFixScale;
 
                 bool mnFullBAIdx;
+
+                vi_slam::optimization::GtsamTransformer *gtsam_transformer_;
         };
     }
 }

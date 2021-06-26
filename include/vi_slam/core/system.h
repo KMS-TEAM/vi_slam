@@ -15,6 +15,8 @@
 #include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/datastructures/keyframedatabase.h"
 
+#include "vi_slam/optimization/gtsamtransformer.h"
+
 #include "vi_slam/display/viewer.h"
 #include "vi_slam/display/framedrawer.h"
 
@@ -37,6 +39,10 @@ namespace vi_slam{
         class MapDrawer;
     }
 
+    namespace optimization{
+        class GtsamTransformer;
+    }
+
     namespace core{
 
         class Tracking;
@@ -54,7 +60,8 @@ namespace vi_slam{
         public:
 
             // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-            System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true);
+            System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true,
+                   const vi_slam::optimization::GtsamTransformer::UpdateType = vi_slam::optimization::GtsamTransformer::BATCH);
 
             // Proccess the given stereo frame. Images must be synchronized and rectified.
             // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -116,6 +123,8 @@ namespace vi_slam{
             int GetTrackingState();
             std::vector<MapPoint*> GetTrackedMapPoints();
             std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+
+            vi_slam::optimization::GtsamTransformer gtsam_transformer_;
 
         private:
 

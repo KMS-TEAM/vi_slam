@@ -12,35 +12,60 @@
 
 #include "vi_slam/core/loopclosing.h"
 
+#include "vi_slam/optimization/gtsamtransformer.h"
+#include "vi_slam/optimization/gtsamserialization.h"
+
 #include <g2o/types/sim3/types_seven_dof_expmap.h>
 
+using namespace vi_slam::datastructures;
+
 namespace vi_slam{
+    namespace datastructures{
+        class KeyFrame;
+        class MapPoint;
+    }
+    namespace core{
+        class LoopClosing;
+    }
     namespace optimization{
+
+        class GtsamTransformer;
+
         class Optimizer {
         public:
-            void static BundleAdjustment(const std::vector<KeyFrame*> &vpKF, const std::vector<MapPoint*> &vpMP,
-                                         int nIterations = 5, bool *pbStopFlag=NULL, const unsigned long nLoopKF=0,
-                                         const bool bRobust = true);
-            void static GlobalBundleAdjustemnt(Map* pMap, int nIterations=5, bool *pbStopFlag=NULL,
-                                               const unsigned long nLoopKF=0, const bool bRobust = true);
-            void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap);
+
+            void static BundleAdjustment(const std::vector<KeyFrame*> &vpKF,
+                                         const std::vector<MapPoint*> &vpMP,
+                                         int nIterations = 5,
+                                         bool *pbStopFlag=NULL,
+                                         const unsigned long nLoopKF=0,
+                                         const bool bRobust = true,
+                                         GtsamTransformer *gtsam_transformer = nullptr);
+
+            void static GlobalBundleAdjustemnt(Map* pMap, int nIterations=5,
+                                               bool *pbStopFlag=NULL,
+                                               const unsigned long nLoopKF=0,
+                                               const bool bRobust = true,
+                                               GtsamTransformer *gtsam_transformer = nullptr);
+
+            void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, GtsamTransformer *gtsam_transformer = nullptr);
             int static PoseOptimization(Frame* pFrame);
 
             // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
             void static OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
-                                               const core::LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-                                               const core::LoopClosing::KeyFrameAndPose &CorrectedSim3,
+                                               const vi_slam::core::LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
+                                               const vi_slam::core::LoopClosing::KeyFrameAndPose &CorrectedSim3,
                                                const map<KeyFrame *, set<KeyFrame *> > &LoopConnections,
                                                const bool &bFixScale);
 
             // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono)
             static int OptimizeSim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *> &vpMatches1,
                                     g2o::Sim3 &g2oS12, const float th2, const bool bFixScale);
+
+        private:
+            static void printActiveGraph(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP);
         };
     }
 }
-
-
-
 
 #endif //VI_SLAM_OPTIMIZER_H

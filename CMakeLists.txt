@@ -49,6 +49,8 @@ include_directories( ${Sophus_INCLUDE_DIRS} )
 find_package(Glog REQUIRED)
 include_directories(${GLOG_INCLUDE_DIRS})
 
+find_package(spdlog REQUIRED)
+
 # gtest
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -75,6 +77,10 @@ include_directories(${fmt_INCLUDE_DIRS})
 #find_package(CUDA REQUIRED)
 #message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
+find_package(GTSAMCMakeTools)
+set(GTSAM_LIBRARIES gtsam tbb tbbmalloc)
+include(GtsamBuildTypes)
+
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}
         Eigen3::Eigen
@@ -92,6 +98,9 @@ set(THIRD_PARTY_LIBS
         pthread
         #vilib::vilib
         fmt::fmt-header-only
+        spdlog::spdlog
+        spdlog::spdlog_header_only
+        ${GTSAM_LIBRARIES}
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_core.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_stuff.so
@@ -103,6 +112,7 @@ set(THIRD_PARTY_LIBS
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sim3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam3d.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam2d.so
+        -lboost_system
         )
 
 ############### source and test ######################
