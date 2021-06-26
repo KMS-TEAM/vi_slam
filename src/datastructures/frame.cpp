@@ -38,8 +38,8 @@ namespace vi_slam{
         }
 
         Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, geometry::FExtractor* extractorLeft, geometry::FExtractor* extractorRight, DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
-                :mpVocaburary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), time_stamp_(time_stamp_), mK(mK.clone()), mDistCoef(mDistCoef.clone()),
-                 mbf(mbf), mb(mb), mThDepth(mThDepth),
+                :mpVocaburary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), time_stamp_(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()),
+                 mbf(bf), mThDepth(thDepth),
                  mpReferenceKF(static_cast<KeyFrame*>(NULL))
         {
             // Frame ID
@@ -99,8 +99,8 @@ namespace vi_slam{
 
         Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
                 :mpVocaburary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<geometry::FExtractor*>(NULL)),
-                 time_stamp_(timeStamp), mK(mK.clone()), mDistCoef(mDistCoef.clone()),
-                 mbf(mbf), mb(mb), mThDepth(mThDepth)
+                 time_stamp_(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()),
+                 mbf(bf), mThDepth(thDepth)
         {
             // Frame ID
             id_=nNextId_++;
@@ -422,6 +422,8 @@ namespace vi_slam{
 
         void Frame::UndistortKeyPoints()
         {
+            std::cerr << "Check Undistort: " << keypoints_.size() << std::endl;
+            std::cout << mDistCoef << std::endl;
             if(mDistCoef.at<float>(0)==0.0)
             {
                 ukeypoints_=keypoints_;
@@ -435,6 +437,7 @@ namespace vi_slam{
                 mat.at<float>(i,0)=keypoints_[i].pt.x;
                 mat.at<float>(i,1)=keypoints_[i].pt.y;
             }
+
 
             // Undistort points
             mat=mat.reshape(2);
