@@ -37,7 +37,7 @@ sudo apt install libpcl-dev
 sudo apt-get install pcl-tools
 ```
 
-###GTSAM install
+### GTSAM install
 
 #### Add PPA
 ```
