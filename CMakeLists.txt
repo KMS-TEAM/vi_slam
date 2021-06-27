@@ -71,8 +71,8 @@ find_package(fmt REQUIRED)
 include_directories(${fmt_INCLUDE_DIRS})
 
 #vilib
-find_package(vilib REQUIRED)
-find_package(CUDA REQUIRED)
+#find_package(vilib REQUIRED)
+#find_package(CUDA REQUIRED)
 #message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
 set(THIRD_PARTY_LIBS
@@ -90,7 +90,7 @@ set(THIRD_PARTY_LIBS
         ${GFLAGS_LIBRARIES}
         ${CSPARSE_LIBRARY}
         pthread
-        vilib::vilib
+        #vilib::vilib
         fmt::fmt-header-only
         ${PROJECT_SOURCE_DIR}/thirdparty/DBoW3/lib/libDBoW3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_core.so
