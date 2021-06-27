@@ -100,7 +100,7 @@ namespace vi_slam {
                     boost::optional<std::vector<size_t>>,
                     boost::optional<const gtsam::KeyVector>,
                     boost::optional<const gtsam::KeyVector>,
-                    boost::optional<std::string>,
+                    boost::optional<gtsam::Values>,
                     boost::optional<std::tuple<std::string, double, std::string>>> checkForNewData();
 
             void setUpdateType(const UpdateType update_type);
@@ -163,7 +163,7 @@ namespace vi_slam {
                     std::vector<size_t>,
                     const gtsam::KeyVector,
                     const gtsam::KeyVector,
-                    std::string,
+                    gtsam::Values,
                     std::tuple<std::string, double, std::string>>> ready_data_queue_;
 
             gtsam::Values session_values_, last_session_values_;

@@ -87,7 +87,7 @@ namespace vi_slam {
                 boost::optional<std::vector<size_t>>,
                 boost::optional<const gtsam::KeyVector>,
                 boost::optional<const gtsam::KeyVector>,
-                boost::optional<std::string>,
+                boost::optional<gtsam::Values>,
                 boost::optional<std::tuple<std::string, double, std::string>>> GtsamTransformer::checkForNewData() {
             if (ready_data_queue_.empty()) {
                 logger_->debug("checkForNewData - there is no new data.");
@@ -126,6 +126,7 @@ namespace vi_slam {
 
         void GtsamTransformer::finish() {
             std::unique_lock<std::mutex> *lock;
+
             do {
                 lock = new std::unique_lock<std::mutex>(mutex_, std::try_to_lock);
             } while (!lock->owns_lock());
@@ -134,26 +135,27 @@ namespace vi_slam {
             logger_->info("finish - active factors vector size: {}", session_factors_.size());
             if (update_type_ == INCREMENTAL) {
                 // Incremental update
-                auto incremental_factor_graph = createFactorGraph(add_factors_, true);
+                gtsam::NonlinearFactorGraph incremental_factor_graph = createFactorGraph(add_factors_, true);
                 ready_data_queue_.emplace(true,
                                           true,
                                           gtsam::serialize(incremental_factor_graph),
                                           createDeletedFactorsIndicesVec(del_factors_),
                                           add_states_,
                                           del_states_,
-                                          gtsam::serialize(session_values_),
+                                          session_values_,
                                           recent_kf_);
             } else if (update_type_ == BATCH) {
                 // Batch update
-                auto active_factor_graph = createFactorGraph(session_factors_, false);
+                gtsam::NonlinearFactorGraph active_factor_graph = createFactorGraph(session_factors_, false);
                 ready_data_queue_.emplace(true,
                                           false,
                                           gtsam::serialize(active_factor_graph),
                                           createDeletedFactorsIndicesVec(del_factors_),
                                           add_states_,
                                           del_states_,
-                                          gtsam::serialize(session_values_),
+                                          session_values_,
                                           recent_kf_);
+                std::cerr << "Check GTSAM " << std::endl;
             }
             logger_->info("finish - ready_data_queue.size: {}", ready_data_queue_.size());
 
@@ -274,6 +276,7 @@ namespace vi_slam {
                     }
                 }
             }
+
             return graph;
         }
 
