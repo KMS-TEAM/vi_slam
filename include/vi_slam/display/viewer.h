@@ -45,6 +45,7 @@ namespace vi_slam
             string viewer_name_;
 
             string camera_frame_name_;
+
             cv::Mat cam_R_vec_;
             cv::Mat cam_t_;
 

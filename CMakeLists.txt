@@ -36,7 +36,7 @@ find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
 
 # G2O
-find_package(G2O REQUIRED)
+#find_package(G2O REQUIRED)
 #include_directories(${G2O_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES("/usr/local/include/")
 LINK_directories("/usr/locla/lib")
@@ -108,5 +108,6 @@ set(THIRD_PARTY_LIBS
 ############### source and test ######################
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/thirdparty)
 add_subdirectory(src)
+add_subdirectory(data_preprocessing)
 #add_subdirectory(test)
 add_subdirectory(app)

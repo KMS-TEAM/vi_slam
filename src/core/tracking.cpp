@@ -213,32 +213,31 @@ namespace vi_slam{
         }
 
 
-        cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
-        {
+        cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp) {
             //std::cerr << "Image size: " << im.size() << std::endl;
             mImGray = im;
 
-            if(mImGray.channels()==3)
-            {
-                if(mbRGB)
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+            if (mImGray.channels() == 3) {
+                if (mbRGB)
+                    cvtColor(mImGray, mImGray, COLOR_BGR2GRAY);
                 else
-                    cvtColor(mImGray,mImGray,COLOR_BGR2GRAY);
-            }
-            else if(mImGray.channels()==4)
-            {
-                if(mbRGB)
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+                    cvtColor(mImGray, mImGray, COLOR_BGR2GRAY);
+            } else if (mImGray.channels() == 4) {
+                if (mbRGB)
+                    cvtColor(mImGray, mImGray, COLOR_RGB2GRAY);
                 else
-                    cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
+                    cvtColor(mImGray, mImGray, COLOR_RGB2GRAY);
             }
             //std::cerr << "Image size: " << mImGray.size() << std::endl;
 
-            if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-                mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-            else
-                mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-
+            if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET){
+                mCurrentFrame = Frame(mImGray, timestamp, mpIniORBextractor, mpORBVocabulary, mK, mDistCoef, mbf,
+                                      mThDepth);
+             }
+            else {
+                mCurrentFrame = Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mK, mDistCoef, mbf,
+                                      mThDepth);
+            }
             Track();
 
             return mCurrentFrame.T_w_c_.clone();
@@ -395,7 +394,7 @@ namespace vi_slam{
                     mState=LOST;
 
                 // Update drawer
-                //mpFrameDrawer->Update(this);
+                mpFrameDrawer->Update(this);
 
                 // If tracking were good, check if we insert a keyframe
                 if(bOK)
@@ -709,7 +708,7 @@ namespace vi_slam{
             mpLastKeyFrame = pKFcur;
             mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
-            //mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
+            mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
 
             mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 

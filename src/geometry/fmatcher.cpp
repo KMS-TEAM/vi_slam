@@ -1637,8 +1637,8 @@ int FMatcher::SearchByProjection(datastructures::Frame &CurrentFrame, const data
 
     const cv::Mat tlc = Rlw*twc+tlw;
 
-    const bool bForward = tlc.at<float>(2)>CurrentFrame.camera_->mb && !bMono;
-    const bool bBackward = -tlc.at<float>(2)>CurrentFrame.camera_->mb && !bMono;
+    const bool bForward = tlc.at<float>(2)>CurrentFrame.mb && !bMono;
+    const bool bBackward = -tlc.at<float>(2)>CurrentFrame.mb && !bMono;
 
     for(int i=0; i<LastFrame.N; i++)
     {
@@ -1659,8 +1659,8 @@ int FMatcher::SearchByProjection(datastructures::Frame &CurrentFrame, const data
                 if(invzc<0)
                     continue;
 
-                float u = CurrentFrame.camera_->fx_*xc*invzc+CurrentFrame.camera_->cx_;
-                float v = CurrentFrame.camera_->fy_*yc*invzc+CurrentFrame.camera_->cy_;
+                float u = CurrentFrame.fx*xc*invzc+CurrentFrame.cx;
+                float v = CurrentFrame.fy*yc*invzc+CurrentFrame.cy;
 
                 if(u<CurrentFrame.mnMinX || u>CurrentFrame.mnMaxX)
                     continue;
@@ -1698,7 +1698,7 @@ int FMatcher::SearchByProjection(datastructures::Frame &CurrentFrame, const data
 
                     if(CurrentFrame.mvuRight[i2]>0)
                     {
-                        const float ur = u - CurrentFrame.camera_->mbf*invzc;
+                        const float ur = u - CurrentFrame.mbf*invzc;
                         const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
                         if(er>radius)
                             continue;
@@ -1796,8 +1796,8 @@ int FMatcher::SearchByProjection(datastructures::Frame &CurrentFrame,
                 const float yc = x3Dc.at<float>(1);
                 const float invzc = 1.0/x3Dc.at<float>(2);
 
-                const float u = CurrentFrame.camera_->fx_*xc*invzc+CurrentFrame.camera_->cx_;
-                const float v = CurrentFrame.camera_->fy_*yc*invzc+CurrentFrame.camera_->cy_;
+                const float u = CurrentFrame.fx*xc*invzc+CurrentFrame.camera_->cx_;
+                const float v = CurrentFrame.fy*yc*invzc+CurrentFrame.camera_->cy_;
 
                 if(u<CurrentFrame.mnMinX || u>CurrentFrame.mnMaxX)
                     continue;

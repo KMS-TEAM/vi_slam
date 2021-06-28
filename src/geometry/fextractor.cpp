@@ -1086,9 +1086,9 @@ namespace vi_slam{
                 if (level != 0)
                 {
                     float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
-                    for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
-                                 keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint)
-                        keypoint->pt *= scale;
+                    for (vector<KeyPoint>::iterator _keypoint = keypoints.begin(),
+                                 keypointEnd = keypoints.end(); _keypoint != keypointEnd; ++_keypoint)
+                        _keypoint->pt *= scale;
                 }
                 // And add the keypoints to the output
                 keypointsoutput.insert(keypointsoutput.end(), keypoints.begin(), keypoints.end());

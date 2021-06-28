@@ -401,6 +401,8 @@ namespace vi_slam{
 
                     if(it==2)
                         e->setRobustKernel(0);
+                    if((nInitialCorrespondences-nBad)<5)
+                        break;
                 }
 
                 for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
@@ -430,6 +432,8 @@ namespace vi_slam{
 
                     if(it==2)
                         e->setRobustKernel(0);
+                    if((nInitialCorrespondences-nBad)<5)
+                        break;
                 }
 
                 if(optimizer.edges().size()<10)
