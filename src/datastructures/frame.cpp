@@ -173,7 +173,7 @@ namespace vi_slam{
 
             N = keypoints_.size();
 
-            std::cerr << "Check keypoint: " << N << std::endl;
+            // std::cerr << "Check keypoint: " << N << std::endl;
 
             if(keypoints_.empty())
                 return;
@@ -240,7 +240,7 @@ namespace vi_slam{
         void Frame::ExtractORB(int flag, const cv::Mat &im)
         {
             if(flag==0) {
-                std::cerr << "Check Image: " << im.size() << std::endl;
+                // std::cerr << "Check Image: " << im.size() << std::endl;
                 mpORBextractorLeft->compute(im, cv::Mat(), keypoints_, descriptors_);
             }
             else {
@@ -422,8 +422,8 @@ namespace vi_slam{
 
         void Frame::UndistortKeyPoints()
         {
-            std::cerr << "Check Undistort: " << keypoints_.size() << std::endl;
-            std::cout << mDistCoef << std::endl;
+            // std::cerr << "Check Undistort: " << keypoints_.size() << std::endl;
+            // std::cout << mDistCoef << std::endl;
             if(mDistCoef.at<float>(0)==0.0)
             {
                 ukeypoints_=keypoints_;

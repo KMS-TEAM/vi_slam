@@ -26,12 +26,12 @@ int main(int argc, char **argv)
     vector<string> vstrImageLeft;
     vector<string> vstrImageRight;
     vector<double> vTimestamps;
-    LoadImages(string("/home/cit-industry/Github/Data/00_gray"), vstrImageLeft, vstrImageRight, vTimestamps);
+    LoadImages(string("/home/lacie/Github/00_gray"), vstrImageLeft, vstrImageRight, vTimestamps);
 
     const int nImages = vstrImageLeft.size();
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    vi_slam::core::System SLAM("/home/cit-industry/Github/vi_slam/Vocabulary/vocabulary.txt","/home/cit-industry/Github/vi_slam/config/KITTI00-Stereo.yaml",vi_slam::core::System::STEREO,true);
+    vi_slam::core::System SLAM("/home/lacie/Github/vi_slam/Vocabulary/ORBvoc.txt","/home/lacie/Github/vi_slam/config/KITTI00-Stereo.yaml",vi_slam::core::System::STEREO,true);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;

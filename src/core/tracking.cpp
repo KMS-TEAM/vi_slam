@@ -220,7 +220,7 @@ namespace vi_slam{
 
             if(mImGray.channels()==3)
             {
-                std::cout << "Check !!!" << std::endl;
+                //std::cout << "Check !!!" << std::endl;
                 if(mbRGB)
                     cvtColor(mImGray,mImGray,COLOR_RGB2GRAY);
                 else
@@ -235,7 +235,7 @@ namespace vi_slam{
             }
 
             if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET) {
-                std::cerr << "Intit Failed" << std::endl;
+                // std::cerr << "Intit Failed" << std::endl;
                 mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
             }
             else {
@@ -251,7 +251,7 @@ namespace vi_slam{
         void Tracking::Track()
         {
 
-            std::cout << "LOL: " << mCurrentFrame.rgb_img_.size() << std::endl;
+            // std::cout << "LOL: " << mCurrentFrame.rgb_img_.size() << std::endl;
 
             if(mState==NO_IMAGES_YET)
             {
