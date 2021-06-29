@@ -8,7 +8,7 @@
 #ifndef VI_SLAM_CAMERA_H
 #define VI_SLAM_CAMERA_H
 
-#include "../common_include.h"
+#include "vi_slam/common_include.h"
 
 namespace vi_slam{
     namespace geometry{

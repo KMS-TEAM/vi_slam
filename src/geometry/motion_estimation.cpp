@@ -4,12 +4,116 @@
 
 #include "vi_slam/geometry/motion_estimation.h"
 
+#include "DBoW3/DUtils/Random.h"
+
+#include <thread>
+#include <stdio.h>
+
 #define DEBUG_PRINT_RESULT  false
 
 namespace vi_slam{
     namespace geometry{
 
-        int helperEstimatePossibleRelativePosesByEpipolarGeometry(
+        MotionEstimator::MotionEstimator(cv::Mat &K, float sigma, int iterations)
+        {
+            mK = K.clone();
+
+            mSigma = sigma;
+            mSigma2 = sigma*sigma;
+            mMaxIterations = iterations;
+        }
+
+        bool MotionEstimator::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const vector<int> &vMatches12,
+                                                cv::Mat &R21, cv::Mat &t21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated)
+        {
+            mvKeys1.clear();
+            mvKeys2.clear();
+
+            mvKeys1 = vKeys1;
+            mvKeys2 = vKeys2;
+
+            // Fill structures with current keypoints and matches with reference frame
+            // Reference Frame: 1, Current Frame: 2
+            mvMatches12.clear();
+            mvMatches12.reserve(mvKeys2.size());
+            mvbMatched1.resize(mvKeys1.size());
+            for(size_t i=0, iend=vMatches12.size();i<iend; i++)
+            {
+                if(vMatches12[i]>=0)
+                {
+                    mvMatches12.push_back(make_pair(i,vMatches12[i]));
+                    mvbMatched1[i]=true;
+                }
+                else
+                    mvbMatched1[i]=false;
+            }
+
+            const int N = mvMatches12.size();
+
+            // Indices for minimum set selection
+            vector<size_t> vAllIndices;
+            vAllIndices.reserve(N);
+            vector<size_t> vAvailableIndices;
+
+            for(int i=0; i<N; i++)
+            {
+                vAllIndices.push_back(i);
+            }
+
+            // Generate sets of 8 points for each RANSAC iteration
+            mvSets = vector< vector<size_t> >(mMaxIterations,vector<size_t>(8,0));
+
+            DUtils::Random::SeedRandOnce(0);
+
+            for(int it=0; it<mMaxIterations; it++)
+            {
+                vAvailableIndices = vAllIndices;
+
+                // Select a minimum set
+                for(size_t j=0; j<8; j++)
+                {
+                    int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
+                    int idx = vAvailableIndices[randi];
+
+                    mvSets[it][j] = idx;
+
+                    vAvailableIndices[randi] = vAvailableIndices.back();
+                    vAvailableIndices.pop_back();
+                }
+            }
+
+            // Launch threads to compute in parallel a fundamental matrix and a homography
+            vector<bool> vbMatchesInliersH, vbMatchesInliersF;
+            float SH, SF;
+            cv::Mat H, F;
+
+            thread threadH(&MotionEstimator::FindHomography,this,ref(vbMatchesInliersH), ref(SH), ref(H));
+            thread threadF(&MotionEstimator::FindFundamental,this,ref(vbMatchesInliersF), ref(SF), ref(F));
+
+            // Wait until both threads have finished
+            threadH.join();
+            threadF.join();
+
+            // Compute ratio of scores
+            if(SH+SF == 0.f) return false;
+            float RH = SH/(SH+SF);
+
+            float minParallax = 1.0;
+
+            // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
+            if(RH>0.50) // if(RH>0.40)
+            {
+                //cout << "Initialization from Homography" << endl;
+                return ReconstructH(vbMatchesInliersH,H, mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
+            }
+            else //if(pF_HF>0.6)
+            {
+                //cout << "Initialization from Fundamental" << endl;
+                return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,minParallax,50);
+            }
+        }
+
+        int MotionEstimator::helperEstimatePossibleRelativePosesByEpipolarGeometry(
                 const vector<cv::KeyPoint> &keypoints_1,
                 const vector<cv::KeyPoint> &keypoints_2,
                 const vector<cv::DMatch> &matches,
@@ -157,7 +261,7 @@ namespace vi_slam{
             return best_sol;
         }
 
-        void helperEstiMotionByEssential(
+        void MotionEstimator::helperEstiMotionByEssential(
                 const vector<cv::KeyPoint> &keypoints_1,
                 const vector<cv::KeyPoint> &keypoints_2,
                 const vector<cv::DMatch> &matches,
@@ -180,7 +284,7 @@ namespace vi_slam{
             }
         }
 
-        vector<cv::DMatch> helperFindInlierMatchesByEpipolarCons(
+        vector<cv::DMatch> MotionEstimator::helperFindInlierMatchesByEpipolarCons(
                 const vector<cv::KeyPoint> &keypoints_1,
                 const vector<cv::KeyPoint> &keypoints_2,
                 const vector<cv::DMatch> &matches,
@@ -191,7 +295,7 @@ namespace vi_slam{
 
             // Estimate Essential to get inlier matches
             cv::Mat dummy_R, dummy_t;
-            helperEstiMotionByEssential(
+            MotionEstimator::helperEstiMotionByEssential(
                     keypoints_1, keypoints_2,
                     matches, K,
                     dummy_R, dummy_t, inlier_matches);
@@ -199,7 +303,7 @@ namespace vi_slam{
         }
 
         // Triangulate points
-        vector<cv::Point3f> helperTriangulatePoints(
+        vector<cv::Point3f> MotionEstimator::helperTriangulatePoints(
                 const vector<cv::KeyPoint> &prev_kpts, const vector<cv::KeyPoint> &curr_kpts,
                 const vector<cv::DMatch> &curr_inlier_matches,
                 const cv::Mat &T_curr_to_prev,
@@ -207,11 +311,11 @@ namespace vi_slam{
         {
             cv::Mat R_curr_to_prev, t_curr_to_prev;
             basics::getRtFromT(T_curr_to_prev, R_curr_to_prev, t_curr_to_prev);
-            return helperTriangulatePoints(prev_kpts, curr_kpts, curr_inlier_matches,
+            return MotionEstimator::helperTriangulatePoints(prev_kpts, curr_kpts, curr_inlier_matches,
                                            R_curr_to_prev, t_curr_to_prev, K);
         }
 
-        vector<cv::Point3f> helperTriangulatePoints(
+        vector<cv::Point3f> MotionEstimator::helperTriangulatePoints(
                 const vector<cv::KeyPoint> &prev_kpts, const vector<cv::KeyPoint> &curr_kpts,
                 const vector<cv::DMatch> &curr_inlier_matches,
                 const cv::Mat &R_curr_to_prev, const cv::Mat &t_curr_to_prev,
@@ -246,7 +350,7 @@ namespace vi_slam{
             return pts_3d_in_curr;
         }
 
-        double computeScoreForEH(double d2, double TM)
+        double MotionEstimator::computeScoreForEH(double d2, double TM)
         {
             double TAO = 5.99; // Same as TH
             if (d2 < TM)
@@ -256,7 +360,7 @@ namespace vi_slam{
         }
 
         // (Deprecated) Choose EH by triangulation error. This helps nothing.
-        void helperEvalEppiAndTriangErrors(
+        void MotionEstimator::helperEvalEppiAndTriangErrors(
                 const vector<cv::KeyPoint> &keypoints_1,
                 const vector<cv::KeyPoint> &keypoints_2,
                 const vector<vector<cv::DMatch>> &list_matches,
@@ -332,7 +436,7 @@ namespace vi_slam{
             }
         }
 
-        double checkEssentialScore(const cv::Mat &E21, const cv::Mat &K, const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
+        double MotionEstimator::checkEssentialScore(const cv::Mat &E21, const cv::Mat &K, const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
                                    vector<int> &inliers_index, double sigma)
         {
             vector<int> inliers_index_new;
@@ -416,7 +520,7 @@ namespace vi_slam{
             return score;
         }
 
-        double checkHomographyScore(const cv::Mat &H21, const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
+        double MotionEstimator::checkHomographyScore(const cv::Mat &H21, const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
                                     vector<int> &inliers_index, double sigma)
         {
             double score;                  // output
@@ -497,10 +601,10 @@ namespace vi_slam{
             return score;
         }
 
-        void FindHomography(vector<cv::KeyPoint> &mvKeys1,
+        void MotionEstimator::FindHomography(vector<cv::KeyPoint> &mvKeys1,
                             vector<cv::KeyPoint> &mvKeys2,
                             vector<bool> &vbMatchesInliers,
-                            vector<Match> &mvMatches12,
+                            vector<MotionEstimator::Match> &mvMatches12,
                             float &score, cv::Mat &H21,
                             int mMaxIterations, float mSigma,
                             vector<vector<size_t> > mvSets)
@@ -554,10 +658,10 @@ namespace vi_slam{
         }
 
 
-        void FindFundamental(vector<cv::KeyPoint> &mvKeys1,
+        void MotionEstimator::FindFundamental(vector<cv::KeyPoint> &mvKeys1,
                              vector<cv::KeyPoint> &mvKeys2,
                              vector<bool> &vbMatchesInliers,
-                             vector<Match> &mvMatches12,
+                             vector<MotionEstimator::Match> &mvMatches12,
                              int mMaxIterations, float mSigma,
                              float &score, cv::Mat &F21,
                              vector<vector<size_t> > mvSets)
@@ -611,7 +715,7 @@ namespace vi_slam{
         }
 
 
-        cv::Mat ComputeH21(const vector<cv::Point2f> &vP1, const vector<cv::Point2f> &vP2)
+        cv::Mat MotionEstimator::ComputeH21(const vector<cv::Point2f> &vP1, const vector<cv::Point2f> &vP2)
         {
             const int N = vP1.size();
 
@@ -653,7 +757,7 @@ namespace vi_slam{
             return vt.row(8).reshape(0, 3);
         }
 
-        cv::Mat ComputeF21(const vector<cv::Point2f> &vP1,const vector<cv::Point2f> &vP2)
+        cv::Mat MotionEstimator::ComputeF21(const vector<cv::Point2f> &vP1,const vector<cv::Point2f> &vP2)
         {
             const int N = vP1.size();
 
@@ -690,11 +794,11 @@ namespace vi_slam{
             return  u*cv::Mat::diag(w)*vt;
         }
 
-        float CheckHomography(const cv::Mat &H21, const cv::Mat &H12,
+        float MotionEstimator::CheckHomography(const cv::Mat &H21, const cv::Mat &H12,
                               vector<bool> &vbMatchesInliers,
                               vector<cv::KeyPoint> &mvKeys1,
                               vector<cv::KeyPoint> &mvKeys2,
-                              vector<Match> &mvMatches12,
+                              vector<MotionEstimator::Match> &mvMatches12,
                               float sigma)
         {
             const int N = mvMatches12.size();
@@ -780,9 +884,9 @@ namespace vi_slam{
             return score;
         }
 
-        float CheckFundamental(const cv::Mat &F21,
+        float MotionEstimator::CheckFundamental(const cv::Mat &F21,
                                vector<bool> &vbMatchesInliers,
-                               vector<Match> &mvMatches12,
+                               vector<MotionEstimator::Match> &mvMatches12,
                                vector<cv::KeyPoint> &mvKeys1,
                                vector<cv::KeyPoint> &mvKeys2,
                                float sigma)
@@ -865,8 +969,8 @@ namespace vi_slam{
             return score;
         }
 
-        bool ReconstructF(vector<bool> &vbMatchesInliers,
-                          vector<Match> &mvMatches12,
+        bool MotionEstimator::ReconstructF(vector<bool> &vbMatchesInliers,
+                          vector<MotionEstimator::Match> &mvMatches12,
                           vector<cv::KeyPoint> &mvKeys1,
                           vector<cv::KeyPoint> &mvKeys2,
                           cv::Mat &F21, cv::Mat &K,
@@ -887,7 +991,7 @@ namespace vi_slam{
             cv::Mat R1, R2, t;
 
             // Recover the 4 motion hypotheses
-            DecomposeE(E21,R1,R2,t);
+            MotionEstimator::DecomposeE(E21,R1,R2,t);
 
             cv::Mat t1=t;
             cv::Mat t2=-t;
@@ -977,8 +1081,8 @@ namespace vi_slam{
             return false;
         }
 
-        bool ReconstructH(vector<bool> &vbMatchesInliers,
-                          vector<Match> &mvMatches12,
+        bool MotionEstimator::ReconstructH(vector<bool> &vbMatchesInliers,
+                          vector<MotionEstimator::Match> &mvMatches12,
                           vector<cv::KeyPoint> &mvKeys1,
                           vector<cv::KeyPoint> &mvKeys2,
                           cv::Mat &H21, cv::Mat &K,
@@ -1148,7 +1252,7 @@ namespace vi_slam{
             return false;
         }
 
-        void Triangulate(const cv::KeyPoint &kp1,
+        void MotionEstimator::Triangulate(const cv::KeyPoint &kp1,
                          const cv::KeyPoint &kp2,
                          const cv::Mat &P1,
                          const cv::Mat &P2,
@@ -1167,7 +1271,7 @@ namespace vi_slam{
             x3D = x3D.rowRange(0,3)/x3D.at<float>(3);
         }
 
-        void Normalize(const vector<cv::KeyPoint> &vKeys,
+        void MotionEstimator::Normalize(const vector<cv::KeyPoint> &vKeys,
                        vector<cv::Point2f> &vNormalizedPoints,
                        cv::Mat &T)
         {
@@ -1218,11 +1322,11 @@ namespace vi_slam{
         }
 
 
-        int CheckRT(const cv::Mat &R,
+        int MotionEstimator::CheckRT(const cv::Mat &R,
                     const cv::Mat &t,
                     const vector<cv::KeyPoint> &vKeys1,
                     const vector<cv::KeyPoint> &vKeys2,
-                    const vector<Match> &vMatches12,
+                    const vector<MotionEstimator::Match> &vMatches12,
                     vector<bool> &vbMatchesInliers,
                     const cv::Mat &K,
                     vector<cv::Point3f> &vP3D,
@@ -1337,7 +1441,7 @@ namespace vi_slam{
             return nGood;
         }
 
-        void DecomposeE(const cv::Mat &E, cv::Mat &R1, cv::Mat &R2, cv::Mat &t)
+        void MotionEstimator::DecomposeE(const cv::Mat &E, cv::Mat &R1, cv::Mat &R2, cv::Mat &t)
         {
             cv::Mat u,w,vt;
             cv::SVD::compute(E,w,u,vt);
@@ -1365,7 +1469,7 @@ namespace vi_slam{
         // ------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------
 
-        void printResult_estiMotionByEssential(
+        void MotionEstimator::printResult_estiMotionByEssential(
                 const cv::Mat &essential_matrix,
                 const vector<int> &inliers_index,
                 const cv::Mat &R,
@@ -1381,7 +1485,7 @@ namespace vi_slam{
             cout << endl;
         }
 
-        void printResult_estiMotionByHomography(
+        void MotionEstimator::printResult_estiMotionByHomography(
                 const cv::Mat &homography_matrix,
                 const vector<int> &inliers_index,
                 const vector<cv::Mat> &Rs, const vector<cv::Mat> &ts,
@@ -1407,7 +1511,7 @@ namespace vi_slam{
         }
 
         // Check [Epipoloar error] and [Triangulation result] for each common inlier in both E and H
-        void print_EpipolarError_and_TriangulationResult_By_Common_Inlier(
+        void MotionEstimator::print_EpipolarError_and_TriangulationResult_By_Common_Inlier(
                 const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
                 const vector<cv::Point2f> &pts_on_np1, const vector<cv::Point2f> &pts_on_np2,
                 const vector<vector<cv::Point3f>> &sols_pts3d_in_cam1,
@@ -1476,7 +1580,7 @@ namespace vi_slam{
         }
 
         // Print each solution's result in order
-        void print_EpipolarError_and_TriangulationResult_By_Solution(
+        void MotionEstimator::print_EpipolarError_and_TriangulationResult_By_Solution(
                 const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
                 const vector<cv::Point2f> &pts_on_np1, const vector<cv::Point2f> &pts_on_np2,
                 const vector<vector<cv::Point3f>> &sols_pts3d_in_cam1,

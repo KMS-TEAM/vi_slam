@@ -3,7 +3,7 @@ file(GLOB_RECURSE SOURCES
         datastructures/*.cpp
         display/*.cpp
 
-        geometry/camera.cpp
+        geometry/cameramodels/camera.cpp
         geometry/epipolar_geometry.cpp
         geometry/fast_cuda.cpp
         geometry/fextractor.cpp

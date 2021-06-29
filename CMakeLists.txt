@@ -75,6 +75,8 @@ find_package(vilib REQUIRED)
 find_package(CUDA REQUIRED)
 #message(STATUS "Found CUDA ${CUDA_VERSION_STRING} at ${CUDA_TOOLKIT_ROOT_DIR}")
 
+find_package(Boost REQUIRED COMPONENTS system serialization graph)
+
 set(THIRD_PARTY_LIBS
         ${OpenCV_LIBS}
         Eigen3::Eigen
@@ -103,6 +105,7 @@ set(THIRD_PARTY_LIBS
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_sim3.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam3d.so
         ${PROJECT_SOURCE_DIR}/thirdparty/g2o_lib/lib/libg2o_types_slam2d.so
+        -lboost_system
         )
 
 ############### source and test ######################
