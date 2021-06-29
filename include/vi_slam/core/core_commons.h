@@ -2,8 +2,8 @@
 // Created by lacie on 25/05/2021.
 //
 
-#ifndef VI_SLAM_VO_COMMONS_H
-#define VI_SLAM_VO_COMMONS_H
+#ifndef VI_SLAM_CORE_COMMONS_H
+#define VI_SLAM_CORE_COMMONS_H
 
 #include "../common_include.h"
 #include "vi_slam/datastructures/frame.h"
