@@ -173,7 +173,7 @@ namespace vi_slam{
 
             N = keypoints_.size();
 
-            std::cerr << "Check keypoint: " << N << std::endl;
+            // std::cerr << "Check keypoint: " << N << std::endl;
 
             if(keypoints_.empty())
                 return;
