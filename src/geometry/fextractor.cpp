@@ -1043,7 +1043,7 @@ namespace vi_slam{
             // Pre-compute the scale pyramid
             ComputePyramid(image_);
 
-           //  std::cerr << "Check features number config: " << nfeatures << std::endl;
+            // std::cerr << "Check features number config: " << nfeatures << std::endl;
 
             vector < vector<KeyPoint> > allKeypoints;
             ComputeKeyPointsOctTree(allKeypoints);
@@ -1098,7 +1098,7 @@ namespace vi_slam{
                 // And add the keypoints to the output
                 keypointsoutput.insert(keypointsoutput.end(), keypoints.begin(), keypoints.end());
             }
-            std::cerr << "Check keypoint ORB: " << keypointsoutput.size() << std::endl;
+            // std::cerr << "Check keypoint ORB: " << keypointsoutput.size() << std::endl;
         }
 
         void FExtractor::ComputePyramid(cv::Mat image)
