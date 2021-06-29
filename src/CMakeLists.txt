@@ -4,6 +4,8 @@ file(GLOB_RECURSE SOURCES
         display/*.cpp
 
         geometry/cameramodels/camera.cpp
+        geometry/cameramodels/pinhole.cpp
+        geometry/cameramodels/kannalabrandt8.cpp
         geometry/epipolar_geometry.cpp
         geometry/fast_cuda.cpp
         geometry/fextractor.cpp
