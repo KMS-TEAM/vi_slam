@@ -2,7 +2,7 @@
 // Created by lacie on 25/05/2021.
 //
 
-#include "vi_slam/geometry/camera.h"
+#include "vi_slam/geometry/cameramodels/camera.h"
 
 namespace vi_slam{
     namespace geometry{
@@ -30,5 +30,7 @@ namespace vi_slam{
             cv::Mat pp = p0 / p0.at<double>(2, 0); // normalize
             return cv::Point2f(pp.at<double>(0, 0), pp.at<double>(1, 0));
         }
+
+
     }
 }
