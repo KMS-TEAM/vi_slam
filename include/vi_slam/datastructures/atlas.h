@@ -29,7 +29,8 @@ namespace vi_slam{
         class Frame;
     }
 
-    class geometry{
+    namespace geometry{
+        class Camera;
         class KannalaBrandt8;
         class Pinhole;
     };
@@ -54,7 +55,7 @@ namespace vi_slam{
             void AddKeyFrame(vi_slam::datastructures::KeyFrame* pKF);
             void AddMapPoint(vi_slam::datastructures::MapPoint* pMP);
 
-            void AddCamera(GeometricCamera* pCam);
+            void AddCamera(geometry::Camera* pCam);
 
             /* All methods without Map pointer work on current map */
             void SetReferenceMapPoints(const std::vector<vi_slam::datastructures::MapPoint*> &vpMPs);

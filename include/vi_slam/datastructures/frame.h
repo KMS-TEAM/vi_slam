@@ -5,7 +5,7 @@
 #ifndef VI_SLAM_FRAME_H
 #define VI_SLAM_FRAME_H
 
-#include "../common_include.h"
+#include "vi_slam//common_include.h"
 #include "vi_slam/basics/opencv_funcs.h"
 #include "vi_slam/geometry/cameramodels/camera.h"
 #include "vi_slam/geometry/fmatcher.h"
@@ -18,12 +18,27 @@
 
 #include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/datastructures/keyframe.h"
+#include "vi_slam/datastructures/imu.h"
+
 
 namespace vi_slam{
+
+    namespace geometry{
+        class Camera;
+        class FExtractor;
+    }
+
+    namespace optimization{
+        class ConstraintPoseImu;
+    }
+
     namespace datastructures{
 
-#define FRAME_GRID_ROWS 48
-#define FRAME_GRID_COLS 64
+    #define FRAME_GRID_ROWS 48
+    #define FRAME_GRID_COLS 64
+
+        class MapPoint;
+        class KeyFrame;
 
         typedef struct PtConn_
         {
@@ -189,6 +204,9 @@ namespace vi_slam{
 
             // Set the camera pose.
             void SetPose(cv::Mat Tcw);
+
+            // Set IMU velocity
+            void SetVelocity(const cv::Mat &Vwb);
 
             // Computes rotation, translation and camera center matrices from the camera pose.
             void UpdatePoseMatrices();
