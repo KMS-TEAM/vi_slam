@@ -9,7 +9,7 @@
 
 #include "../common_include.h"
 #include "vi_slam/basics/opencv_funcs.h"
-#include "camera.h"
+#include "vi_slam/geometry/cameramodels/camera.h"
 
 using namespace std;
 

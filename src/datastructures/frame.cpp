@@ -210,7 +210,7 @@ namespace vi_slam{
             AssignFeaturesToGrid();
         }
 
-        Frame::Ptr Frame::createFrame(cv::Mat rgb_img, geometry::Camera::Ptr camera, double time_stamp)
+        Frame::Ptr Frame::createFrame(cv::Mat rgb_img, geometry::Camera* camera, double time_stamp)
         {
             Frame::Ptr frame(new Frame());
             frame->rgb_img_ = rgb_img;

@@ -7,7 +7,7 @@
 
 #include "../common_include.h"
 #include "vi_slam/basics/opencv_funcs.h"
-#include "vi_slam/geometry/camera.h"
+#include "vi_slam/geometry/cameramodels/camera.h"
 #include "vi_slam/geometry/fmatcher.h"
 #include "vi_slam/basics/converter.h"
 #include "vi_slam/geometry/fextractor.h"
@@ -103,7 +103,7 @@ namespace vi_slam{
             vector<cv::DMatch> matches_with_map_; // inliers matches index with respect to all the points
 
             // -- Camera
-            geometry::Camera::Ptr camera_;
+            geometry::Camera* camera_;
 
             // Calibration matrix and OpenCV distortion parameters.
             cv::Mat mK;
@@ -139,7 +139,7 @@ namespace vi_slam{
         public:
             Frame() {}
             ~Frame() {}
-            static Frame::Ptr createFrame(cv::Mat rgb_img, geometry::Camera::Ptr camera, double time_stamp = -1);
+            static Frame::Ptr createFrame(cv::Mat rgb_img, geometry::Camera* camera, double time_stamp = -1);
 
             // Copy constructor.
             Frame(const Frame &frame);

@@ -41,6 +41,18 @@ namespace vi_slam{
             Camera(const std::vector<float> &_vParameters) : mvParameters(_vParameters) {}
             ~Camera() {}
 
+            Camera(double fx, double fy, double cx, double cy) : fx_(fx), fy_(fy), cx_(cx), cy_(cy){
+                K_ = (cv::Mat_<double>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
+            }
+
+            Camera(cv::Mat K){
+                fx_ = K.at<double>(0, 0);
+                fy_ = K.at<double>(1, 1);
+                cx_ = K.at<double>(0, 2);
+                cy_ = K.at<double>(1, 2);
+                K_ = K;
+            }
+
             virtual cv::Point2f project(const cv::Point3f &p3D) = 0;
             virtual cv::Point2f project(const cv::Matx31f &m3D) = 0;
             virtual cv::Point2f project(const cv::Mat& m3D) = 0;
@@ -85,6 +97,10 @@ namespace vi_slam{
             const unsigned int CAM_FISHEYE = 1;
 
             static long unsigned int nNextId;
+
+        public:
+            double fx_, fy_, cx_, cy_;
+            cv::Mat K_;
 
         protected:
             std::vector<float> mvParameters;

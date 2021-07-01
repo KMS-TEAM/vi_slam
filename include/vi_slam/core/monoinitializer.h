@@ -6,6 +6,7 @@
 #define VI_SLAM_MONOINITIALER_H
 
 #include "vi_slam/datastructures/frame.h"
+#include "vi_slam/geometry/motion_estimation.h"
 #include <opencv2/opencv.hpp>
 
 using namespace std;
@@ -14,6 +15,9 @@ using namespace std;
 namespace vi_slam{
     namespace datastructures{
         class Frame;
+    }
+    namespace geometry{
+        class MotionEstimator;
     }
     namespace core{
         class MonoInitializer {

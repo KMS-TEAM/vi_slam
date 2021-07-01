@@ -86,13 +86,13 @@ namespace vi_slam{
             float SH, SF;
             cv::Mat H, F;
 
-            std::thread threadH(&geometry::FindHomography, ref(mvKeys1), ref(mvKeys2),
+            std::thread threadH(&vi_slam::geometry::MotionEstimator::FindHomography, ref(mvKeys1), ref(mvKeys2),
                                                            ref(vbMatchesInliersH),
                                                            ref(mvMatches12),
                                                            ref(SH), ref(H),
                                                            ref(mMaxIterations), ref(mSigma), ref(mvSets));
 
-            std::thread threadF(&geometry::FindFundamental, ref(mvKeys1), ref(mvKeys2),
+            std::thread threadF(&vi_slam::geometry::MotionEstimator::FindFundamental, ref(mvKeys1), ref(mvKeys2),
                                                             ref(vbMatchesInliersF),
                                                             ref(mvMatches12),
                                                             ref(mMaxIterations), ref(mSigma),
@@ -107,9 +107,9 @@ namespace vi_slam{
 
             // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
             if(RH>0.40)
-                return geometry::ReconstructH(vbMatchesInliersH,mvMatches12, mvKeys1, mvKeys2, H,mK,R21,t21,vP3D,vbTriangulated,1.0, mSigma,50);
+                return geometry::MotionEstimator::ReconstructH(vbMatchesInliersH,mvMatches12, mvKeys1, mvKeys2, H,mK,R21,t21,vP3D,vbTriangulated,1.0, mSigma,50);
             else //if(pF_HF>0.6)
-                return geometry::ReconstructF(vbMatchesInliersF,mvMatches12, mvKeys1, mvKeys2, F,mK,R21,t21,vP3D,vbTriangulated,1.0, mSigma, 50);
+                return geometry::MotionEstimator::ReconstructF(vbMatchesInliersF,mvMatches12, mvKeys1, mvKeys2, F,mK,R21,t21,vP3D,vbTriangulated,1.0, mSigma, 50);
 
             return false;
         }

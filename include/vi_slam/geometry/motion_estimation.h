@@ -30,7 +30,7 @@ namespace vi_slam{
 
             ~MotionEstimator();
 
-        private:
+        public:
             typedef pair<int,int> Match;
 
             /** @brief This is a giant function, which:
@@ -122,6 +122,15 @@ namespace vi_slam{
                                        const vector<cv::Point2f> &pts_img1, const vector<cv::Point2f> &pts_img2,
                                        vector<int> &inliers_index, double sigma = 1.0);
 
+
+            void FindHomography_(std::vector<bool> &vbMatchesInliers, float &score, cv::Mat &H21);
+            void FindFundamental_(std::vector<bool> &vbInliers, float &score, cv::Mat &F21);
+
+            bool ReconstructF_(std::vector<bool> &vbMatchesInliers, cv::Mat &F21, cv::Mat &K,
+                              cv::Mat &R21, cv::Mat &t21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated, float minParallax, int minTriangulated);
+
+            bool ReconstructH_(std::vector<bool> &vbMatchesInliers, cv::Mat &H21, cv::Mat &K,
+                              cv::Mat &R21, cv::Mat &t21, std::vector<cv::Point3f> &vP3D,std:: vector<bool> &vbTriangulated, float minParallax, int minTriangulated);
             /**
              * @brief Compute the score of estiamted Homography matrix by the method in ORB-SLAM
              */
