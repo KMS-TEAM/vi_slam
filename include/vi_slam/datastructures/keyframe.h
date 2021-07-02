@@ -5,7 +5,6 @@
 #ifndef VI_SLAM_KEYFRAME_H
 #define VI_SLAM_KEYFRAME_H
 
-#include "vi_slam/datastructures/mappoint.h"
 #include "DBoW3/DBoW3/src/BowVector.h"
 #include "DBoW3/DBoW3/src/FeatureVector.h"
 #include "DBoW3/DBoW3/src/Vocabulary.h"
@@ -14,12 +13,24 @@
 #include "vi_slam/datastructures/keyframedatabase.h"
 #include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/datastructures/map.h"
+#include "vi_slam/datastructures/imu.h"
 
-#include "../common_include.h"
+#include "vi_slam/geometry/cameramodels/camera.h"
+#include "vi_slam/geometry/fextractor.h"
+
+#include "vi_slam/common_include.h"
 
 #include <mutex>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
 
 namespace vi_slam{
+
+    namespace geometry{
+        class Camera;
+    }
+
     namespace datastructures{
 
         class KeyFrameDatabase;
@@ -29,10 +40,13 @@ namespace vi_slam{
         class KeyFrame {
 
         public:
+            KeyFrame();
             KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
 
             // Pose functions
             void SetPose(const cv::Mat &Tcw);
+            void SetVelocity(const cv::Mat &Vw_);
+
             cv::Mat GetPose();
             cv::Mat GetPoseInverse();
             cv::Mat GetCameraCenter();
@@ -40,13 +54,27 @@ namespace vi_slam{
             cv::Mat GetRotation();
             cv::Mat GetTranslation();
 
+            cv::Mat GetImuPosition();
+            cv::Mat GetImuRotation();
+            cv::Mat GetImuPose();
+            cv::Mat GetVelocity();
+
+            cv::Matx33f GetRotation_();
+            cv::Matx31f GetTranslation_();
+            cv::Matx31f GetCameraCenter_();
+            cv::Matx33f GetRightRotation_();
+            cv::Matx31f GetRightTranslation_();
+            cv::Matx44f GetRightPose_();
+            cv::Matx31f GetRightCameraCenter_();
+            cv::Matx44f GetPose_();
+
             // Bag of Words Representation
             void ComputeBoW();
 
             // Covisibility graph functions
             void AddConnection(KeyFrame* pKF, const int &weight);
             void EraseConnection(KeyFrame* pKF);
-            void UpdateConnections();
+            void UpdateConnections(bool upParent = true);
             void UpdateBestCovisibles();
             std::set<KeyFrame *> GetConnectedKeyFrames();
             std::vector<KeyFrame* > GetVectorCovisibleKeyFrames();
@@ -61,12 +89,18 @@ namespace vi_slam{
             std::set<KeyFrame*> GetChilds();
             KeyFrame* GetParent();
             bool hasChild(KeyFrame* pKF);
+            void SetFirstConnection(bool bFirst);
 
             // Loop Edges
             void AddLoopEdge(KeyFrame* pKF);
             std::set<KeyFrame*> GetLoopEdges();
 
+            // Merge Edges
+            void AddMergeEdge(KeyFrame* pKF);
+            set<KeyFrame*> GetMergeEdges();
+
             // MapPoint observation functions
+            int GetNumberMPs();
             void AddMapPoint(MapPoint* pMP, const size_t &idx);
             void EraseMapPointMatch(const size_t &idx);
             void EraseMapPointMatch(MapPoint* pMP);
@@ -77,8 +111,9 @@ namespace vi_slam{
             MapPoint* GetMapPoint(const size_t &idx);
 
             // KeyPoint functions
-            std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r) const;
+            std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const bool bRight = false) const;
             cv::Mat UnprojectStereo(int i);
+            cv::Matx31f UnprojectStereo_(int i);
 
             // Image
             bool IsInImage(const float &x, const float &y) const;
@@ -101,6 +136,22 @@ namespace vi_slam{
             static bool lId(KeyFrame* pKF1, KeyFrame* pKF2){
                 return pKF1->mnId<pKF2->mnId;
             }
+
+            Map* GetMap();
+            void UpdateMap(Map* pMap);
+
+            void SetNewBias(const IMU::Bias &b);
+            cv::Mat GetGyroBias();
+            cv::Mat GetAccBias();
+            IMU::Bias GetImuBias();
+
+            bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
+            bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
+
+            void SetORBVocabulary(ORBVocabulary* pORBVoc);
+            void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
+
+            bool bImu;
 
             // The following variables are accesed from only 1 thread or never change (no mutex needed).
         public:
@@ -125,6 +176,9 @@ namespace vi_slam{
             long unsigned int mnBALocalForKF;
             long unsigned int mnBAFixedForKF;
 
+            //Number of optimizations by BA(amount of iterations in BA)
+            long unsigned int mnNumberOfOpt;
+
             // Variables used by the keyframe database
             long unsigned int mnLoopQuery;
             int mnLoopWords;
@@ -133,13 +187,40 @@ namespace vi_slam{
             int mnRelocWords;
             float mRelocScore;
 
+            long unsigned int mnMergeQuery;
+            int mnMergeWords;
+            float mMergeScore;
+            long unsigned int mnPlaceRecognitionQuery;
+            int mnPlaceRecognitionWords;
+            float mPlaceRecognitionScore;
+
+            bool mbCurrentPlaceRecognition;
+
             // Variables used by loop closing
             cv::Mat mTcwGBA;
             cv::Mat mTcwBefGBA;
+            cv::Mat mVwbGBA;
+            cv::Mat mVwbBefGBA;
+            IMU::Bias mBiasGBA;
             long unsigned int mnBAGlobalForKF;
+
+            // Variables used by merging
+            cv::Mat mTcwMerge;
+            cv::Mat mTcwBefMerge;
+            cv::Mat mTwcBefMerge;
+            cv::Mat mVwbMerge;
+            cv::Mat mVwbBefMerge;
+            IMU::Bias mBiasMerge;
+            long unsigned int mnMergeCorrectedForKF;
+            long unsigned int mnMergeForKF;
+            float mfScaleMerge;
+            long unsigned int mnBALocalForMerge;
+
+            float mfScale;
 
             // Calibration parameters
             const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth;
+            cv::Mat mDistCoef;
 
             // Number of KeyPoints
             const int N;
@@ -173,6 +254,26 @@ namespace vi_slam{
             const int mnMaxY;
             const cv::Mat mK;
 
+            // Preintegrated IMU measurements from previous keyframe
+            KeyFrame* mPrevKF;
+            KeyFrame* mNextKF;
+
+            IMU::Preintegrated* mpImuPreintegrated;
+            IMU::Calib mImuCalib;
+
+
+            unsigned int mnOriginMapId;
+
+            string mNameFile;
+
+            int mnDataset;
+
+            std::vector <KeyFrame*> mvpLoopCandKFs;
+            std::vector <KeyFrame*> mvpMergeCandKFs;
+
+            bool mbHasHessian;
+            cv::Mat mHessianPose;
+
             // The following variables need to be accessed trough a mutex to be thread safe.
         protected:
 
@@ -180,8 +281,19 @@ namespace vi_slam{
             cv::Mat Tcw;
             cv::Mat Twc;
             cv::Mat Ow;
-
             cv::Mat Cw; // Stereo middel point. Only for visualization
+
+            cv::Matx44f Tcw_, Twc_, Tlr_;
+            cv::Matx31f Ow_;
+
+            // IMU position
+            cv::Mat Owb;
+
+            // Velocity (Only used for inertial SLAM)
+            cv::Mat Vw;
+
+            // Imu bias
+            IMU::Bias mImuBias;
 
             // MapPoints associated to keypoints
             std::vector<MapPoint*> mvpMapPoints;
@@ -215,6 +327,45 @@ namespace vi_slam{
             std::mutex mMutexPose;
             std::mutex mMutexConnections;
             std::mutex mMutexFeatures;
+            std::mutex mMutexMap;
+
+        public:
+            geometry::Camera* mpCamera, *mpCamera2;
+
+            //Indexes of stereo observations correspondences
+            std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
+
+            //Transformation matrix between cameras in stereo fisheye
+            cv::Mat mTlr;
+            cv::Mat mTrl;
+
+            //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
+            const std::vector<cv::KeyPoint> mvKeysRight;
+
+            const int NLeft, NRight;
+
+            std::vector< std::vector <std::vector<size_t> > > mGridRight;
+
+            cv::Mat GetRightPose();
+            cv::Mat GetRightPoseInverse();
+            cv::Mat GetRightPoseInverseH();
+            cv::Mat GetRightCameraCenter();
+            cv::Mat GetRightRotation();
+            cv::Mat GetRightTranslation();
+
+            cv::Mat imgLeft, imgRight;
+
+            void PrintPointDistribution(){
+                int left = 0, right = 0;
+                int Nlim = (NLeft != -1) ? NLeft : N;
+                for(int i = 0; i < N; i++){
+                    if(mvpMapPoints[i]){
+                        if(i < Nlim) left++;
+                        else right++;
+                    }
+                }
+                cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
+            }
         };
     }
 }
