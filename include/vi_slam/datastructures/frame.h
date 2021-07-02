@@ -20,6 +20,7 @@
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/imu.h"
 
+#include <mutex>
 
 namespace vi_slam{
 
@@ -39,6 +40,7 @@ namespace vi_slam{
 
         class MapPoint;
         class KeyFrame;
+        class IMU;
 
         typedef struct PtConn_
         {
@@ -95,11 +97,13 @@ namespace vi_slam{
 
             // Flag to identify outlier associations.
             std::vector<bool> mvbOutlier;
+            int mnCloseMPs;
 
             // -- Matches with reference keyframe (for E/H or PnP)
             //  for (1) E/H at initialization stage and (2) triangulating 3d points at all stages.
             vector<cv::DMatch> matches_with_ref_;         // matches with reference frame
             vector<cv::DMatch> inliers_matches_with_ref_; // matches that satisify E or H's constraints, and
+
             // Reference Keyframe.
             KeyFrame* mpReferenceKF;
 
@@ -151,8 +155,41 @@ namespace vi_slam{
 
             static bool mbInitialComputations;
 
+            // IMU
+            // IMU linear velocity
+            cv::Mat mVw;
+
+            cv::Mat mPredRwb, mPredtwb, mPredVwb;
+            IMU::Bias mPredBias;
+
+            // IMU bias
+            IMU::Bias mImuBias;
+
+            // Imu calibration
+            IMU::Calib mImuCalib;
+
+            // Imu preintegration from last keyframe
+            IMU::Preintegrated* mpImuPreintegrated;
+            KeyFrame* mpLastKeyFrame;
+
+            // Pointer to previous frame
+            Frame* mpPrevFrame;
+            IMU::Preintegrated* mpImuPreintegratedFrame;
+
+            map<long unsigned int, cv::Point2f> mmProjectPoints;
+            map<long unsigned int, cv::Point2f> mmMatchedInImage;
+
+            string mNameFile;
+
+            int mnDataset;
+
+#ifdef REGISTER_TIMES
+            double mTimeORB_Ext;
+            double mTimeStereoMatch;
+#endif
+
         public:
-            Frame() {}
+            Frame();
             ~Frame() {}
             static Frame::Ptr createFrame(cv::Mat rgb_img, geometry::Camera* camera, double time_stamp = -1);
 
@@ -160,13 +197,13 @@ namespace vi_slam{
             Frame(const Frame &frame);
 
             // Constructor for stereo cameras.
-            Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, geometry::FExtractor* extractorLeft, geometry::FExtractor* extractorRight, DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+            Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, geometry::FExtractor* extractorLeft, geometry::FExtractor* extractorRight, DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Camera* pCamera,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
             // Constructor for RGB-D cameras.
-            Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+            Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Camera* pCamera,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
             // Constructor for Monocular cameras.
-            Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+            Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Camera* pCamera, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
         public: // Below are deprecated. These were used in the two-frame-matching vo.
 
@@ -197,16 +234,20 @@ namespace vi_slam{
             };
 
             // Extract ORB on the image. 0 for left image and 1 for right image.
-            void ExtractORB(int flag, const cv::Mat &im);
+            void ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1);
 
             // Compute Bag of Words representation.
             void ComputeBoW();
 
             // Set the camera pose.
             void SetPose(cv::Mat Tcw);
+            void GetPose(cv::Mat &Tcw);
 
             // Set IMU velocity
             void SetVelocity(const cv::Mat &Vwb);
+
+            // Set IMU pose and velocity (implicitly changes camera pose)
+            void SetImuPoseVelocity(const cv::Mat &Rwb, const cv::Mat &twb, const cv::Mat &Vwb);
 
             // Computes rotation, translation and camera center matrices from the camera pose.
             void UpdatePoseMatrices();
@@ -225,10 +266,20 @@ namespace vi_slam{
             // and fill variables of the MapPoint to be used by the tracking
             bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
 
+            cv::Mat GetImuPosition();
+            cv::Mat GetImuRotation();
+            cv::Mat GetImuPose();
+
+            void SetNewBias(const IMU::Bias &b);
+
+            bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
+
+            cv::Mat inRefCoordinates(cv::Mat pCw);
+
             // Compute the cell of a keypoint (return false if outside the grid)
             bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
-            vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
+            vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, , const bool bRight = false) const;
 
             // Search a match for each keypoint in the left image to a keypoint in the right image.
             // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
@@ -250,6 +301,11 @@ namespace vi_slam{
             }
             cv::Mat getCamCenter();
 
+            optimization::ConstraintPoseImu* mpcpi;
+
+            bool imuIsPreintegrated();
+            void setIntegrated();
+
         private:
 
             // Undistort keypoints given OpenCV distortion parameters.
@@ -268,6 +324,61 @@ namespace vi_slam{
             cv::Mat mtcw;
             cv::Mat mRwc;
             cv::Mat mOw; //==mtwc
+
+            cv::Matx31f mOwx;
+            cv::Matx33f mRcwx;
+            cv::Matx31f mtcwx;
+
+            bool mbImuPreintegrated;
+
+            std::mutex *mpMutexImu;
+
+        public:
+            geometry::Camera* mpCamera, *mpCamera2;
+
+            //Number of KeyPoints extracted in the left and right images
+            int Nleft, Nright;
+            //Number of Non Lapping Keypoints
+            int monoLeft, monoRight;
+
+            //For stereo matching
+            std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
+
+            //For stereo fisheye matching
+            static cv::BFMatcher BFmatcher;
+
+            //Triangulated stereo observations using as reference the left camera. These are
+            //computed during ComputeStereoFishEyeMatches
+            std::vector<cv::Mat> mvStereo3Dpoints;
+
+            //Grid for the right image
+            std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+
+            cv::Mat mTlr, mRlr, mtlr, mTrl;
+            cv::Matx34f mTrlx, mTlrx;
+
+            Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, cv::Mat& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+
+            //Stereo fisheye
+            void ComputeStereoFishEyeMatches();
+
+            bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
+
+            cv::Mat UnprojectStereoFishEye(const int &i);
+
+            cv::Mat imgLeft, imgRight;
+
+            void PrintPointDistribution(){
+                int left = 0, right = 0;
+                int Nlim = (Nleft != -1) ? Nleft : N;
+                for(int i = 0; i < N; i++){
+                    if(mvpMapPoints[i] && !mvbOutlier[i]){
+                        if(i < Nlim) left++;
+                        else right++;
+                    }
+                }
+                cout << "Point distribution in Frame: left-> " << left << " --- right-> " << right << endl;
+            }
         };
     }
 }
