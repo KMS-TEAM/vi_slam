@@ -16,6 +16,15 @@ namespace vi_slam{
         long unsigned int MapPoint::nNextId=0;
         std::mutex MapPoint::mGlobalMutex;
 
+        MapPoint::MapPoint():
+                mnFirstKFid(0), mnFirstFrame(0), nObs(0), mnTrackReferenceForFrame(0),
+                mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
+                mnCorrectedReference(0), mnBAGlobalForKF(0), mnVisible(1), mnFound(1), mbBad(false),
+                mpReplaced(static_cast<MapPoint*>(NULL))
+        {
+            mpReplaced = static_cast<MapPoint*>(NULL);
+        }
+
         MapPoint::MapPoint(
                 const cv::Point3f &pos, const cv::Mat &descriptor, const cv::Mat &norm,
                 unsigned char r, unsigned char g, unsigned char b) : pos_(pos), descriptor_(descriptor), norm_(norm), color_({r, g, b}),
@@ -25,23 +34,30 @@ namespace vi_slam{
             id_ = factory_id_++;
         }
 
-        void MapPoint::setPos(const cv::Mat &Pos){
+        void MapPoint::SetWorldPos(const cv::Mat &Pos){
             std::unique_lock<std::mutex> lock2(mGlobalMutex);
             std::unique_lock<std::mutex> lock(mMutexPos);
             pos_ = Pos.clone();
+            mWorldPosx = cv::Matx31f(Pos.at<float>(0), Pos.at<float>(1), Pos.at<float>(2));
         }
 
         MapPoint::MapPoint(const cv::Mat &Pos, KeyFrame *pRefKF, Map* pMap):
                 mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), nObs(0), mnTrackReferenceForFrame(0),
                 mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
                 mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
-                mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap)
+                mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
+                mnOriginMapId(pMap->GetId())
         {
-            pos_ = Pos.clone();
-            norm_ = cv::Mat::zeros(3,1,CV_32F);
+            Pos.copyTo(mWorldPos);
+            mWorldPosx = cv::Matx31f(Pos.at<float>(0), Pos.at<float>(1), Pos.at<float>(2));
+            mNormalVector = cv::Mat::zeros(3,1,CV_32F);
+            mNormalVectorx = cv::Matx31f::zeros();
+
+            mbTrackInViewR = false;
+            mbTrackInView = false;
 
             // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
-            std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
+            unique_lock<mutex> lock(mpMap->mMutexPointCreation);
             id_=nNextId++;
         }
 
@@ -49,16 +65,32 @@ namespace vi_slam{
                 mnFirstKFid(-1), mnFirstFrame(pFrame->id_), nObs(0), mnTrackReferenceForFrame(0), mnLastFrameSeen(0),
                 mnBALocalForKF(0), mnFuseCandidateForKF(0),mnLoopPointForKF(0), mnCorrectedByKF(0),
                 mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(static_cast<KeyFrame*>(NULL)), mnVisible(1),
-                mnFound(1), mbBad(false), mpReplaced(NULL), mpMap(pMap)
+                mnFound(1), mbBad(false), mpReplaced(NULL), mpMap(pMap), mnOriginMapId(pMap->GetId())
         {
-            pos_ = Pos.clone();
-            cv::Mat Ow = pFrame->GetCameraCenter();
-            norm_ = pos_ - Ow;
-            norm_ = norm_/cv::norm(norm_);
+            Pos.copyTo(mWorldPos);
+            mWorldPosx = cv::Matx31f(Pos.at<float>(0), Pos.at<float>(1), Pos.at<float>(2));
+
+            cv::Mat Ow;
+            if(pFrame -> Nleft == -1 || idxF < pFrame -> Nleft){
+                Ow = pFrame->GetCameraCenter();
+            }
+            else{
+                cv::Mat Rwl = pFrame -> mRwc;
+                cv::Mat tlr = pFrame -> mTlr.col(3);
+                cv::Mat twl = pFrame -> mOw;
+
+                Ow = Rwl * tlr + twl;
+            }
+            mNormalVector = mWorldPos - Ow;
+            mNormalVector = mNormalVector/cv::norm(mNormalVector);
+            mNormalVectorx = cv::Matx31f(mNormalVector.at<float>(0), mNormalVector.at<float>(1), mNormalVector.at<float>(2));
+
 
             cv::Mat PC = Pos - Ow;
             const float dist = cv::norm(PC);
-            const int level = pFrame->ukeypoints_[idxF].octave;
+            const int level = (pFrame -> Nleft == -1) ? pFrame->ukeypoints_[idxF].octave
+                                                      : (idxF < pFrame -> Nleft) ? pFrame->keypoints_[idxF].octave
+                                                                                 : pFrame -> keypointsRight_[idxF].octave;
             const float levelScaleFactor =  pFrame->mvScaleFactors[level];
             const int nLevels = pFrame->mnScaleLevels;
 
@@ -68,7 +100,7 @@ namespace vi_slam{
             pFrame->descriptors_.row(idxF).copyTo(descriptor_);
 
             // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
-            std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
+            unique_lock<mutex> lock(mpMap->mMutexPointCreation);
             id_=nNextId++;
         }
 
@@ -84,6 +116,18 @@ namespace vi_slam{
             return norm_.clone();
         }
 
+        cv::Matx31f MapPoint::GetWorldPos2()
+        {
+            unique_lock<mutex> lock(mMutexPos);
+            return mWorldPosx;
+        }
+
+        cv::Matx31f MapPoint::GetNormal2()
+        {
+            unique_lock<mutex> lock(mMutexPos);
+            return mNormalVectorx;
+        }
+
         KeyFrame* MapPoint::GetReferenceKeyFrame()
         {
             unique_lock<mutex> lock(mMutexFeatures);
@@ -93,11 +137,25 @@ namespace vi_slam{
         void MapPoint::AddObservation(KeyFrame* pKF, size_t idx)
         {
             unique_lock<mutex> lock(mMutexFeatures);
-            if(mObservations.count(pKF))
-                return;
-            mObservations[pKF]=idx;
+            tuple<int,int> indexes;
 
-            if(pKF->mvuRight[idx]>=0)
+            if(mObservations.count(pKF)){
+                indexes = mObservations[pKF];
+            }
+            else{
+                indexes = tuple<int,int>(-1,-1);
+            }
+
+            if(pKF -> NLeft != -1 && idx >= pKF -> NLeft){
+                get<1>(indexes) = idx;
+            }
+            else{
+                get<0>(indexes) = idx;
+            }
+
+            mObservations[pKF]=indexes;
+
+            if(!pKF->mpCamera2 && pKF->mvuRight[idx]>=0)
                 nObs+=2;
             else
                 nObs++;
@@ -110,11 +168,18 @@ namespace vi_slam{
                 unique_lock<mutex> lock(mMutexFeatures);
                 if(mObservations.count(pKF))
                 {
-                    int idx = mObservations[pKF];
-                    if(pKF->mvuRight[idx]>=0)
-                        nObs-=2;
-                    else
+                    tuple<int,int> indexes = mObservations[pKF];
+                    int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+                    if(leftIndex != -1){
+                        if(!pKF->mpCamera2 && pKF->mvuRight[leftIndex]>=0)
+                            nObs-=2;
+                        else
+                            nObs--;
+                    }
+                    if(rightIndex != -1){
                         nObs--;
+                    }
 
                     mObservations.erase(pKF);
 
@@ -131,7 +196,7 @@ namespace vi_slam{
                 SetBadFlag();
         }
 
-        map<KeyFrame*, size_t> MapPoint::GetObservations()
+        std::map<KeyFrame*, std::tuple<int,int>>  MapPoint::GetObservations()
         {
             unique_lock<mutex> lock(mMutexFeatures);
             return mObservations;
@@ -145,7 +210,7 @@ namespace vi_slam{
 
         void MapPoint::SetBadFlag()
         {
-            map<KeyFrame*,size_t> obs;
+            map<KeyFrame*, tuple<int,int>> obs;
             {
                 unique_lock<mutex> lock1(mMutexFeatures);
                 unique_lock<mutex> lock2(mMutexPos);
@@ -153,10 +218,16 @@ namespace vi_slam{
                 obs = mObservations;
                 mObservations.clear();
             }
-            for(map<KeyFrame*,size_t>::iterator mit=obs.begin(), mend=obs.end(); mit!=mend; mit++)
+            for(map<KeyFrame*, tuple<int,int>>::iterator mit=obs.begin(), mend=obs.end(); mit!=mend; mit++)
             {
                 KeyFrame* pKF = mit->first;
-                pKF->EraseMapPointMatch(mit->second);
+                int leftIndex = get<0>(mit -> second), rightIndex = get<1>(mit -> second);
+                if(leftIndex != -1){
+                    pKF->EraseMapPointMatch(leftIndex);
+                }
+                if(rightIndex != -1){
+                    pKF->EraseMapPointMatch(rightIndex);
+                }
             }
 
             mpMap->EraseMapPoint(this);
@@ -171,11 +242,11 @@ namespace vi_slam{
 
         void MapPoint::Replace(MapPoint* pMP)
         {
-            if(pMP->id_==this->id_)
+            if(pMP->mnId==this->mnId)
                 return;
 
             int nvisible, nfound;
-            map<KeyFrame*,size_t> obs;
+            map<KeyFrame*,tuple<int,int>> obs;
             {
                 unique_lock<mutex> lock1(mMutexFeatures);
                 unique_lock<mutex> lock2(mMutexPos);
@@ -187,19 +258,33 @@ namespace vi_slam{
                 mpReplaced = pMP;
             }
 
-            for(map<KeyFrame*,size_t>::iterator mit=obs.begin(), mend=obs.end(); mit!=mend; mit++)
+            for(map<KeyFrame*,tuple<int,int>>::iterator mit=obs.begin(), mend=obs.end(); mit!=mend; mit++)
             {
                 // Replace measurement in keyframe
                 KeyFrame* pKF = mit->first;
 
+                tuple<int,int> indexes = mit -> second;
+                int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
                 if(!pMP->IsInKeyFrame(pKF))
                 {
-                    pKF->ReplaceMapPointMatch(mit->second, pMP);
-                    pMP->AddObservation(pKF,mit->second);
+                    if(leftIndex != -1){
+                        pKF->ReplaceMapPointMatch(leftIndex, pMP);
+                        pMP->AddObservation(pKF,leftIndex);
+                    }
+                    if(rightIndex != -1){
+                        pKF->ReplaceMapPointMatch(rightIndex, pMP);
+                        pMP->AddObservation(pKF,rightIndex);
+                    }
                 }
                 else
                 {
-                    pKF->EraseMapPointMatch(mit->second);
+                    if(leftIndex != -1){
+                        pKF->EraseMapPointMatch(leftIndex);
+                    }
+                    if(rightIndex != -1){
+                        pKF->EraseMapPointMatch(rightIndex);
+                    }
                 }
             }
             pMP->IncreaseFound(nfound);
@@ -238,8 +323,7 @@ namespace vi_slam{
         {
             // Retrieve all observed descriptors
             vector<cv::Mat> vDescriptors;
-
-            map<KeyFrame*,size_t> observations;
+            map<KeyFrame*,tuple<int,int>> observations;
 
             {
                 unique_lock<mutex> lock1(mMutexFeatures);
@@ -253,12 +337,21 @@ namespace vi_slam{
 
             vDescriptors.reserve(observations.size());
 
-            for(map<KeyFrame*,size_t>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+            for(map<KeyFrame*,tuple<int,int>>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
             {
                 KeyFrame* pKF = mit->first;
 
-                if(!pKF->isBad())
-                    vDescriptors.push_back(pKF->mDescriptors.row(mit->second));
+                if(!pKF->isBad()){
+                    tuple<int,int> indexes = mit -> second;
+                    int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+                    if(leftIndex != -1){
+                        vDescriptors.push_back(pKF->mDescriptors.row(leftIndex));
+                    }
+                    if(rightIndex != -1){
+                        vDescriptors.push_back(pKF->mDescriptors.row(rightIndex));
+                    }
+                }
             }
 
             if(vDescriptors.empty())
@@ -307,13 +400,13 @@ namespace vi_slam{
             return descriptor_.clone();
         }
 
-        int MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
+        tuple<int,int> MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
         {
             unique_lock<mutex> lock(mMutexFeatures);
             if(mObservations.count(pKF))
                 return mObservations[pKF];
             else
-                return -1;
+                return tuple<int,int>(-1,-1);
         }
 
         bool MapPoint::IsInKeyFrame(KeyFrame *pKF)
@@ -324,7 +417,7 @@ namespace vi_slam{
 
         void MapPoint::UpdateNormalAndDepth()
         {
-            map<KeyFrame*,size_t> observations;
+            map<KeyFrame*,tuple<int,int>> observations;
             KeyFrame* pRefKF;
             cv::Mat Pos;
             {
@@ -334,7 +427,7 @@ namespace vi_slam{
                     return;
                 observations=mObservations;
                 pRefKF=mpRefKF;
-                Pos = pos_.clone();
+                Pos = mWorldPos.clone();
             }
 
             if(observations.empty())
@@ -342,18 +435,43 @@ namespace vi_slam{
 
             cv::Mat normal = cv::Mat::zeros(3,1,CV_32F);
             int n=0;
-            for(map<KeyFrame*,size_t>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+            for(map<KeyFrame*,tuple<int,int>>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
             {
                 KeyFrame* pKF = mit->first;
-                cv::Mat Owi = pKF->GetCameraCenter();
-                cv::Mat normali = pos_ - Owi;
-                normal = normal + normali/cv::norm(normali);
-                n++;
+
+                tuple<int,int> indexes = mit -> second;
+                int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+
+                if(leftIndex != -1){
+                    cv::Mat Owi = pKF->GetCameraCenter();
+                    cv::Mat normali = mWorldPos - Owi;
+                    normal = normal + normali/cv::norm(normali);
+                    n++;
+                }
+                if(rightIndex != -1){
+                    cv::Mat Owi = pKF->GetRightCameraCenter();
+                    cv::Mat normali = mWorldPos - Owi;
+                    normal = normal + normali/cv::norm(normali);
+                    n++;
+                }
             }
 
             cv::Mat PC = Pos - pRefKF->GetCameraCenter();
             const float dist = cv::norm(PC);
-            const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
+
+            tuple<int ,int> indexes = observations[pRefKF];
+            int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+            int level;
+            if(pRefKF -> NLeft == -1){
+                level = pRefKF->mvKeysUn[leftIndex].octave;
+            }
+            else if(leftIndex != -1){
+                level = pRefKF -> mvKeys[leftIndex].octave;
+            }
+            else{
+                level = pRefKF -> mvKeysRight[rightIndex - pRefKF -> NLeft].octave;
+            }
+
             const float levelScaleFactor =  pRefKF->mvScaleFactors[level];
             const int nLevels = pRefKF->mnScaleLevels;
 
@@ -361,8 +479,16 @@ namespace vi_slam{
                 unique_lock<mutex> lock3(mMutexPos);
                 mfMaxDistance = dist*levelScaleFactor;
                 mfMinDistance = mfMaxDistance/pRefKF->mvScaleFactors[nLevels-1];
-                norm_ = normal/n;
+                mNormalVector = normal/n;
+                mNormalVectorx = cv::Matx31f(mNormalVector.at<float>(0), mNormalVector.at<float>(1), mNormalVector.at<float>(2));
             }
+        }
+
+        void MapPoint::SetNormalVector(cv::Mat& normal)
+        {
+            unique_lock<mutex> lock3(mMutexPos);
+            mNormalVector = normal;
+            mNormalVectorx = cv::Matx31f(mNormalVector.at<float>(0), mNormalVector.at<float>(1), mNormalVector.at<float>(2));
         }
 
         float MapPoint::GetMinDistanceInvariance()
@@ -409,6 +535,18 @@ namespace vi_slam{
                 nScale = pF->mnScaleLevels-1;
 
             return nScale;
+        }
+
+        Map* MapPoint::GetMap()
+        {
+            unique_lock<mutex> lock(mMutexMap);
+            return mpMap;
+        }
+
+        void MapPoint::UpdateMap(Map* pMap)
+        {
+            unique_lock<mutex> lock(mMutexMap);
+            mpMap = pMap;
         }
     }
 }

@@ -306,7 +306,7 @@ namespace vi_slam{
             bool imuIsPreintegrated();
             void setIntegrated();
 
-        private:
+        public:
 
             // Undistort keypoints given OpenCV distortion parameters.
             // Only for the RGB-D case. Stereo must be already rectified!
