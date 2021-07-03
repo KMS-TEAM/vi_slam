@@ -33,6 +33,10 @@ namespace vi_slam{
     }
 
     namespace optimization{
+
+        using namespace datastructures;
+        using namespace geometry;
+
         typedef Eigen::Matrix<double, 6, 1> Vector6d;
         typedef Eigen::Matrix<double, 9, 1> Vector9d;
         typedef Eigen::Matrix<double, 12, 1> Vector12d;
@@ -85,7 +89,7 @@ namespace vi_slam{
             std::vector<Eigen::Matrix3d> Rcb, Rbc;
             std::vector<Eigen::Vector3d> tcb, tbc;
             double bf;
-            std::vector<GeometricCamera*> pCamera;
+            std::vector<Camera*> pCamera;
 
             // For posegraph 4DoF
             Eigen::Matrix3d Rwb0;
@@ -111,7 +115,7 @@ namespace vi_slam{
             int its;
         };
 
-// Optimizable parameters are IMU pose
+        // Optimizable parameters are IMU pose
         class VertexPose : public g2o::BaseVertex<6,ImuCamPose>
         {
         public:
@@ -377,7 +381,7 @@ namespace vi_slam{
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            EdgeMonoOnlyPose(const cv::Mat &Xw_, int cam_idx_=0):Xw(Converter::toVector3d(Xw_)),
+            EdgeMonoOnlyPose(const cv::Mat &Xw_, int cam_idx_=0):Xw(vi_slam::basics::converter::toVector3d(Xw_)),
                                                                  cam_idx(cam_idx_){}
 
             virtual bool read(std::istream& is){return false;}
@@ -454,7 +458,7 @@ namespace vi_slam{
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
             EdgeStereoOnlyPose(const cv::Mat &Xw_, int cam_idx_=0):
-                    Xw(Converter::toVector3d(Xw_)), cam_idx(cam_idx_){}
+                    Xw(basics::converter::toVector3d(Xw_)), cam_idx(cam_idx_){}
 
             virtual bool read(std::istream& is){return false;}
             virtual bool write(std::ostream& os) const{return false;}
@@ -708,9 +712,9 @@ namespace vi_slam{
             ConstraintPoseImu(const cv::Mat &Rwb_, const cv::Mat &twb_, const cv::Mat &vwb_,
                               const IMU::Bias &b, const cv::Mat &H_)
             {
-                Rwb = Converter::toMatrix3d(Rwb_);
-                twb = Converter::toVector3d(twb_);
-                vwb = Converter::toVector3d(vwb_);
+                Rwb = basics::converter::toMatrix3d(Rwb_);
+                twb = basics::converter::toVector3d(twb_);
+                vwb = basics::converter::toVector3d(vwb_);
                 bg << b.bwx, b.bwy, b.bwz;
                 ba << b.bax, b.bay, b.baz;
                 for(int i=0;i<15;i++)
@@ -774,7 +778,7 @@ namespace vi_slam{
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            EdgePriorAcc(const cv::Mat &bprior_):bprior(Converter::toVector3d(bprior_)){}
+            EdgePriorAcc(const cv::Mat &bprior_):bprior(basics::converter::toVector3d(bprior_)){}
 
             virtual bool read(std::istream& is){return false;}
             virtual bool write(std::ostream& os) const{return false;}
@@ -798,7 +802,7 @@ namespace vi_slam{
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-            EdgePriorGyro(const cv::Mat &bprior_):bprior(Converter::toVector3d(bprior_)){}
+            EdgePriorGyro(const cv::Mat &bprior_):bprior(basics::converter::toVector3d(bprior_)){}
 
             virtual bool read(std::istream& is){return false;}
             virtual bool write(std::ostream& os) const{return false;}

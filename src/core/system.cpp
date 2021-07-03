@@ -21,6 +21,9 @@
 
 namespace vi_slam{
     namespace core{
+
+        using namespace display;
+
         Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
         System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
@@ -30,11 +33,9 @@ namespace vi_slam{
         {
             // Output welcome message
             cout << endl <<
-                 "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
-                 "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
-                 "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
-                 "This is free software, and you are welcome to redistribute it" << endl <<
-                 "under certain conditions. See LICENSE.txt." << endl << endl;
+                 "Vi_SLAM from KMS Team" << endl <<
+                 "This is based on ORB_SLAM and SLAMBOOK" << endl  <<
+                 "P/S: Con Jun" << endl << endl;
 
             cout << "Input sensor was set to: ";
 
@@ -63,7 +64,7 @@ namespace vi_slam{
             //Load ORB Vocabulary
             cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
-            mpVocabulary = new ORBVocabulary();
+            mpVocabulary = new DBoW3::Vocabulary();
             bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
             if(!bVocLoad)
             {
@@ -94,7 +95,7 @@ namespace vi_slam{
 
             //Initialize the Local Mapping thread and launch
             mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, strSequence);
-            mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
+            mptLocalMapping = new thread(&core::LocalMapping::Run,mpLocalMapper);
             mpLocalMapper->mThFarPoints = fsSettings["thFarPoints"];
             if(mpLocalMapper->mThFarPoints!=0)
             {
@@ -106,7 +107,7 @@ namespace vi_slam{
 
             //Initialize the Loop Closing thread and launch
             mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR); // mSensor!=MONOCULAR);
-            mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
+            mptLoopClosing = new thread(&core::LoopClosing::Run, mpLoopCloser);
 
             //Initialize the Viewer thread and launch
             if(bUseViewer)
@@ -191,7 +192,7 @@ namespace vi_slam{
             unique_lock<mutex> lock2(mMutexState);
             mTrackingState = mpTracker->mState;
             mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-            mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+            mTrackedKeyPointsUn = mpTracker->mCurrentFrame.ukeypoints_;
 
             return Tcw;
         }
@@ -250,7 +251,7 @@ namespace vi_slam{
             unique_lock<mutex> lock2(mMutexState);
             mTrackingState = mpTracker->mState;
             mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-            mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+            mTrackedKeyPointsUn = mpTracker->mCurrentFrame.ukeypoints_;
             return Tcw;
         }
 
@@ -312,7 +313,7 @@ namespace vi_slam{
             unique_lock<mutex> lock2(mMutexState);
             mTrackingState = mpTracker->mState;
             mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-            mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+            mTrackedKeyPointsUn = mpTracker->mCurrentFrame.ukeypoints_;
 
             return Tcw;
         }
@@ -418,7 +419,7 @@ namespace vi_slam{
 
             // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
             // which is true when tracking failed (lbL).
-            list<ORB_SLAM3::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
+            list<vi_slam::datastructures::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
             list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
             list<bool>::iterator lbL = mpTracker->mlbLost.begin();
             for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
@@ -444,7 +445,7 @@ namespace vi_slam{
                 cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
                 cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
 
-                vector<float> q = Converter::toQuaternion(Rwc);
+                vector<float> q = vi_slam::basics::converter::toQuaternion(Rwc);
 
                 f << setprecision(6) << *lT << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
             }
@@ -475,7 +476,7 @@ namespace vi_slam{
                     continue;
 
                 cv::Mat R = pKF->GetRotation().t();
-                vector<float> q = Converter::toQuaternion(R);
+                vector<float> q = vi_slam::basics::converter::toQuaternion(R);
                 cv::Mat t = pKF->GetCameraCenter();
                 f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
                   << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
@@ -528,7 +529,7 @@ namespace vi_slam{
 
             // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
             // which is true when tracking failed (lbL).
-            list<ORB_SLAM3::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
+            list<vi_slam::datastructures::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
             list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
             list<bool>::iterator lbL = mpTracker->mlbLost.begin();
 
@@ -565,7 +566,7 @@ namespace vi_slam{
                     cv::Mat Tbw = pKF->mImuCalib.Tbc*(*lit)*Trw;
                     cv::Mat Rwb = Tbw.rowRange(0,3).colRange(0,3).t();
                     cv::Mat twb = -Rwb*Tbw.rowRange(0,3).col(3);
-                    vector<float> q = Converter::toQuaternion(Rwb);
+                    vector<float> q = vi_slam::basics::converter::toQuaternion(Rwb);
                     f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb.at<float>(0) << " " << twb.at<float>(1) << " " << twb.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
                 }
                 else
@@ -573,7 +574,7 @@ namespace vi_slam{
                     cv::Mat Tcw = (*lit)*Trw;
                     cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
                     cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
-                    vector<float> q = Converter::toQuaternion(Rwc);
+                    vector<float> q = vi_slam::basics::converter::toQuaternion(Rwc);
                     f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
                 }
 
@@ -618,7 +619,7 @@ namespace vi_slam{
                 if (mSensor == IMU_MONOCULAR || mSensor == IMU_STEREO)
                 {
                     cv::Mat R = pKF->GetImuRotation().t();
-                    vector<float> q = Converter::toQuaternion(R);
+                    vector<float> q = vi_slam::basics::converter::toQuaternion(R);
                     cv::Mat twb = pKF->GetImuPosition();
                     f << setprecision(6) << 1e9*pKF->mTimeStamp  << " " <<  setprecision(9) << twb.at<float>(0) << " " << twb.at<float>(1) << " " << twb.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
 
@@ -626,7 +627,7 @@ namespace vi_slam{
                 else
                 {
                     cv::Mat R = pKF->GetRotation();
-                    vector<float> q = Converter::toQuaternion(R);
+                    vector<float> q = vi_slam::basics::converter::toQuaternion(R);
                     cv::Mat t = pKF->GetCameraCenter();
                     f << setprecision(6) << 1e9*pKF->mTimeStamp << " " <<  setprecision(9) << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
                 }
@@ -660,11 +661,11 @@ namespace vi_slam{
 
             // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
             // which is true when tracking failed (lbL).
-            list<ORB_SLAM3::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
+            list<vi_slam::datastructures::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
             list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
             for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
             {
-                ORB_SLAM3::KeyFrame* pKF = *lRit;
+                vi_slam::datastructures::KeyFrame* pKF = *lRit;
 
                 cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
 
@@ -726,7 +727,6 @@ namespace vi_slam{
                     return false;
             }
         }
-
 
         bool System::isFinished()
         {

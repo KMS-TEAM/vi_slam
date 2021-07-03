@@ -48,6 +48,10 @@ namespace vi_slam{
 
     namespace core{
 
+        class LocalMapping;
+        class LoopClosing;
+        class Tracking;
+
         class Verbose
         {
         public:

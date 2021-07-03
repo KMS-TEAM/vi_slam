@@ -14,6 +14,11 @@
 #include <unistd.h>
 
 namespace vi_slam{
+
+    using namespace optimization;
+    using namespace geometry;
+    using namespace basics;
+
     namespace core{
         LoopClosing::LoopClosing(Atlas *pAtlas, KeyFrameDatabase *pDB, DBoW3::Vocabulary *pVoc, const bool bFixScale):
                 mbResetRequested(false), mbResetActiveMapRequested(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas),
@@ -82,9 +87,9 @@ namespace vi_slam{
                                 Verbose::PrintMess("*Merged detected", Verbose::VERBOSITY_QUIET);
                                 Verbose::PrintMess("Number of KFs in the current map: " + to_string(mpCurrentKF->GetMap()->KeyFramesInMap()), Verbose::VERBOSITY_DEBUG);
                                 cv::Mat mTmw = mpMergeMatchedKF->GetPose();
-                                g2o::Sim3 gSmw2(Converter::toMatrix3d(mTmw.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTmw.rowRange(0, 3).col(3)),1.0);
+                                g2o::Sim3 gSmw2(basics::converter::toMatrix3d(mTmw.rowRange(0, 3).colRange(0, 3)),basics::converter::toVector3d(mTmw.rowRange(0, 3).col(3)),1.0);
                                 cv::Mat mTcw = mpCurrentKF->GetPose();
-                                g2o::Sim3 gScw1(Converter::toMatrix3d(mTcw.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTcw.rowRange(0, 3).col(3)),1.0);
+                                g2o::Sim3 gScw1(basics::converter::toMatrix3d(mTcw.rowRange(0, 3).colRange(0, 3)),basics::converter::toVector3d(mTcw.rowRange(0, 3).col(3)),1.0);
                                 g2o::Sim3 gSw2c = mg2oMergeSlw.inverse();
                                 g2o::Sim3 gSw1m = mg2oMergeSlw;
 
@@ -172,7 +177,7 @@ namespace vi_slam{
                             if(mpCurrentKF->GetMap()->IsInertial())
                             {
                                 cv::Mat Twc = mpCurrentKF->GetPoseInverse();
-                                g2o::Sim3 g2oTwc(Converter::toMatrix3d(Twc.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(Twc.rowRange(0, 3).col(3)),1.0);
+                                g2o::Sim3 g2oTwc(basics::converter::toMatrix3d(Twc.rowRange(0, 3).colRange(0, 3)),basics::converter::toVector3d(Twc.rowRange(0, 3).col(3)),1.0);
                                 g2o::Sim3 g2oSww_new = g2oTwc*mg2oLoopScw;
 
                                 Eigen::Vector3d phi = LogSO3(g2oSww_new.rotation().toRotationMatrix());
@@ -304,7 +309,7 @@ namespace vi_slam{
                 bCheckSpatial = true;
                 // Find from the last KF candidates
                 cv::Mat mTcl = mpCurrentKF->GetPose() * mpLoopLastCurrentKF->GetPoseInverse();
-                g2o::Sim3 gScl(Converter::toMatrix3d(mTcl.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTcl.rowRange(0, 3).col(3)),1.0);
+                g2o::Sim3 gScl(basics::converter::toMatrix3d(mTcl.rowRange(0, 3).colRange(0, 3)),basics::converter::toVector3d(mTcl.rowRange(0, 3).col(3)),1.0);
                 g2o::Sim3 gScw = gScl * mg2oLoopSlw;
                 int numProjMatches = 0;
                 vector<MapPoint*> vpMatchedMPs;
@@ -354,7 +359,7 @@ namespace vi_slam{
             {
                 // Find from the last KF candidates
                 cv::Mat mTcl = mpCurrentKF->GetPose() * mpMergeLastCurrentKF->GetPoseInverse();
-                g2o::Sim3 gScl(Converter::toMatrix3d(mTcl.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTcl.rowRange(0, 3).col(3)),1.0);
+                g2o::Sim3 gScl(basics::converter::toMatrix3d(mTcl.rowRange(0, 3).colRange(0, 3)),basics::converter::toVector3d(mTcl.rowRange(0, 3).col(3)),1.0);
                 g2o::Sim3 gScw = gScl * mg2oMergeSlw;
                 int numProjMatches = 0;
                 vector<MapPoint*> vpMatchedMPs;
@@ -387,8 +392,6 @@ namespace vi_slam{
                         mvpMergeMPs.clear();
                         mnMergeNumNotFound = 0;
                     }
-
-
                 }
             }
 
@@ -399,7 +402,7 @@ namespace vi_slam{
             }
 
             const vector<KeyFrame*> vpConnectedKeyFrames = mpCurrentKF->GetVectorCovisibleKeyFrames();
-            const DBoW2::BowVector &CurrentBowVec = mpCurrentKF->mBowVec;
+            const DBoW3::BowVector &CurrentBowVec = mpCurrentKF->mBowVec;
 
             // Extract candidates from the bag of words
             vector<KeyFrame*> vpMergeBowCand, vpLoopBowCand;
@@ -412,10 +415,9 @@ namespace vi_slam{
                 mpKeyFrameDB->DetectNBestCandidates(mpCurrentKF, vpLoopBowCand, vpMergeBowCand,3);
 #ifdef REGISTER_TIMES
                 std::chrono::steady_clock::time_point time_EndDetectBoW = std::chrono::steady_clock::now();
-        timeDetectBoW = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndDetectBoW - time_StartDetectBoW).count();
+                timeDetectBoW = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndDetectBoW - time_StartDetectBoW).count();
 #endif
             }
-
 
             if(!bLoopDetectedInKF && !vpLoopBowCand.empty())
             {
@@ -454,9 +456,9 @@ namespace vi_slam{
 
             if(nNumProjMatches >= nProjMatches)
             {
-                cv::Mat mScw = Converter::toCvMat(gScw);
+                cv::Mat mScw = basics::converter::toCvMat(gScw);
                 cv::Mat mTwm = pMatchedKF->GetPoseInverse();
-                g2o::Sim3 gSwm(Converter::toMatrix3d(mTwm.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTwm.rowRange(0, 3).col(3)),1.0);
+                g2o::Sim3 gSwm(basics::converter::toMatrix3d(mTwm.rowRange(0, 3).colRange(0, 3)),basics::converter::toVector3d(mTwm.rowRange(0, 3).col(3)),1.0);
                 g2o::Sim3 gScm = gScw * gSwm;
                 Eigen::Matrix<double, 7, 7> mHessian7x7;
 
@@ -469,8 +471,8 @@ namespace vi_slam{
 
                 if(numOptMatches > nProjOptMatches)
                 {
-                    g2o::Sim3 gScw_estimation(Converter::toMatrix3d(mScw.rowRange(0, 3).colRange(0, 3)),
-                                              Converter::toVector3d(mScw.rowRange(0, 3).col(3)),1.0);
+                    g2o::Sim3 gScw_estimation(basics::converter::toMatrix3d(mScw.rowRange(0, 3).colRange(0, 3)),
+                                              basics::converter::toVector3d(mScw.rowRange(0, 3).col(3)),1.0);
 
                     vector<MapPoint*> vpMatchedMP;
                     vpMatchedMP.resize(mpCurrentKF->GetMapPointMatches().size(), static_cast<MapPoint*>(NULL));
@@ -499,8 +501,8 @@ namespace vi_slam{
 
             int nNumCovisibles = 5;
 
-            ORBmatcher matcherBoW(0.9, true);
-            ORBmatcher matcher(0.75, true);
+            FMatcher matcherBoW(0.9, true);
+            FMatcher matcher(0.75, true);
             int nNumGuidedMatching = 0;
 
             KeyFrame* pBestMatchedKF;
@@ -519,7 +521,6 @@ namespace vi_slam{
             {
                 if(!pKFi || pKFi->isBad())
                     continue;
-
 
                 // Current KF against KF with covisibles version
                 std::vector<KeyFrame*> vpCovKFi = pKFi->GetBestCovisibilityKeyFrames(nNumCovisibles);
@@ -625,10 +626,10 @@ namespace vi_slam{
                             }
                         }
 
-                        g2o::Sim3 gScm(Converter::toMatrix3d(solver.GetEstimatedRotation()),Converter::toVector3d(solver.GetEstimatedTranslation()),solver.GetEstimatedScale());
-                        g2o::Sim3 gSmw(Converter::toMatrix3d(pMostBoWMatchesKF->GetRotation()),Converter::toVector3d(pMostBoWMatchesKF->GetTranslation()),1.0);
+                        g2o::Sim3 gScm(converter::toMatrix3d(solver.GetEstimatedRotation()),converter::toVector3d(solver.GetEstimatedTranslation()),solver.GetEstimatedScale());
+                        g2o::Sim3 gSmw(converter::toMatrix3d(pMostBoWMatchesKF->GetRotation()),converter::toVector3d(pMostBoWMatchesKF->GetTranslation()),1.0);
                         g2o::Sim3 gScw = gScm*gSmw; // Similarity matrix of current from the world position
-                        cv::Mat mScw = Converter::toCvMat(gScw);
+                        cv::Mat mScw = converter::toCvMat(gScw);
 
 
                         vector<MapPoint*> vpMatchedMP;
@@ -650,9 +651,9 @@ namespace vi_slam{
 
                             if(numOptMatches >= nSim3Inliers)
                             {
-                                g2o::Sim3 gSmw(Converter::toMatrix3d(pMostBoWMatchesKF->GetRotation()),Converter::toVector3d(pMostBoWMatchesKF->GetTranslation()),1.0);
+                                g2o::Sim3 gSmw(converter::toMatrix3d(pMostBoWMatchesKF->GetRotation()),converter::toVector3d(pMostBoWMatchesKF->GetTranslation()),1.0);
                                 g2o::Sim3 gScw = gScm*gSmw; // Similarity matrix of current from the world position
-                                cv::Mat mScw = Converter::toCvMat(gScw);
+                                cv::Mat mScw = converter::toCvMat(gScw);
 
                                 vector<MapPoint*> vpMatchedMP;
                                 vpMatchedMP.resize(mpCurrentKF->GetMapPointMatches().size(), static_cast<MapPoint*>(NULL));
@@ -668,7 +669,7 @@ namespace vi_slam{
                                     {
                                         KeyFrame* pKFj = vpCurrentCovKFs[j];
                                         cv::Mat mTjc = pKFj->GetPose() * mpCurrentKF->GetPoseInverse();
-                                        g2o::Sim3 gSjc(Converter::toMatrix3d(mTjc.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTjc.rowRange(0, 3).col(3)),1.0);
+                                        g2o::Sim3 gSjc(converter::toMatrix3d(mTjc.rowRange(0, 3).colRange(0, 3)),converter::toVector3d(mTjc.rowRange(0, 3).col(3)),1.0);
                                         g2o::Sim3 gSjw = gSjc * gScw;
                                         int numProjMatches_j = 0;
                                         vector<MapPoint*> vpMatchedMPs_j;
@@ -791,9 +792,9 @@ namespace vi_slam{
                 }
             }
 
-            cv::Mat mScw = Converter::toCvMat(g2oScw);
+            cv::Mat mScw = converter::toCvMat(g2oScw);
 
-            ORBmatcher matcher(0.9, true);
+            FMatcher matcher(0.9, true);
 
             vpMatchedMapPoints.resize(pCurrentKF->GetMapPointMatches().size(), static_cast<MapPoint*>(NULL));
             int num_matches = matcher.SearchByProjection(pCurrentKF, mScw, vpMapPoints, vpMatchedMapPoints, 3, 1.5);
@@ -865,7 +866,7 @@ namespace vi_slam{
                         cv::Mat Tic = Tiw*Twc;
                         cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
                         cv::Mat tic = Tic.rowRange(0,3).col(3);
-                        g2o::Sim3 g2oSic(Converter::toMatrix3d(Ric),Converter::toVector3d(tic),1.0);
+                        g2o::Sim3 g2oSic(converter::toMatrix3d(Ric),converter::toVector3d(tic),1.0);
                         g2o::Sim3 g2oCorrectedSiw = g2oSic*mg2oLoopScw;
                         //Pose corrected with the Sim3 of the loop closure
                         CorrectedSim3[pKFi]=g2oCorrectedSiw;
@@ -873,7 +874,7 @@ namespace vi_slam{
 
                     cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
                     cv::Mat tiw = Tiw.rowRange(0,3).col(3);
-                    g2o::Sim3 g2oSiw(Converter::toMatrix3d(Riw),Converter::toVector3d(tiw),1.0);
+                    g2o::Sim3 g2oSiw(converter::toMatrix3d(Riw), converter::toVector3d(tiw),1.0);
                     //Pose without correction
                     NonCorrectedSim3[pKFi]=g2oSiw;
                 }
@@ -900,10 +901,10 @@ namespace vi_slam{
 
                         // Project with non-corrected pose and project back with corrected pose
                         cv::Mat P3Dw = pMPi->GetWorldPos();
-                        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+                        Eigen::Matrix<double,3,1> eigP3Dw = converter::toVector3d(P3Dw);
                         Eigen::Matrix<double,3,1> eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oSiw.map(eigP3Dw));
 
-                        cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
+                        cv::Mat cvCorrectedP3Dw = converter::toCvMat(eigCorrectedP3Dw);
                         pMPi->SetWorldPos(cvCorrectedP3Dw);
                         pMPi->mnCorrectedByKF = mpCurrentKF->mnId;
                         pMPi->mnCorrectedReference = pKFi->mnId;
@@ -917,7 +918,7 @@ namespace vi_slam{
 
                     eigt *=(1./s); //[R t/s;0 1]
 
-                    cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt);
+                    cv::Mat correctedTiw = converter::toCvSE3(eigR,eigt);
 
                     pKFi->SetPose(correctedTiw);
 
@@ -925,7 +926,7 @@ namespace vi_slam{
                     if(bImuInit)
                     {
                         Eigen::Matrix3d Rcor = eigR.transpose()*g2oSiw.rotation().toRotationMatrix();
-                        pKFi->SetVelocity(Converter::toCvMat(Rcor)*pKFi->GetVelocity());
+                        pKFi->SetVelocity(converter::toCvMat(Rcor)*pKFi->GetVelocity());
                     }
 
                     // Make sure connections are updated
@@ -933,7 +934,6 @@ namespace vi_slam{
                 }
                 // TODO Check this index increasement
                 pLoopMap->IncreaseChangeIndex();
-
 
                 // Start Loop Fusion
                 // Update matched map points and replace if duplicated
@@ -1196,7 +1196,7 @@ namespace vi_slam{
 
             cv::Mat Rwc = Twc.rowRange(0,3).colRange(0,3);
             cv::Mat twc = Twc.rowRange(0,3).col(3);
-            g2o::Sim3 g2oNonCorrectedSwc(Converter::toMatrix3d(Rwc),Converter::toVector3d(twc),1.0);
+            g2o::Sim3 g2oNonCorrectedSwc(converter::toMatrix3d(Rwc),converter::toVector3d(twc),1.0);
             g2o::Sim3 g2oNonCorrectedScw = g2oNonCorrectedSwc.inverse();
             g2o::Sim3 g2oCorrectedScw = mg2oMergeScw;
 
@@ -1218,14 +1218,14 @@ namespace vi_slam{
                     cv::Mat Tiw = pKFi->GetPose();
                     cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
                     cv::Mat tiw = Tiw.rowRange(0,3).col(3);
-                    g2o::Sim3 g2oSiw(Converter::toMatrix3d(Riw),Converter::toVector3d(tiw),1.0);
+                    g2o::Sim3 g2oSiw(converter::toMatrix3d(Riw),converter::toVector3d(tiw),1.0);
                     //Pose without correction
                     vNonCorrectedSim3[pKFi]=g2oSiw;
 
                     cv::Mat Tic = Tiw*Twc;
                     cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
                     cv::Mat tic = Tic.rowRange(0,3).col(3);
-                    g2o::Sim3 g2oSic(Converter::toMatrix3d(Ric),Converter::toVector3d(tic),1.0);
+                    g2o::Sim3 g2oSic(converter::toMatrix3d(Ric),converter::toVector3d(tic),1.0);
                     g2oCorrectedSiw = g2oSic*mg2oMergeScw;
                     vCorrectedSim3[pKFi]=g2oCorrectedSiw;
                 }
@@ -1243,14 +1243,14 @@ namespace vi_slam{
                 pKFi->mfScale = s;
                 eigt *=(1./s); //[R t/s;0 1]
 
-                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt);
+                cv::Mat correctedTiw = converter::toCvSE3(eigR,eigt);
 
                 pKFi->mTcwMerge = correctedTiw;
 
                 if(pCurrentMap->isImuInitialized())
                 {
                     Eigen::Matrix3d Rcor = eigR.transpose()*vNonCorrectedSim3[pKFi].rotation().toRotationMatrix();
-                    pKFi->mVwbMerge = Converter::toCvMat(Rcor)*pKFi->GetVelocity();
+                    pKFi->mVwbMerge = converter::toCvMat(Rcor)*pKFi->GetVelocity();
                 }
 
             }
@@ -1266,15 +1266,15 @@ namespace vi_slam{
 
                 // Project with non-corrected pose and project back with corrected pose
                 cv::Mat P3Dw = pMPi->GetWorldPos();
-                Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+                Eigen::Matrix<double,3,1> eigP3Dw = converter::toVector3d(P3Dw);
                 Eigen::Matrix<double,3,1> eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(eigP3Dw));
                 Eigen::Matrix3d eigR = g2oCorrectedSwi.rotation().toRotationMatrix();
                 Eigen::Matrix3d Rcor = eigR * g2oNonCorrectedSiw.rotation().toRotationMatrix();
 
-                cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
+                cv::Mat cvCorrectedP3Dw = converter::toCvMat(eigCorrectedP3Dw);
 
                 pMPi->mPosMerge = cvCorrectedP3Dw;
-                pMPi->mNormalVectorMerge = Converter::toCvMat(Rcor) * pMPi->GetNormal();
+                pMPi->mNormalVectorMerge = converter::toCvMat(Rcor) * pMPi->GetNormal();
             }
 
             {
@@ -1419,14 +1419,14 @@ namespace vi_slam{
                             cv::Mat Tiw = pKFi->GetPose();
                             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
                             cv::Mat tiw = Tiw.rowRange(0,3).col(3);
-                            g2o::Sim3 g2oSiw(Converter::toMatrix3d(Riw),Converter::toVector3d(tiw),1.0);
+                            g2o::Sim3 g2oSiw(converter::toMatrix3d(Riw),converter::toVector3d(tiw),1.0);
                             //Pose without correction
                             vNonCorrectedSim3[pKFi]=g2oSiw;
 
                             cv::Mat Tic = Tiw*Twc;
                             cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
                             cv::Mat tic = Tic.rowRange(0,3).col(3);
-                            g2o::Sim3 g2oSim(Converter::toMatrix3d(Ric),Converter::toVector3d(tic),1.0);
+                            g2o::Sim3 g2oSim(converter::toMatrix3d(Ric),converter::toVector3d(tic),1.0);
                             g2oCorrectedSiw = g2oSim*mg2oMergeScw;
                             vCorrectedSim3[pKFi]=g2oCorrectedSiw;
 
@@ -1438,7 +1438,7 @@ namespace vi_slam{
                             pKFi->mfScale = s;
                             eigt *=(1./s); //[R t/s;0 1]
 
-                            cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt);
+                            cv::Mat correctedTiw = converter::toCvSE3(eigR,eigt);
 
                             pKFi->mTcwBefMerge = pKFi->GetPose();
                             pKFi->mTwcBefMerge = pKFi->GetPoseInverse();
@@ -1448,7 +1448,7 @@ namespace vi_slam{
                             if(pCurrentMap->isImuInitialized())
                             {
                                 Eigen::Matrix3d Rcor = eigR.transpose()*vNonCorrectedSim3[pKFi].rotation().toRotationMatrix();
-                                pKFi->SetVelocity(Converter::toCvMat(Rcor)*pKFi->GetVelocity()); // TODO: should add here scale s
+                                pKFi->SetVelocity(converter::toCvMat(Rcor)*pKFi->GetVelocity()); // TODO: should add here scale s
                             }
 
                         }
@@ -1463,10 +1463,10 @@ namespace vi_slam{
 
                             // Project with non-corrected pose and project back with corrected pose
                             cv::Mat P3Dw = pMPi->GetWorldPos();
-                            Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+                            Eigen::Matrix<double,3,1> eigP3Dw = converter::toVector3d(P3Dw);
                             Eigen::Matrix<double,3,1> eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oNonCorrectedSiw.map(eigP3Dw));
 
-                            cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
+                            cv::Mat cvCorrectedP3Dw = converter::toCvMat(eigCorrectedP3Dw);
                             pMPi->SetWorldPos(cvCorrectedP3Dw);
 
                             pMPi->UpdateNormalAndDepth();
@@ -1593,8 +1593,8 @@ namespace vi_slam{
 
             {
                 float s_on = mSold_new.scale();
-                cv::Mat R_on = Converter::toCvMat(mSold_new.rotation().toRotationMatrix());
-                cv::Mat t_on = Converter::toCvMat(mSold_new.translation());
+                cv::Mat R_on = converter::toCvMat(mSold_new.rotation().toRotationMatrix());
+                cv::Mat t_on = converter::toCvMat(mSold_new.translation());
 
                 unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
@@ -1670,7 +1670,7 @@ namespace vi_slam{
                     cv::Mat Tiw=pKFi->GetPose();
                     cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
                     cv::Mat tiw = Tiw.rowRange(0,3).col(3);
-                    g2o::Sim3 g2oSiw(Converter::toMatrix3d(Riw),Converter::toVector3d(tiw),1.0);
+                    g2o::Sim3 g2oSiw(converter::toMatrix3d(Riw),converter::toVector3d(tiw),1.0);
                     NonCorrectedSim3[pKFi]=g2oSiw;
                 }
             }

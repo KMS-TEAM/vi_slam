@@ -27,11 +27,17 @@ using namespace cv;
 using namespace vi_slam;
 
 namespace vi_slam{
+
+    using namespace datastructures;
+    using namespace display;
+    using namespace geometry;
+    using namespace optimization;
+
     namespace core{
-        Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq):
+        Tracking::Tracking(System *pSys, DBoW3::Vocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq):
                 mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
                 mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
-                mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
+                mpInitializer(static_cast<MonoInitializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
                 mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0), time_recently_lost_visual(2.0),
                 mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr)
         {
@@ -85,17 +91,17 @@ namespace vi_slam{
 
 #ifdef REGISTER_TIMES
             vdRectStereo_ms.clear();
-    vdORBExtract_ms.clear();
-    vdStereoMatch_ms.clear();
-    vdIMUInteg_ms.clear();
-    vdPosePred_ms.clear();
-    vdLMTrack_ms.clear();
-    vdNewKF_ms.clear();
-    vdTrackTotal_ms.clear();
+            vdORBExtract_ms.clear();
+            vdStereoMatch_ms.clear();
+            vdIMUInteg_ms.clear();
+            vdPosePred_ms.clear();
+            vdLMTrack_ms.clear();
+            vdNewKF_ms.clear();
+            vdTrackTotal_ms.clear();
 
-    vdUpdatedLM_ms.clear();
-    vdSearchLP_ms.clear();
-    vdPoseOpt_ms.clear();
+            vdUpdatedLM_ms.clear();
+            vdSearchLP_ms.clear();
+            vdPoseOpt_ms.clear();
 #endif
 
             vnKeyFramesLM.clear();
@@ -104,373 +110,370 @@ namespace vi_slam{
 
 #ifdef REGISTER_TIMES
         double calcAverage(vector<double> v_times)
-{
-    double accum = 0;
-    for(double value : v_times)
-    {
-        accum += value;
-    }
-
-    return accum / v_times.size();
-}
-
-double calcDeviation(vector<double> v_times, double average)
-{
-    double accum = 0;
-    for(double value : v_times)
-    {
-        accum += pow(value - average, 2);
-    }
-    return sqrt(accum / v_times.size());
-}
-
-double calcAverage(vector<int> v_values)
-{
-    double accum = 0;
-    int total = 0;
-    for(double value : v_values)
-    {
-        if(value == 0)
-            continue;
-        accum += value;
-        total++;
-    }
-
-    return accum / total;
-}
-
-double calcDeviation(vector<int> v_values, double average)
-{
-    double accum = 0;
-    int total = 0;
-    for(double value : v_values)
-    {
-        if(value == 0)
-            continue;
-        accum += pow(value - average, 2);
-        total++;
-    }
-    return sqrt(accum / total);
-}
-
-void Tracking::LocalMapStats2File()
-{
-    ofstream f;
-    f.open("LocalMapTimeStats.txt");
-    f << fixed << setprecision(6);
-    f << "#Stereo rect[ms], MP culling[ms], MP creation[ms], LBA[ms], KF culling[ms], Total[ms]" << endl;
-    for(int i=0; i<mpLocalMapper->vdLMTotal_ms.size(); ++i)
-    {
-        f << mpLocalMapper->vdKFInsert_ms[i] << "," << mpLocalMapper->vdMPCulling_ms[i] << ","
-          << mpLocalMapper->vdMPCreation_ms[i] << "," << mpLocalMapper->vdLBA_ms[i] << ","
-          << mpLocalMapper->vdKFCulling_ms[i] <<  "," << mpLocalMapper->vdLMTotal_ms[i] << endl;
-    }
-
-    f.close();
-
-    f.open("LBA_Stats.txt");
-    f << fixed << setprecision(6);
-    f << "#LBA time[ms], KF opt[#], KF fixed[#], MP[#], Edges[#]" << endl;
-    for(int i=0; i<mpLocalMapper->vdLBASync_ms.size(); ++i)
-    {
-        f << mpLocalMapper->vdLBASync_ms[i] << "," << mpLocalMapper->vnLBA_KFopt[i] << ","
-          << mpLocalMapper->vnLBA_KFfixed[i] << "," << mpLocalMapper->vnLBA_MPs[i] << ","
-          << mpLocalMapper->vnLBA_edges[i] << endl;
-    }
-
-
-    f.close();
-}
-
-void Tracking::TrackStats2File()
-{
-    ofstream f;
-    f.open("SessionInfo.txt");
-    f << fixed;
-    f << "Number of KFs: " << mpAtlas->GetAllKeyFrames().size() << endl;
-    f << "Number of MPs: " << mpAtlas->GetAllMapPoints().size() << endl;
-
-    f << "OpenCV version: " << CV_VERSION << endl;
-
-    f.close();
-
-    f.open("TrackingTimeStats.txt");
-    f << fixed << setprecision(6);
-
-    f << "#KF insert[ms], ORB ext[ms], Stereo match[ms], IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]" << endl;
-
-    for(int i=0; i<vdTrackTotal_ms.size(); ++i)
-    {
-        double stereo_rect = 0.0;
-        if(!vdRectStereo_ms.empty())
         {
-            stereo_rect = vdStereoMatch_ms[i];
+            double accum = 0;
+            for(double value : v_times)
+            {
+                accum += value;
+            }
+
+            return accum / v_times.size();
         }
 
-        double stereo_match = 0.0;
-        if(!vdStereoMatch_ms.empty())
+        double calcDeviation(vector<double> v_times, double average)
         {
-            stereo_match = vdStereoMatch_ms[i];
+            double accum = 0;
+            for(double value : v_times)
+            {
+                accum += pow(value - average, 2);
+            }
+            return sqrt(accum / v_times.size());
         }
 
-        double imu_preint = 0.0;
-        if(!vdIMUInteg_ms.empty())
+        double calcAverage(vector<int> v_values)
         {
-            imu_preint = vdIMUInteg_ms[i];
+            double accum = 0;
+            int total = 0;
+            for(double value : v_values)
+            {
+                if(value == 0)
+                    continue;
+                accum += value;
+                total++;
+            }
+
+            return accum / total;
         }
 
-        f << stereo_rect << "," << vdORBExtract_ms[i] << "," << stereo_match << "," << imu_preint << ","
-          << vdPosePred_ms[i] <<  "," << vdLMTrack_ms[i] << "," << vdNewKF_ms[i] << "," << vdTrackTotal_ms[i] << endl;
-    }
+        double calcDeviation(vector<int> v_values, double average)
+        {
+            double accum = 0;
+            int total = 0;
+            for(double value : v_values)
+            {
+                if(value == 0)
+                    continue;
+                accum += pow(value - average, 2);
+                total++;
+            }
+            return sqrt(accum / total);
+        }
 
-    f.close();
+        void Tracking::LocalMapStats2File()
+        {
+            ofstream f;
+            f.open("LocalMapTimeStats.txt");
+            f << fixed << setprecision(6);
+            f << "#Stereo rect[ms], MP culling[ms], MP creation[ms], LBA[ms], KF culling[ms], Total[ms]" << endl;
+            for(int i=0; i<mpLocalMapper->vdLMTotal_ms.size(); ++i)
+            {
+                f << mpLocalMapper->vdKFInsert_ms[i] << "," << mpLocalMapper->vdMPCulling_ms[i] << ","
+                  << mpLocalMapper->vdMPCreation_ms[i] << "," << mpLocalMapper->vdLBA_ms[i] << ","
+                  << mpLocalMapper->vdKFCulling_ms[i] <<  "," << mpLocalMapper->vdLMTotal_ms[i] << endl;
+            }
 
-    f.open("TrackLocalMapStats.txt");
-    f << fixed << setprecision(6);
+            f.close();
 
-    f << "# number of KF, number of MP, UpdateLM[ms], SearchLP[ms], PoseOpt[ms]" << endl;
-
-    for(int i=0; i<vnKeyFramesLM.size(); ++i)
-    {
-
-        f << vnKeyFramesLM[i] << "," << vnMapPointsLM[i] <<  "," << vdUpdatedLM_ms[i] << "," << vdSearchLP_ms[i] << "," << vdPoseOpt_ms[i] << endl;
-    }
-
-    f.close();
-}
-
-void Tracking::PrintTimeStats()
-{
-    // Save data in files
-    TrackStats2File();
-    LocalMapStats2File();
-
-
-    ofstream f;
-    f.open("ExecTimeMean.txt");
-    f << fixed;
-    //Report the mean and std of each one
-    std::cout << std::endl << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
-    f << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
-    cout << "OpenCV version: " << CV_VERSION << endl;
-    f << "OpenCV version: " << CV_VERSION << endl;
-    std::cout << "---------------------------" << std::endl;
-    std::cout << "Tracking" << std::setprecision(5) << std::endl << std::endl;
-    f << "---------------------------" << std::endl;
-    f << "Tracking" << std::setprecision(5) << std::endl << std::endl;
-    double average, deviation;
-    if(!vdRectStereo_ms.empty())
-    {
-        average = calcAverage(vdRectStereo_ms);
-        deviation = calcDeviation(vdRectStereo_ms, average);
-        std::cout << "Stereo Rectification: " << average << "$\\pm$" << deviation << std::endl;
-        f << "Stereo Rectification: " << average << "$\\pm$" << deviation << std::endl;
-    }
-
-    average = calcAverage(vdORBExtract_ms);
-    deviation = calcDeviation(vdORBExtract_ms, average);
-    std::cout << "ORB Extraction: " << average << "$\\pm$" << deviation << std::endl;
-    f << "ORB Extraction: " << average << "$\\pm$" << deviation << std::endl;
-
-    if(!vdStereoMatch_ms.empty())
-    {
-        average = calcAverage(vdStereoMatch_ms);
-        deviation = calcDeviation(vdStereoMatch_ms, average);
-        std::cout << "Stereo Matching: " << average << "$\\pm$" << deviation << std::endl;
-        f << "Stereo Matching: " << average << "$\\pm$" << deviation << std::endl;
-    }
-
-    if(!vdIMUInteg_ms.empty())
-    {
-        average = calcAverage(vdIMUInteg_ms);
-        deviation = calcDeviation(vdIMUInteg_ms, average);
-        std::cout << "IMU Preintegration: " << average << "$\\pm$" << deviation << std::endl;
-        f << "IMU Preintegration: " << average << "$\\pm$" << deviation << std::endl;
-    }
-
-    average = calcAverage(vdPosePred_ms);
-    deviation = calcDeviation(vdPosePred_ms, average);
-    std::cout << "Pose Prediction: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Pose Prediction: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(vdLMTrack_ms);
-    deviation = calcDeviation(vdLMTrack_ms, average);
-    std::cout << "LM Track: " << average << "$\\pm$" << deviation << std::endl;
-    f << "LM Track: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(vdNewKF_ms);
-    deviation = calcDeviation(vdNewKF_ms, average);
-    std::cout << "New KF decision: " << average << "$\\pm$" << deviation << std::endl;
-    f << "New KF decision: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(vdTrackTotal_ms);
-    deviation = calcDeviation(vdTrackTotal_ms, average);
-    std::cout << "Total Tracking: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Total Tracking: " << average << "$\\pm$" << deviation << std::endl;
-
-    // Local Map Tracking complexity
-    std::cout << "---------------------------" << std::endl;
-    std::cout << std::endl << "Local Map Tracking complexity (mean$\\pm$std)" << std::endl;
-    f << "---------------------------" << std::endl;
-    f << std::endl << "Local Map Tracking complexity (mean$\\pm$std)" << std::endl;
-
-    average = calcAverage(vnKeyFramesLM);
-    deviation = calcDeviation(vnKeyFramesLM, average);
-    std::cout << "Local KFs: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Local KFs: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(vnMapPointsLM);
-    deviation = calcDeviation(vnMapPointsLM, average);
-    std::cout << "Local MPs: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Local MPs: " << average << "$\\pm$" << deviation << std::endl;
-
-    // Local Mapping time stats
-    std::cout << std::endl << std::endl << std::endl;
-    std::cout << "Local Mapping" << std::endl << std::endl;
-    f << std::endl << "Local Mapping" << std::endl << std::endl;
-
-    average = calcAverage(mpLocalMapper->vdKFInsert_ms);
-    deviation = calcDeviation(mpLocalMapper->vdKFInsert_ms, average);
-    std::cout << "KF Insertion: " << average << "$\\pm$" << deviation << std::endl;
-    f << "KF Insertion: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vdMPCulling_ms);
-    deviation = calcDeviation(mpLocalMapper->vdMPCulling_ms, average);
-    std::cout << "MP Culling: " << average << "$\\pm$" << deviation << std::endl;
-    f << "MP Culling: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vdMPCreation_ms);
-    deviation = calcDeviation(mpLocalMapper->vdMPCreation_ms, average);
-    std::cout << "MP Creation: " << average << "$\\pm$" << deviation << std::endl;
-    f << "MP Creation: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vdLBASync_ms);
-    deviation = calcDeviation(mpLocalMapper->vdLBASync_ms, average);
-    std::cout << "LBA: " << average << "$\\pm$" << deviation << std::endl;
-    f << "LBA: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vdKFCullingSync_ms);
-    deviation = calcDeviation(mpLocalMapper->vdKFCullingSync_ms, average);
-    std::cout << "KF Culling: " << average << "$\\pm$" << deviation << std::endl;
-    f << "KF Culling: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vdLMTotal_ms);
-    deviation = calcDeviation(mpLocalMapper->vdLMTotal_ms, average);
-    std::cout << "Total Local Mapping: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Total Local Mapping: " << average << "$\\pm$" << deviation << std::endl;
-
-    // Local Mapping LBA complexity
-    std::cout << "---------------------------" << std::endl;
-    std::cout << std::endl << "LBA complexity (mean$\\pm$std)" << std::endl;
-    f << "---------------------------" << std::endl;
-    f << std::endl << "LBA complexity (mean$\\pm$std)" << std::endl;
-
-    average = calcAverage(mpLocalMapper->vnLBA_edges);
-    deviation = calcDeviation(mpLocalMapper->vnLBA_edges, average);
-    std::cout << "LBA Edges: " << average << "$\\pm$" << deviation << std::endl;
-    f << "LBA Edges: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vnLBA_KFopt);
-    deviation = calcDeviation(mpLocalMapper->vnLBA_KFopt, average);
-    std::cout << "LBA KF optimized: " << average << "$\\pm$" << deviation << std::endl;
-    f << "LBA KF optimized: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vnLBA_KFfixed);
-    deviation = calcDeviation(mpLocalMapper->vnLBA_KFfixed, average);
-    std::cout << "LBA KF fixed: " << average << "$\\pm$" << deviation << std::endl;
-    f << "LBA KF fixed: " << average << "$\\pm$" << deviation << std::endl;
-
-    average = calcAverage(mpLocalMapper->vnLBA_MPs);
-    deviation = calcDeviation(mpLocalMapper->vnLBA_MPs, average);
-    std::cout << "LBA MP: " << average << "$\\pm$" << deviation << std::endl << std::endl;
-    f << "LBA MP: " << average << "$\\pm$" << deviation << std::endl << std::endl;
-
-    std::cout << "LBA executions: " << mpLocalMapper->nLBA_exec << std::endl;
-    std::cout << "LBA aborts: " << mpLocalMapper->nLBA_abort << std::endl;
-    f << "LBA executions: " << mpLocalMapper->nLBA_exec << std::endl;
-    f << "LBA aborts: " << mpLocalMapper->nLBA_abort << std::endl;
-
-    // Map complexity
-    std::cout << "---------------------------" << std::endl;
-    std::cout << std::endl << "Map complexity" << std::endl;
-    std::cout << "KFs in map: " << mpAtlas->GetAllMaps()[0]->GetAllKeyFrames().size() << std::endl;
-    std::cout << "MPs in map: " << mpAtlas->GetAllMaps()[0]->GetAllMapPoints().size() << std::endl;
-    f << "---------------------------" << std::endl;
-    f << std::endl << "Map complexity" << std::endl;
-    f << "KFs in map: " << mpAtlas->GetAllMaps()[0]->GetAllKeyFrames().size() << std::endl;
-    f << "MPs in map: " << mpAtlas->GetAllMaps()[0]->GetAllMapPoints().size() << std::endl;
+            f.open("LBA_Stats.txt");
+            f << fixed << setprecision(6);
+            f << "#LBA time[ms], KF opt[#], KF fixed[#], MP[#], Edges[#]" << endl;
+            for(int i=0; i<mpLocalMapper->vdLBASync_ms.size(); ++i)
+            {
+                f << mpLocalMapper->vdLBASync_ms[i] << "," << mpLocalMapper->vnLBA_KFopt[i] << ","
+                  << mpLocalMapper->vnLBA_KFfixed[i] << "," << mpLocalMapper->vnLBA_MPs[i] << ","
+                  << mpLocalMapper->vnLBA_edges[i] << endl;
+            }
 
 
-    // Place recognition time stats
-    std::cout << std::endl << std::endl << std::endl;
-    std::cout << "Place Recognition (mean$\\pm$std)" << std::endl << std::endl;
-    f << std::endl << "Place Recognition (mean$\\pm$std)" << std::endl << std::endl;
+            f.close();
+        }
 
-    average = calcAverage(mpLoopClosing->vTimeBoW_ms);
-    deviation = calcDeviation(mpLoopClosing->vTimeBoW_ms, average);
-    std::cout << "Database Query: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Database Query: " << average << "$\\pm$" << deviation << std::endl;
-    average = calcAverage(mpLoopClosing->vTimeSE3_ms);
-    deviation = calcDeviation(mpLoopClosing->vTimeSE3_ms, average);
-    std::cout << "SE3 estimation: " << average << "$\\pm$" << deviation << std::endl;
-    f << "SE3 estimation: " << average << "$\\pm$" << deviation << std::endl;
-    average = calcAverage(mpLoopClosing->vTimePRTotal_ms);
-    deviation = calcDeviation(mpLoopClosing->vTimePRTotal_ms, average);
-    std::cout << "Total Place Recognition: " << average << "$\\pm$" << deviation << std::endl;
-    f << "Total Place Recognition: " << average << "$\\pm$" << deviation << std::endl;
+        void Tracking::TrackStats2File()
+        {
+            ofstream f;
+            f.open("SessionInfo.txt");
+            f << fixed;
+            f << "Number of KFs: " << mpAtlas->GetAllKeyFrames().size() << endl;
+            f << "Number of MPs: " << mpAtlas->GetAllMapPoints().size() << endl;
 
-    // Loop Closing time stats
-    if(mpLoopClosing->vTimeLoopTotal_ms.size() > 0)
-    {
-        std::cout << std::endl << std::endl << std::endl;
-        std::cout << "Loop Closing (mean$\\pm$std)" << std::endl << std::endl;
-        f << std::endl << "Loop Closing (mean$\\pm$std)" << std::endl << std::endl;
+            f << "OpenCV version: " << CV_VERSION << endl;
 
-        average = calcAverage(mpLoopClosing->vTimeLoopTotal_ms);
-        deviation = calcDeviation(mpLoopClosing->vTimeLoopTotal_ms, average);
-        std::cout << "Total Loop Closing: " << average << "$\\pm$" << deviation << std::endl;
-        f << "Total Loop Closing: " << average << "$\\pm$" << deviation << std::endl;
-    }
+            f.close();
 
-    if(mpLoopClosing->vTimeMergeTotal_ms.size() > 0)
-    {
-        // Map Merging time stats
-        std::cout << std::endl << std::endl << std::endl;
-        std::cout << "Map Merging (mean$\\pm$std)" << std::endl << std::endl;
-        f << std::endl << "Map Merging (mean$\\pm$std)" << std::endl << std::endl;
+            f.open("TrackingTimeStats.txt");
+            f << fixed << setprecision(6);
 
-        average = calcAverage(mpLoopClosing->vTimeMergeTotal_ms);
-        deviation = calcDeviation(mpLoopClosing->vTimeMergeTotal_ms, average);
-        std::cout << "Total Map Merging: " << average << "$\\pm$" << deviation << std::endl;
-        f << "Total Map Merging: " << average << "$\\pm$" << deviation << std::endl;
-    }
+            f << "#KF insert[ms], ORB ext[ms], Stereo match[ms], IMU preint[ms], Pose pred[ms], LM track[ms], KF dec[ms], Total[ms]" << endl;
+
+            for(int i=0; i<vdTrackTotal_ms.size(); ++i)
+            {
+                double stereo_rect = 0.0;
+                if(!vdRectStereo_ms.empty())
+                {
+                    stereo_rect = vdStereoMatch_ms[i];
+                }
+
+                double stereo_match = 0.0;
+                if(!vdStereoMatch_ms.empty())
+                {
+                    stereo_match = vdStereoMatch_ms[i];
+                }
+
+                double imu_preint = 0.0;
+                if(!vdIMUInteg_ms.empty())
+                {
+                    imu_preint = vdIMUInteg_ms[i];
+                }
+
+                f << stereo_rect << "," << vdORBExtract_ms[i] << "," << stereo_match << "," << imu_preint << ","
+                  << vdPosePred_ms[i] <<  "," << vdLMTrack_ms[i] << "," << vdNewKF_ms[i] << "," << vdTrackTotal_ms[i] << endl;
+            }
+
+            f.close();
+
+            f.open("TrackLocalMapStats.txt");
+            f << fixed << setprecision(6);
+
+            f << "# number of KF, number of MP, UpdateLM[ms], SearchLP[ms], PoseOpt[ms]" << endl;
+
+            for(int i=0; i<vnKeyFramesLM.size(); ++i)
+            {
+
+                f << vnKeyFramesLM[i] << "," << vnMapPointsLM[i] <<  "," << vdUpdatedLM_ms[i] << "," << vdSearchLP_ms[i] << "," << vdPoseOpt_ms[i] << endl;
+            }
+
+            f.close();
+        }
+
+        void Tracking::PrintTimeStats()
+        {
+            // Save data in files
+            TrackStats2File();
+            LocalMapStats2File();
 
 
-    if(mpLoopClosing->vTimeGBATotal_ms.size() > 0)
-    {
-        // Full GBA time stats
-        std::cout << std::endl << std::endl << std::endl;
-        std::cout << "Full GBA (mean$\\pm$std)" << std::endl << std::endl;
-        f << std::endl << "Full GBA (mean$\\pm$std)" << std::endl << std::endl;
+            ofstream f;
+            f.open("ExecTimeMean.txt");
+            f << fixed;
+            //Report the mean and std of each one
+            std::cout << std::endl << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
+            f << " TIME STATS in ms (mean$\\pm$std)" << std::endl;
+            cout << "OpenCV version: " << CV_VERSION << endl;
+            f << "OpenCV version: " << CV_VERSION << endl;
+            std::cout << "---------------------------" << std::endl;
+            std::cout << "Tracking" << std::setprecision(5) << std::endl << std::endl;
+            f << "---------------------------" << std::endl;
+            f << "Tracking" << std::setprecision(5) << std::endl << std::endl;
+            double average, deviation;
+            if(!vdRectStereo_ms.empty())
+            {
+                average = calcAverage(vdRectStereo_ms);
+                deviation = calcDeviation(vdRectStereo_ms, average);
+                std::cout << "Stereo Rectification: " << average << "$\\pm$" << deviation << std::endl;
+                f << "Stereo Rectification: " << average << "$\\pm$" << deviation << std::endl;
+            }
 
-        average = calcAverage(mpLoopClosing->vTimeFullGBA_ms);
-        deviation = calcDeviation(mpLoopClosing->vTimeFullGBA_ms, average);
-        std::cout << "GBA: " << average << "$\\pm$" << deviation << std::endl;
-        f << "GBA: " << average << "$\\pm$" << deviation << std::endl;
-        average = calcAverage(mpLoopClosing->vTimeMapUpdate_ms);
-        deviation = calcDeviation(mpLoopClosing->vTimeMapUpdate_ms, average);
-        std::cout << "Map Update: " << average << "$\\pm$" << deviation << std::endl;
-        f << "Map Update: " << average << "$\\pm$" << deviation << std::endl;
-        average = calcAverage(mpLoopClosing->vTimeGBATotal_ms);
-        deviation = calcDeviation(mpLoopClosing->vTimeGBATotal_ms, average);
-        std::cout << "Total Full GBA: " << average << "$\\pm$" << deviation << std::endl;
-        f << "Total Full GBA: " << average << "$\\pm$" << deviation << std::endl;
-    }
+            average = calcAverage(vdORBExtract_ms);
+            deviation = calcDeviation(vdORBExtract_ms, average);
+            std::cout << "ORB Extraction: " << average << "$\\pm$" << deviation << std::endl;
+            f << "ORB Extraction: " << average << "$\\pm$" << deviation << std::endl;
 
-    f.close();
+            if(!vdStereoMatch_ms.empty())
+            {
+                average = calcAverage(vdStereoMatch_ms);
+                deviation = calcDeviation(vdStereoMatch_ms, average);
+                std::cout << "Stereo Matching: " << average << "$\\pm$" << deviation << std::endl;
+                f << "Stereo Matching: " << average << "$\\pm$" << deviation << std::endl;
+            }
 
-}
+            if(!vdIMUInteg_ms.empty())
+            {
+                average = calcAverage(vdIMUInteg_ms);
+                deviation = calcDeviation(vdIMUInteg_ms, average);
+                std::cout << "IMU Preintegration: " << average << "$\\pm$" << deviation << std::endl;
+                f << "IMU Preintegration: " << average << "$\\pm$" << deviation << std::endl;
+            }
 
+            average = calcAverage(vdPosePred_ms);
+            deviation = calcDeviation(vdPosePred_ms, average);
+            std::cout << "Pose Prediction: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Pose Prediction: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(vdLMTrack_ms);
+            deviation = calcDeviation(vdLMTrack_ms, average);
+            std::cout << "LM Track: " << average << "$\\pm$" << deviation << std::endl;
+            f << "LM Track: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(vdNewKF_ms);
+            deviation = calcDeviation(vdNewKF_ms, average);
+            std::cout << "New KF decision: " << average << "$\\pm$" << deviation << std::endl;
+            f << "New KF decision: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(vdTrackTotal_ms);
+            deviation = calcDeviation(vdTrackTotal_ms, average);
+            std::cout << "Total Tracking: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Total Tracking: " << average << "$\\pm$" << deviation << std::endl;
+
+            // Local Map Tracking complexity
+            std::cout << "---------------------------" << std::endl;
+            std::cout << std::endl << "Local Map Tracking complexity (mean$\\pm$std)" << std::endl;
+            f << "---------------------------" << std::endl;
+            f << std::endl << "Local Map Tracking complexity (mean$\\pm$std)" << std::endl;
+
+            average = calcAverage(vnKeyFramesLM);
+            deviation = calcDeviation(vnKeyFramesLM, average);
+            std::cout << "Local KFs: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Local KFs: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(vnMapPointsLM);
+            deviation = calcDeviation(vnMapPointsLM, average);
+            std::cout << "Local MPs: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Local MPs: " << average << "$\\pm$" << deviation << std::endl;
+
+            // Local Mapping time stats
+            std::cout << std::endl << std::endl << std::endl;
+            std::cout << "Local Mapping" << std::endl << std::endl;
+            f << std::endl << "Local Mapping" << std::endl << std::endl;
+
+            average = calcAverage(mpLocalMapper->vdKFInsert_ms);
+            deviation = calcDeviation(mpLocalMapper->vdKFInsert_ms, average);
+            std::cout << "KF Insertion: " << average << "$\\pm$" << deviation << std::endl;
+            f << "KF Insertion: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vdMPCulling_ms);
+            deviation = calcDeviation(mpLocalMapper->vdMPCulling_ms, average);
+            std::cout << "MP Culling: " << average << "$\\pm$" << deviation << std::endl;
+            f << "MP Culling: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vdMPCreation_ms);
+            deviation = calcDeviation(mpLocalMapper->vdMPCreation_ms, average);
+            std::cout << "MP Creation: " << average << "$\\pm$" << deviation << std::endl;
+            f << "MP Creation: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vdLBASync_ms);
+            deviation = calcDeviation(mpLocalMapper->vdLBASync_ms, average);
+            std::cout << "LBA: " << average << "$\\pm$" << deviation << std::endl;
+            f << "LBA: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vdKFCullingSync_ms);
+            deviation = calcDeviation(mpLocalMapper->vdKFCullingSync_ms, average);
+            std::cout << "KF Culling: " << average << "$\\pm$" << deviation << std::endl;
+            f << "KF Culling: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vdLMTotal_ms);
+            deviation = calcDeviation(mpLocalMapper->vdLMTotal_ms, average);
+            std::cout << "Total Local Mapping: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Total Local Mapping: " << average << "$\\pm$" << deviation << std::endl;
+
+            // Local Mapping LBA complexity
+            std::cout << "---------------------------" << std::endl;
+            std::cout << std::endl << "LBA complexity (mean$\\pm$std)" << std::endl;
+            f << "---------------------------" << std::endl;
+            f << std::endl << "LBA complexity (mean$\\pm$std)" << std::endl;
+
+            average = calcAverage(mpLocalMapper->vnLBA_edges);
+            deviation = calcDeviation(mpLocalMapper->vnLBA_edges, average);
+            std::cout << "LBA Edges: " << average << "$\\pm$" << deviation << std::endl;
+            f << "LBA Edges: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vnLBA_KFopt);
+            deviation = calcDeviation(mpLocalMapper->vnLBA_KFopt, average);
+            std::cout << "LBA KF optimized: " << average << "$\\pm$" << deviation << std::endl;
+            f << "LBA KF optimized: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vnLBA_KFfixed);
+            deviation = calcDeviation(mpLocalMapper->vnLBA_KFfixed, average);
+            std::cout << "LBA KF fixed: " << average << "$\\pm$" << deviation << std::endl;
+            f << "LBA KF fixed: " << average << "$\\pm$" << deviation << std::endl;
+
+            average = calcAverage(mpLocalMapper->vnLBA_MPs);
+            deviation = calcDeviation(mpLocalMapper->vnLBA_MPs, average);
+            std::cout << "LBA MP: " << average << "$\\pm$" << deviation << std::endl << std::endl;
+            f << "LBA MP: " << average << "$\\pm$" << deviation << std::endl << std::endl;
+
+            std::cout << "LBA executions: " << mpLocalMapper->nLBA_exec << std::endl;
+            std::cout << "LBA aborts: " << mpLocalMapper->nLBA_abort << std::endl;
+            f << "LBA executions: " << mpLocalMapper->nLBA_exec << std::endl;
+            f << "LBA aborts: " << mpLocalMapper->nLBA_abort << std::endl;
+
+            // Map complexity
+            std::cout << "---------------------------" << std::endl;
+            std::cout << std::endl << "Map complexity" << std::endl;
+            std::cout << "KFs in map: " << mpAtlas->GetAllMaps()[0]->GetAllKeyFrames().size() << std::endl;
+            std::cout << "MPs in map: " << mpAtlas->GetAllMaps()[0]->GetAllMapPoints().size() << std::endl;
+            f << "---------------------------" << std::endl;
+            f << std::endl << "Map complexity" << std::endl;
+            f << "KFs in map: " << mpAtlas->GetAllMaps()[0]->GetAllKeyFrames().size() << std::endl;
+            f << "MPs in map: " << mpAtlas->GetAllMaps()[0]->GetAllMapPoints().size() << std::endl;
+
+
+            // Place recognition time stats
+            std::cout << std::endl << std::endl << std::endl;
+            std::cout << "Place Recognition (mean$\\pm$std)" << std::endl << std::endl;
+            f << std::endl << "Place Recognition (mean$\\pm$std)" << std::endl << std::endl;
+
+            average = calcAverage(mpLoopClosing->vTimeBoW_ms);
+            deviation = calcDeviation(mpLoopClosing->vTimeBoW_ms, average);
+            std::cout << "Database Query: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Database Query: " << average << "$\\pm$" << deviation << std::endl;
+            average = calcAverage(mpLoopClosing->vTimeSE3_ms);
+            deviation = calcDeviation(mpLoopClosing->vTimeSE3_ms, average);
+            std::cout << "SE3 estimation: " << average << "$\\pm$" << deviation << std::endl;
+            f << "SE3 estimation: " << average << "$\\pm$" << deviation << std::endl;
+            average = calcAverage(mpLoopClosing->vTimePRTotal_ms);
+            deviation = calcDeviation(mpLoopClosing->vTimePRTotal_ms, average);
+            std::cout << "Total Place Recognition: " << average << "$\\pm$" << deviation << std::endl;
+            f << "Total Place Recognition: " << average << "$\\pm$" << deviation << std::endl;
+
+            // Loop Closing time stats
+            if(mpLoopClosing->vTimeLoopTotal_ms.size() > 0)
+            {
+                std::cout << std::endl << std::endl << std::endl;
+                std::cout << "Loop Closing (mean$\\pm$std)" << std::endl << std::endl;
+                f << std::endl << "Loop Closing (mean$\\pm$std)" << std::endl << std::endl;
+
+                average = calcAverage(mpLoopClosing->vTimeLoopTotal_ms);
+                deviation = calcDeviation(mpLoopClosing->vTimeLoopTotal_ms, average);
+                std::cout << "Total Loop Closing: " << average << "$\\pm$" << deviation << std::endl;
+                f << "Total Loop Closing: " << average << "$\\pm$" << deviation << std::endl;
+            }
+
+            if(mpLoopClosing->vTimeMergeTotal_ms.size() > 0)
+            {
+                // Map Merging time stats
+                std::cout << std::endl << std::endl << std::endl;
+                std::cout << "Map Merging (mean$\\pm$std)" << std::endl << std::endl;
+                f << std::endl << "Map Merging (mean$\\pm$std)" << std::endl << std::endl;
+
+                average = calcAverage(mpLoopClosing->vTimeMergeTotal_ms);
+                deviation = calcDeviation(mpLoopClosing->vTimeMergeTotal_ms, average);
+                std::cout << "Total Map Merging: " << average << "$\\pm$" << deviation << std::endl;
+                f << "Total Map Merging: " << average << "$\\pm$" << deviation << std::endl;
+            }
+
+
+            if(mpLoopClosing->vTimeGBATotal_ms.size() > 0)
+            {
+                // Full GBA time stats
+                std::cout << std::endl << std::endl << std::endl;
+                std::cout << "Full GBA (mean$\\pm$std)" << std::endl << std::endl;
+                f << std::endl << "Full GBA (mean$\\pm$std)" << std::endl << std::endl;
+
+                average = calcAverage(mpLoopClosing->vTimeFullGBA_ms);
+                deviation = calcDeviation(mpLoopClosing->vTimeFullGBA_ms, average);
+                std::cout << "GBA: " << average << "$\\pm$" << deviation << std::endl;
+                f << "GBA: " << average << "$\\pm$" << deviation << std::endl;
+                average = calcAverage(mpLoopClosing->vTimeMapUpdate_ms);
+                deviation = calcDeviation(mpLoopClosing->vTimeMapUpdate_ms, average);
+                std::cout << "Map Update: " << average << "$\\pm$" << deviation << std::endl;
+                f << "Map Update: " << average << "$\\pm$" << deviation << std::endl;
+                average = calcAverage(mpLoopClosing->vTimeGBATotal_ms);
+                deviation = calcDeviation(mpLoopClosing->vTimeGBATotal_ms, average);
+                std::cout << "Total Full GBA: " << average << "$\\pm$" << deviation << std::endl;
+                f << "Total Full GBA: " << average << "$\\pm$" << deviation << std::endl;
+            }
+            f.close();
+        }
 #endif
 
         Tracking::~Tracking()
@@ -1077,13 +1080,13 @@ void Tracking::PrintTimeStats()
                 return false;
             }
 
-            mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+            mpORBextractorLeft = new FExtractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
             if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-                mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+                mpORBextractorRight = new FExtractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
             if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-                mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+                mpIniORBextractor = new FExtractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
             cout << endl << "ORB Extractor Parameters: " << endl;
             cout << "- Number of Features: " << nFeatures << endl;
@@ -1267,12 +1270,12 @@ void Tracking::PrintTimeStats()
 
 #ifdef REGISTER_TIMES
             vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
-    vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);
+            vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);
 #endif
 
             Track();
 
-            return mCurrentFrame.mTcw.clone();
+            return mCurrentFrame.T_w_c_.clone();
         }
 
 
@@ -1307,12 +1310,9 @@ void Tracking::PrintTimeStats()
 #ifdef REGISTER_TIMES
             vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
 #endif
-
             Track();
-
-            return mCurrentFrame.mTcw.clone();
+            return mCurrentFrame.T_w_c_.clone();
         }
-
 
         cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
         {
@@ -1360,10 +1360,10 @@ void Tracking::PrintTimeStats()
             vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
 #endif
 
-            lastID = mCurrentFrame.mnId;
+            lastID = mCurrentFrame.id_;
             Track();
 
-            return mCurrentFrame.mTcw.clone();
+            return mCurrentFrame.T_w_c_.clone();
         }
 
 
@@ -1402,11 +1402,11 @@ void Tracking::PrintTimeStats()
                     {
                         IMU::Point* m = &mlQueueImuData.front();
                         cout.precision(17);
-                        if(m->t<mCurrentFrame.mpPrevFrame->mTimeStamp-0.001l)
+                        if(m->t<mCurrentFrame.mpPrevFrame->time_stamp_-0.001l)
                         {
                             mlQueueImuData.pop_front();
                         }
-                        else if(m->t<mCurrentFrame.mTimeStamp-0.001l)
+                        else if(m->t<mCurrentFrame.time_stamp_-0.001l)
                         {
                             mvImuFromLastFrame.push_back(*m);
                             mlQueueImuData.pop_front();
@@ -1438,12 +1438,12 @@ void Tracking::PrintTimeStats()
                 if((i==0) && (i<(n-1)))
                 {
                     float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-                    float tini = mvImuFromLastFrame[i].t-mCurrentFrame.mpPrevFrame->mTimeStamp;
+                    float tini = mvImuFromLastFrame[i].t-mCurrentFrame.mpPrevFrame->time_stamp_;
                     acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
                            (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tini/tab))*0.5f;
                     angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
                               (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tini/tab))*0.5f;
-                    tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame.mpPrevFrame->mTimeStamp;
+                    tstep = mvImuFromLastFrame[i+1].t-mCurrentFrame.mpPrevFrame->time_stamp_;
                 }
                 else if(i<(n-1))
                 {
@@ -1454,18 +1454,18 @@ void Tracking::PrintTimeStats()
                 else if((i>0) && (i==(n-1)))
                 {
                     float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
-                    float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame.mTimeStamp;
+                    float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame.time_stamp_;
                     acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
                            (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tend/tab))*0.5f;
                     angVel = (mvImuFromLastFrame[i].w+mvImuFromLastFrame[i+1].w-
                               (mvImuFromLastFrame[i+1].w-mvImuFromLastFrame[i].w)*(tend/tab))*0.5f;
-                    tstep = mCurrentFrame.mTimeStamp-mvImuFromLastFrame[i].t;
+                    tstep = mCurrentFrame.time_stamp_-mvImuFromLastFrame[i].t;
                 }
                 else if((i==0) && (i==(n-1)))
                 {
                     acc = mvImuFromLastFrame[i].a;
                     angVel = mvImuFromLastFrame[i].w;
-                    tstep = mCurrentFrame.mTimeStamp-mCurrentFrame.mpPrevFrame->mTimeStamp;
+                    tstep = mCurrentFrame.time_stamp_-mCurrentFrame.mpPrevFrame->time_stamp_;
                 }
 
                 if (!mpImuPreintegratedFromLastKF)
@@ -1559,7 +1559,7 @@ void Tracking::PrintTimeStats()
                 cv::Mat JRg = pF2->mpImuPreintegratedFrame->JRg;
                 cv::Mat E = pF2->mpImuPreintegratedFrame->GetUpdatedDeltaRotation().t()*VisionR;
                 cv::Mat e = IMU::LogSO3(E);
-                assert(fabs(pF2->mTimeStamp-pF1->mTimeStamp-pF2->mpImuPreintegratedFrame->dT)<0.01);
+                assert(fabs(pF2->time_stamp_-pF1->time_stamp_-pF2->mpImuPreintegratedFrame->dT)<0.01);
 
                 cv::Mat J = -IMU::InverseRightJacobianSO3(e)*E.t()*JRg;
                 grad += J.t()*e;
@@ -1638,7 +1638,6 @@ void Tracking::PrintTimeStats()
             }
         }
 
-
         void Tracking::Track()
         {
 
@@ -1660,7 +1659,7 @@ void Tracking::PrintTimeStats()
 
             if(mState!=NO_IMAGES_YET)
             {
-                if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
+                if(mLastFrame.time_stamp_>mCurrentFrame.time_stamp_)
                 {
                     cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << endl;
                     unique_lock<mutex> lock(mMutexImuQueue);
@@ -1668,9 +1667,9 @@ void Tracking::PrintTimeStats()
                     CreateMapInAtlas();
                     return;
                 }
-                else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
+                else if(mCurrentFrame.time_stamp_>mLastFrame.time_stamp_+1.0)
                 {
-                    cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
+                    cout << "id last: " << mLastFrame.id_ << "    id curr: " << mCurrentFrame.id_ << endl;
                     if(mpAtlas->isInertial())
                     {
 
@@ -1716,11 +1715,9 @@ void Tracking::PrintTimeStats()
                 PreintegrateIMU();
 #ifdef REGISTER_TIMES
                 std::chrono::steady_clock::time_point time_EndPreIMU = std::chrono::steady_clock::now();
-
-        double timePreImu = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPreIMU - time_StartPreIMU).count();
-        vdIMUInteg_ms.push_back(timePreImu);
+                double timePreImu = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPreIMU - time_StartPreIMU).count();
+                vdIMUInteg_ms.push_back(timePreImu);
 #endif
-
             }
             mbCreatedMap = false;
 
@@ -1758,7 +1755,7 @@ void Tracking::PrintTimeStats()
 
                 if(mpAtlas->GetAllMaps().size() == 1)
                 {
-                    mnFirstFrameId = mCurrentFrame.mnId;
+                    mnFirstFrameId = mCurrentFrame.id_;
                 }
             }
             else
@@ -1783,7 +1780,7 @@ void Tracking::PrintTimeStats()
                         // Local Mapping might have changed some MapPoints tracked in last frame
                         CheckReplacedInLastFrame();
 
-                        if((mVelocity.empty() && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                        if((mVelocity.empty() && !pCurrentMap->isImuInitialized()) || mCurrentFrame.id_<mnLastRelocFrameId+2)
                         {
                             //Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
                             bOK = TrackReferenceKeyFrame();
@@ -1799,7 +1796,7 @@ void Tracking::PrintTimeStats()
 
                         if (!bOK)
                         {
-                            if ( mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
+                            if ( mCurrentFrame.id_<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
                                  (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO))
                             {
                                 mState = LOST;
@@ -1808,7 +1805,7 @@ void Tracking::PrintTimeStats()
                             {
                                 cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
                                 mState = RECENTLY_LOST;
-                                mTimeStampLost = mCurrentFrame.mTimeStamp;
+                                mTimeStampLost = mCurrentFrame.time_stamp_;
                                 //mCurrentFrame.SetPose(mLastFrame.mTcw);
                             }
                             else
@@ -1832,7 +1829,7 @@ void Tracking::PrintTimeStats()
                                 else
                                     bOK = false;
 
-                                if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
+                                if (mCurrentFrame.time_stamp_-mTimeStampLost>time_recently_lost)
                                 {
                                     mState = LOST;
                                     Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
@@ -1843,7 +1840,7 @@ void Tracking::PrintTimeStats()
                             {
                                 // TODO fix relocalization
                                 bOK = Relocalization();
-                                if(!bOK && mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost_visual)
+                                if(!bOK && mCurrentFrame.time_stamp_-mTimeStampLost>time_recently_lost_visual)
                                 {
                                     mState = LOST;
                                     Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
@@ -1914,7 +1911,7 @@ void Tracking::PrintTimeStats()
                                 bOKMM = TrackWithMotionModel();
                                 vpMPsMM = mCurrentFrame.mvpMapPoints;
                                 vbOutMM = mCurrentFrame.mvbOutlier;
-                                TcwMM = mCurrentFrame.mTcw.clone();
+                                TcwMM = mCurrentFrame.T_w_c_.clone();
                             }
                             bOKReloc = Relocalization();
 
@@ -1950,9 +1947,8 @@ void Tracking::PrintTimeStats()
 
 #ifdef REGISTER_TIMES
                 std::chrono::steady_clock::time_point time_EndPosePred = std::chrono::steady_clock::now();
-
-        double timePosePred = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPosePred - time_StartPosePred).count();
-        vdPosePred_ms.push_back(timePosePred);
+                double timePosePred = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPosePred - time_StartPosePred).count();
+                vdPosePred_ms.push_back(timePosePred);
 #endif
 
 
@@ -1997,14 +1993,14 @@ void Tracking::PrintTimeStats()
                     else
                         mState = RECENTLY_LOST; // visual to lost
 
-                    if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
+                    if(mCurrentFrame.id_>mnLastRelocFrameId+mMaxFrames)
                     {
-                        mTimeStampLost = mCurrentFrame.mTimeStamp;
+                        mTimeStampLost = mCurrentFrame.time_stamp_;
                     }
                 }
 
                 // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it shluld be once mCurrFrame is completely modified)
-                if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) && ((mSensor == System::IMU_MONOCULAR) || (mSensor == System::IMU_STEREO)) && pCurrentMap->isImuInitialized())
+                if((mCurrentFrame.id_<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.id_ > mnFramesToResetIMU) && ((mSensor == System::IMU_MONOCULAR) || (mSensor == System::IMU_STEREO)) && pCurrentMap->isImuInitialized())
                 {
                     // TODO check this situation
                     Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
@@ -2019,42 +2015,41 @@ void Tracking::PrintTimeStats()
                 {
                     if(bOK)
                     {
-                        if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
+                        if(mCurrentFrame.id_==(mnLastRelocFrameId+mnFramesToResetIMU))
                         {
                             cout << "RESETING FRAME!!!" << endl;
                         }
-                        else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
+                        else if(mCurrentFrame.id_>(mnLastRelocFrameId+30))
                             mLastBias = mCurrentFrame.mImuBias;
                     }
                 }
 
 #ifdef REGISTER_TIMES
                 std::chrono::steady_clock::time_point time_EndLMTrack = std::chrono::steady_clock::now();
-
-        double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
-        vdLMTrack_ms.push_back(timeLMTrack);
+                double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
+                vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
                 // Update drawer
                 mpFrameDrawer->Update(this);
-                if(!mCurrentFrame.mTcw.empty())
-                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                if(!mCurrentFrame.T_w_c_.empty())
+                    mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                 if(bOK || mState==RECENTLY_LOST)
                 {
                     // Update motion model
-                    if(!mLastFrame.mTcw.empty() && !mCurrentFrame.mTcw.empty())
+                    if(!mLastFrame.T_w_c_.empty() && !mCurrentFrame.T_w_c_.empty())
                     {
                         cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
                         mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
                         mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
-                        mVelocity = mCurrentFrame.mTcw*LastTwc;
+                        mVelocity = mCurrentFrame.T_w_c_*LastTwc;
                     }
                     else
                         mVelocity = cv::Mat();
 
                     if(mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO)
-                        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                     // Clean VO matches
                     for(int i=0; i<mCurrentFrame.N; i++)
@@ -2081,9 +2076,6 @@ void Tracking::PrintTimeStats()
 #endif
                     bool bNeedKF = NeedNewKeyFrame();
 
-
-
-
                     // Check if we need to insert a new keyframe
                     if(bNeedKF && (bOK|| (mState==RECENTLY_LOST && (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO))))
                         CreateNewKeyFrame();
@@ -2091,10 +2083,9 @@ void Tracking::PrintTimeStats()
 #ifdef REGISTER_TIMES
                     std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
 
-            double timeNewKF = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndNewKF - time_StartNewKF).count();
-            vdNewKF_ms.push_back(timeNewKF);
+                    double timeNewKF = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndNewKF - time_StartNewKF).count();
+                    vdNewKF_ms.push_back(timeNewKF);
 #endif
-
                     // We allow points with high innovation (considererd outliers by the Huber Function)
                     // pass to the new keyframe, so that bundle adjustment will finally decide
                     // if they are outliers or not. We don't want next frame to estimate its position
@@ -2131,18 +2122,15 @@ void Tracking::PrintTimeStats()
                 mLastFrame = Frame(mCurrentFrame);
             }
 
-
-
-
             if(mState==OK || mState==RECENTLY_LOST)
             {
                 // Store frame pose information to retrieve the complete camera trajectory afterwards.
-                if(!mCurrentFrame.mTcw.empty())
+                if(!mCurrentFrame.T_w_c_.empty())
                 {
-                    cv::Mat Tcr = mCurrentFrame.mTcw*mCurrentFrame.mpReferenceKF->GetPoseInverse();
+                    cv::Mat Tcr = mCurrentFrame.T_w_c_*mCurrentFrame.mpReferenceKF->GetPoseInverse();
                     mlRelativeFramePoses.push_back(Tcr);
                     mlpReferences.push_back(mCurrentFrame.mpReferenceKF);
-                    mlFrameTimes.push_back(mCurrentFrame.mTimeStamp);
+                    mlFrameTimes.push_back(mCurrentFrame.time_stamp_);
                     mlbLost.push_back(mState==LOST);
                 }
                 else
@@ -2156,7 +2144,6 @@ void Tracking::PrintTimeStats()
 
             }
         }
-
 
         void Tracking::StereoInitialization()
         {
@@ -2246,9 +2233,9 @@ void Tracking::PrintTimeStats()
                 mpLocalMapper->InsertKeyFrame(pKFini);
 
                 mLastFrame = Frame(mCurrentFrame);
-                mnLastKeyFrameId=mCurrentFrame.mnId;
+                mnLastKeyFrameId=mCurrentFrame.id_;
                 mpLastKeyFrame = pKFini;
-                mnLastRelocFrameId = mCurrentFrame.mnId;
+                mnLastRelocFrameId = mCurrentFrame.id_;
 
                 mvpLocalKeyFrames.push_back(pKFini);
                 mvpLocalMapPoints=mpAtlas->GetAllMapPoints();
@@ -2259,12 +2246,11 @@ void Tracking::PrintTimeStats()
 
                 mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
 
-                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.T_w_c_);
 
                 mState=OK;
             }
         }
-
 
         void Tracking::MonocularInitialization()
         {
@@ -2272,19 +2258,19 @@ void Tracking::PrintTimeStats()
             if(!mpInitializer)
             {
                 // Set Reference Frame
-                if(mCurrentFrame.mvKeys.size()>100)
+                if(mCurrentFrame.keypoints_.size()>100)
                 {
 
                     mInitialFrame = Frame(mCurrentFrame);
                     mLastFrame = Frame(mCurrentFrame);
-                    mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
-                    for(size_t i=0; i<mCurrentFrame.mvKeysUn.size(); i++)
-                        mvbPrevMatched[i]=mCurrentFrame.mvKeysUn[i].pt;
+                    mvbPrevMatched.resize(mCurrentFrame.ukeypoints_.size());
+                    for(size_t i=0; i<mCurrentFrame.ukeypoints_.size(); i++)
+                        mvbPrevMatched[i]=mCurrentFrame.ukeypoints_[i].pt;
 
                     if(mpInitializer)
                         delete mpInitializer;
 
-                    mpInitializer =  new Initializer(mCurrentFrame,1.0,200);
+                    mpInitializer =  new MonoInitializer(mCurrentFrame,1.0,200);
 
                     fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
@@ -2303,24 +2289,24 @@ void Tracking::PrintTimeStats()
             }
             else
             {
-                if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
+                if (((int)mCurrentFrame.keypoints_.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.time_stamp_-mInitialFrame.time_stamp_>1.0)))
                 {
                     delete mpInitializer;
-                    mpInitializer = static_cast<Initializer*>(NULL);
+                    mpInitializer = static_cast<MonoInitializer*>(NULL);
                     fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
                     return;
                 }
 
                 // Find correspondences
-                ORBmatcher matcher(0.9,true);
+                FMatcher matcher(0.9,true);
                 int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
                 // Check if there are enough correspondences
                 if(nmatches<100)
                 {
                     delete mpInitializer;
-                    mpInitializer = static_cast<Initializer*>(NULL);
+                    mpInitializer = static_cast<MonoInitializer*>(NULL);
                     fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
                     return;
                 }
@@ -2329,7 +2315,7 @@ void Tracking::PrintTimeStats()
                 cv::Mat tcw; // Current Camera Translation
                 vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
-                if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Rcw,tcw,mvIniP3D,vbTriangulated))
+                if(mpCamera->ReconstructWithTwoViews(mInitialFrame.ukeypoints_,mCurrentFrame.ukeypoints_,mvIniMatches,Rcw,tcw,mvIniP3D,vbTriangulated))
                 {
                     for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
                     {
@@ -2352,8 +2338,6 @@ void Tracking::PrintTimeStats()
                 }
             }
         }
-
-
 
         void Tracking::CreateInitialMapMonocular()
         {
@@ -2397,7 +2381,6 @@ void Tracking::PrintTimeStats()
                 //Add to Map
                 mpAtlas->AddMapPoint(pMP);
             }
-
 
             // Update Connections
             pKFini->UpdateConnections();
@@ -2458,9 +2441,9 @@ void Tracking::PrintTimeStats()
             mpLocalMapper->mFirstTs=pKFcur->mTimeStamp;
 
             mCurrentFrame.SetPose(pKFcur->GetPose());
-            mnLastKeyFrameId=mCurrentFrame.mnId;
+            mnLastKeyFrameId=mCurrentFrame.id_;
             mpLastKeyFrame = pKFcur;
-            mnLastRelocFrameId = mInitialFrame.mnId;
+            mnLastRelocFrameId = mInitialFrame.id_;
 
             mvpLocalKeyFrames.push_back(pKFcur);
             mvpLocalKeyFrames.push_back(pKFini);
@@ -2473,10 +2456,9 @@ void Tracking::PrintTimeStats()
 
             cv::Mat deltaT = vKFs.back()->GetPose()*vKFs.front()->GetPoseInverse();
             mVelocity = cv::Mat();
-            Eigen::Vector3d phi = LogSO3(Converter::toMatrix3d(deltaT.rowRange(0,3).colRange(0,3)));
+            Eigen::Vector3d phi = datastructures::IMU::LogSO3(vi_slam::basics::converter::toMatrix3d(deltaT.rowRange(0,3).colRange(0,3)));
 
-
-            double aux = (mCurrentFrame.mTimeStamp-mLastFrame.mTimeStamp)/(mCurrentFrame.mTimeStamp-mInitialFrame.mTimeStamp);
+            double aux = (mCurrentFrame.time_stamp_-mLastFrame.time_stamp_)/(mCurrentFrame.time_stamp_-mInitialFrame.time_stamp_);
             phi *= aux;
 
             mLastFrame = Frame(mCurrentFrame);
@@ -2495,13 +2477,13 @@ void Tracking::PrintTimeStats()
 
         void Tracking::CreateMapInAtlas()
         {
-            mnLastInitFrameId = mCurrentFrame.mnId;
+            mnLastInitFrameId = mCurrentFrame.id_;
             mpAtlas->CreateNewMap();
             if (mSensor==System::IMU_STEREO || mSensor == System::IMU_MONOCULAR)
                 mpAtlas->SetInertialSensor();
             mbSetInit=false;
 
-            mnInitialFrameId = mCurrentFrame.mnId+1;
+            mnInitialFrameId = mCurrentFrame.id_+1;
             mState = NO_IMAGES_YET;
 
             // Restart the variable with information about the last KF
@@ -2513,7 +2495,7 @@ void Tracking::PrintTimeStats()
             {
                 if(mpInitializer)
                     delete mpInitializer;
-                mpInitializer = static_cast<Initializer*>(NULL);
+                mpInitializer = static_cast<MonoInitializer*>(NULL);
             }
 
             if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO ) && mpImuPreintegratedFromLastKF)
@@ -2561,7 +2543,7 @@ void Tracking::PrintTimeStats()
 
             // We perform first an ORB matching with the reference keyframe
             // If enough matches are found we setup a PnP solver
-            ORBmatcher matcher(0.7,true);
+            FMatcher matcher(0.7,true);
             vector<MapPoint*> vpMapPointMatches;
 
             int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -2573,7 +2555,7 @@ void Tracking::PrintTimeStats()
             }
 
             mCurrentFrame.mvpMapPoints = vpMapPointMatches;
-            mCurrentFrame.SetPose(mLastFrame.mTcw);
+            mCurrentFrame.SetPose(mLastFrame.T_w_c_);
 
             //mCurrentFrame.PrintPointDistribution();
 
@@ -2600,7 +2582,7 @@ void Tracking::PrintTimeStats()
                             pMP->mbTrackInViewR = false;
                         }
                         pMP->mbTrackInView = false;
-                        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                        pMP->mnLastFrameSeen = mCurrentFrame.id_;
                         nmatches--;
                     }
                     else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
@@ -2622,7 +2604,7 @@ void Tracking::PrintTimeStats()
             cv::Mat Tlr = mlRelativeFramePoses.back();
             mLastFrame.SetPose(Tlr*pRef->GetPose());
 
-            if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
+            if(mnLastKeyFrameId==mLastFrame.id_ || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
                 return;
 
             // Create "visual odometry" MapPoints
@@ -2684,7 +2666,7 @@ void Tracking::PrintTimeStats()
 
         bool Tracking::TrackWithMotionModel()
         {
-            ORBmatcher matcher(0.9,true);
+            FMatcher matcher(0.9,true);
 
             // Update last frame pose according to its reference keyframe
             // Create "visual odometry" points if in Localization Mode
@@ -2692,7 +2674,7 @@ void Tracking::PrintTimeStats()
 
 
 
-            if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
+            if (mpAtlas->isImuInitialized() && (mCurrentFrame.id_>mnLastRelocFrameId+mnFramesToResetIMU))
             {
                 // Predict ste with IMU if it is initialized and it doesnt need reset
                 PredictStateIMU();
@@ -2700,7 +2682,7 @@ void Tracking::PrintTimeStats()
             }
             else
             {
-                mCurrentFrame.SetPose(mVelocity*mLastFrame.mTcw);
+                mCurrentFrame.SetPose(mVelocity*mLastFrame.T_w_c_);
             }
 
 
@@ -2757,7 +2739,7 @@ void Tracking::PrintTimeStats()
                         else{
                             pMP->mbTrackInViewR = false;
                         }
-                        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                        pMP->mnLastFrameSeen = mCurrentFrame.id_;
                         nmatches--;
                     }
                     else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
@@ -2790,19 +2772,15 @@ void Tracking::PrintTimeStats()
             UpdateLocalMap();
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartSearchLP = std::chrono::steady_clock::now();
-
-    double timeUpdatedLM_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_StartSearchLP - time_StartLMUpdate).count();
-    vdUpdatedLM_ms.push_back(timeUpdatedLM_ms);
+            double timeUpdatedLM_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_StartSearchLP - time_StartLMUpdate).count();
+            vdUpdatedLM_ms.push_back(timeUpdatedLM_ms);
 #endif
-
             SearchLocalPoints();
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartPoseOpt = std::chrono::steady_clock::now();
-
-    double timeSearchLP_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_StartPoseOpt - time_StartSearchLP).count();
-    vdSearchLP_ms.push_back(timeSearchLP_ms);
+            double timeSearchLP_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_StartPoseOpt - time_StartSearchLP).count();
+            vdSearchLP_ms.push_back(timeSearchLP_ms);
 #endif
-
             // TOO check outliers before PO
             int aux1 = 0, aux2=0;
             for(int i=0; i<mCurrentFrame.N; i++)
@@ -2818,7 +2796,7 @@ void Tracking::PrintTimeStats()
                 Optimizer::PoseOptimization(&mCurrentFrame);
             else
             {
-                if(mCurrentFrame.mnId<=mnLastRelocFrameId+mnFramesToResetIMU)
+                if(mCurrentFrame.id_<=mnLastRelocFrameId+mnFramesToResetIMU)
                 {
                     Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_DEBUG);
                     Optimizer::PoseOptimization(&mCurrentFrame);
@@ -2839,9 +2817,8 @@ void Tracking::PrintTimeStats()
             }
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndPoseOpt = std::chrono::steady_clock::now();
-
-    double timePoseOpt_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPoseOpt - time_StartPoseOpt).count();
-    vdPoseOpt_ms.push_back(timePoseOpt_ms);
+            double timePoseOpt_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndPoseOpt - time_StartPoseOpt).count();
+            vdPoseOpt_ms.push_back(timePoseOpt_ms);
 #endif
 
             vnKeyFramesLM.push_back(mvpLocalKeyFrames.size());
@@ -2882,7 +2859,7 @@ void Tracking::PrintTimeStats()
             // Decide if the tracking was succesful
             // More restrictive if there was a relocalization recently
             mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
-            if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
+            if(mCurrentFrame.id_<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
                 return false;
 
             if((mnMatchesInliers>10)&&(mState==RECENTLY_LOST))
@@ -2920,9 +2897,9 @@ void Tracking::PrintTimeStats()
         {
             if(((mSensor == System::IMU_MONOCULAR) || (mSensor == System::IMU_STEREO)) && !mpAtlas->GetCurrentMap()->isImuInitialized())
             {
-                if (mSensor == System::IMU_MONOCULAR && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
+                if (mSensor == System::IMU_MONOCULAR && (mCurrentFrame.time_stamp_-mpLastKeyFrame->mTimeStamp)>=0.25)
                     return true;
-                else if (mSensor == System::IMU_STEREO && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
+                else if (mSensor == System::IMU_STEREO && (mCurrentFrame.time_stamp_-mpLastKeyFrame->mTimeStamp)>=0.25)
                     return true;
                 else
                     return false;
@@ -2943,7 +2920,7 @@ void Tracking::PrintTimeStats()
             const int nKFs = mpAtlas->KeyFramesInMap();
 
             // Do not insert keyframes if not enough frames have passed from last relocalisation
-            if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && nKFs>mMaxFrames)
+            if(mCurrentFrame.id_<mnLastRelocFrameId+mMaxFrames && nKFs>mMaxFrames)
             {
                 return false;
             }
@@ -2972,7 +2949,6 @@ void Tracking::PrintTimeStats()
                             nTrackedClose++;
                         else
                             nNonTrackedClose++;
-
                     }
                 }
             }
@@ -2999,9 +2975,9 @@ void Tracking::PrintTimeStats()
             }
 
             // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
-            const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
+            const bool c1a = mCurrentFrame.id_>=mnLastKeyFrameId+mMaxFrames;
             // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-            const bool c1b = ((mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames) && bLocalMappingIdle);
+            const bool c1b = ((mCurrentFrame.id_>=mnLastKeyFrameId+mMinFrames) && bLocalMappingIdle);
             //Condition 1c: tracking is weak
             const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
             // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
@@ -3013,12 +2989,12 @@ void Tracking::PrintTimeStats()
             {
                 if (mSensor==System::IMU_MONOCULAR)
                 {
-                    if ((mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.5)
+                    if ((mCurrentFrame.time_stamp_-mpLastKeyFrame->mTimeStamp)>=0.5)
                         c3 = true;
                 }
                 else if (mSensor==System::IMU_STEREO)
                 {
-                    if ((mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.5)
+                    if ((mCurrentFrame.time_stamp_-mpLastKeyFrame->mTimeStamp)>=0.5)
                         c3 = true;
                 }
             }
@@ -3175,12 +3151,11 @@ void Tracking::PrintTimeStats()
                 }
             }
 
-
             mpLocalMapper->InsertKeyFrame(pKF);
 
             mpLocalMapper->SetNotStop(false);
 
-            mnLastKeyFrameId = mCurrentFrame.mnId;
+            mnLastKeyFrameId = mCurrentFrame.id_;
             mpLastKeyFrame = pKF;
             //cout  << "end creating new KF" << endl;
         }
@@ -3200,7 +3175,7 @@ void Tracking::PrintTimeStats()
                     else
                     {
                         pMP->IncreaseVisible();
-                        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                        pMP->mnLastFrameSeen = mCurrentFrame.id_;
                         pMP->mbTrackInView = false;
                         pMP->mbTrackInViewR = false;
                     }
@@ -3214,7 +3189,7 @@ void Tracking::PrintTimeStats()
             {
                 MapPoint* pMP = *vit;
 
-                if(pMP->mnLastFrameSeen == mCurrentFrame.mnId)
+                if(pMP->mnLastFrameSeen == mCurrentFrame.id_)
                     continue;
                 if(pMP->isBad())
                     continue;
@@ -3226,13 +3201,13 @@ void Tracking::PrintTimeStats()
                 }
                 if(pMP->mbTrackInView)
                 {
-                    mCurrentFrame.mmProjectPoints[pMP->mnId] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
+                    mCurrentFrame.mmProjectPoints[pMP->id_] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
                 }
             }
 
             if(nToMatch>0)
             {
-                ORBmatcher matcher(0.8);
+                FMatcher matcher(0.8);
                 int th = 1;
                 if(mSensor==System::RGBD)
                     th=3;
@@ -3249,7 +3224,7 @@ void Tracking::PrintTimeStats()
                 }
 
                 // If the camera has been relocalised recently, perform a coarser search
-                if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                if(mCurrentFrame.id_<mnLastRelocFrameId+2)
                     th=5;
 
                 if(mState==LOST || mState==RECENTLY_LOST) // Lost for less than 1 second
@@ -3286,13 +3261,13 @@ void Tracking::PrintTimeStats()
                     MapPoint* pMP = *itMP;
                     if(!pMP)
                         continue;
-                    if(pMP->mnTrackReferenceForFrame==mCurrentFrame.mnId)
+                    if(pMP->mnTrackReferenceForFrame==mCurrentFrame.id_)
                         continue;
                     if(!pMP->isBad())
                     {
                         count_pts++;
                         mvpLocalMapPoints.push_back(pMP);
-                        pMP->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                        pMP->mnTrackReferenceForFrame=mCurrentFrame.id_;
                     }
                 }
             }
@@ -3303,7 +3278,7 @@ void Tracking::PrintTimeStats()
         {
             // Each map point vote for the keyframes in which it has been observed
             map<KeyFrame*,int> keyframeCounter;
-            if(!mpAtlas->isImuInitialized() || (mCurrentFrame.mnId<mnLastRelocFrameId+2))
+            if(!mpAtlas->isImuInitialized() || (mCurrentFrame.id_<mnLastRelocFrameId+2))
             {
                 for(int i=0; i<mCurrentFrame.N; i++)
                 {
@@ -3347,7 +3322,6 @@ void Tracking::PrintTimeStats()
                 }
             }
 
-
             int max=0;
             KeyFrame* pKFmax= static_cast<KeyFrame*>(NULL);
 
@@ -3369,7 +3343,7 @@ void Tracking::PrintTimeStats()
                 }
 
                 mvpLocalKeyFrames.push_back(pKF);
-                pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+                pKF->mnTrackReferenceForFrame = mCurrentFrame.id_;
             }
 
             // Include also some not-already-included keyframes that are neighbors to already-included keyframes
@@ -3389,10 +3363,10 @@ void Tracking::PrintTimeStats()
                     KeyFrame* pNeighKF = *itNeighKF;
                     if(!pNeighKF->isBad())
                     {
-                        if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                        if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                         {
                             mvpLocalKeyFrames.push_back(pNeighKF);
-                            pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                            pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.id_;
                             break;
                         }
                     }
@@ -3404,10 +3378,10 @@ void Tracking::PrintTimeStats()
                     KeyFrame* pChildKF = *sit;
                     if(!pChildKF->isBad())
                     {
-                        if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                        if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                         {
                             mvpLocalKeyFrames.push_back(pChildKF);
-                            pChildKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                            pChildKF->mnTrackReferenceForFrame=mCurrentFrame.id_;
                             break;
                         }
                     }
@@ -3416,10 +3390,10 @@ void Tracking::PrintTimeStats()
                 KeyFrame* pParent = pKF->GetParent();
                 if(pParent)
                 {
-                    if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                    if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                     {
                         mvpLocalKeyFrames.push_back(pParent);
-                        pParent->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                        pParent->mnTrackReferenceForFrame=mCurrentFrame.id_;
                         break;
                     }
                 }
@@ -3434,10 +3408,10 @@ void Tracking::PrintTimeStats()
                 for(int i=0; i<Nd; i++){
                     if (!tempKeyFrame)
                         break;
-                    if(tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+                    if(tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame.id_)
                     {
                         mvpLocalKeyFrames.push_back(tempKeyFrame);
-                        tempKeyFrame->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+                        tempKeyFrame->mnTrackReferenceForFrame=mCurrentFrame.id_;
                         tempKeyFrame=tempKeyFrame->mPrevKF;
                     }
                 }
@@ -3469,7 +3443,7 @@ void Tracking::PrintTimeStats()
 
             // We perform first an ORB matching with each candidate
             // If enough matches are found we setup a PnP solver
-            ORBmatcher matcher(0.75,true);
+            FMatcher matcher(0.75,true);
 
             vector<MLPnPsolver*> vpMLPnPsolvers;
             vpMLPnPsolvers.resize(nKFs);
@@ -3508,7 +3482,7 @@ void Tracking::PrintTimeStats()
             // Alternatively perform some iterations of P4P RANSAC
             // Until we found a camera pose supported by enough inliers
             bool bMatch = false;
-            ORBmatcher matcher2(0.9,true);
+            FMatcher matcher2(0.9,true);
 
             while(nCandidates>0 && !bMatch)
             {
@@ -3535,7 +3509,7 @@ void Tracking::PrintTimeStats()
                     // If a Camera Pose is computed, optimize
                     if(!Tcw.empty())
                     {
-                        Tcw.copyTo(mCurrentFrame.mTcw);
+                        Tcw.copyTo(mCurrentFrame.T_w_c_);
 
                         set<MapPoint*> sFound;
 
@@ -3593,7 +3567,6 @@ void Tracking::PrintTimeStats()
                             }
                         }
 
-
                         // If the pose is supported by enough inliers stop ransacs and continue
                         if(nGood>=50)
                         {
@@ -3610,7 +3583,7 @@ void Tracking::PrintTimeStats()
             }
             else
             {
-                mnLastRelocFrameId = mCurrentFrame.mnId;
+                mnLastRelocFrameId = mCurrentFrame.id_;
                 cout << "Relocalized!!" << endl;
                 return true;
             }
@@ -3636,7 +3609,6 @@ void Tracking::PrintTimeStats()
                 Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
             }
 
-
             // Reset Loop Closing
             Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
             mpLoopClosing->RequestReset();
@@ -3655,13 +3627,13 @@ void Tracking::PrintTimeStats()
             mnInitialFrameId = 0;
 
             KeyFrame::nNextId = 0;
-            Frame::nNextId = 0;
+            Frame::nNextId_ = 0;
             mState = NO_IMAGES_YET;
 
             if(mpInitializer)
             {
                 delete mpInitializer;
-                mpInitializer = static_cast<Initializer*>(NULL);
+                mpInitializer = static_cast<MonoInitializer*>(NULL);
             }
             mbSetInit=false;
 
@@ -3714,14 +3686,14 @@ void Tracking::PrintTimeStats()
             // Clear Map (this erase MapPoints and KeyFrames)
             mpAtlas->clearMap();
 
-            mnLastInitFrameId = Frame::nNextId;
+            mnLastInitFrameId = Frame::nNextId_;
             mnLastRelocFrameId = mnLastInitFrameId;
             mState = NO_IMAGES_YET;
 
             if(mpInitializer)
             {
                 delete mpInitializer;
-                mpInitializer = static_cast<Initializer*>(NULL);
+                mpInitializer = static_cast<MonoInitializer*>(NULL);
             }
 
             list<bool> lbLost;
@@ -3755,8 +3727,8 @@ void Tracking::PrintTimeStats()
 
             mlbLost = lbLost;
 
-            mnInitialFrameId = mCurrentFrame.mnId;
-            mnLastRelocFrameId = mCurrentFrame.mnId;
+            mnInitialFrameId = mCurrentFrame.id_;
+            mnLastRelocFrameId = mCurrentFrame.id_;
 
             mCurrentFrame = Frame();
             mLastFrame = Frame();
@@ -3817,7 +3789,7 @@ void Tracking::PrintTimeStats()
         {
             Map * pMap = pCurrentKeyFrame->GetMap();
             unsigned int index = mnFirstFrameId;
-            list<ORB_SLAM3::KeyFrame*>::iterator lRit = mlpReferences.begin();
+            list<vi_slam::datastructures::KeyFrame*>::iterator lRit = mlpReferences.begin();
             list<bool>::iterator lbL = mlbLost.begin();
             for(list<cv::Mat>::iterator lit=mlRelativeFramePoses.begin(),lend=mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lbL++)
             {
@@ -3857,7 +3829,7 @@ void Tracking::PrintTimeStats()
             }
 
 
-            if(mLastFrame.mnId == mLastFrame.mpLastKeyFrame->mnFrameId)
+            if(mLastFrame.id_ == mLastFrame.mpLastKeyFrame->mnFrameId)
             {
                 mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(),
                                               mLastFrame.mpLastKeyFrame->GetImuPosition(),
@@ -3887,7 +3859,7 @@ void Tracking::PrintTimeStats()
                                                  Vwb1 + Gz*t12 + Rwb1*mCurrentFrame.mpImuPreintegrated->GetUpdatedDeltaVelocity());
             }
 
-            mnFirstImuFrameId = mCurrentFrame.mnId;
+            mnFirstImuFrameId = mCurrentFrame.id_;
         }
 
 
@@ -3901,11 +3873,10 @@ void Tracking::PrintTimeStats()
             cv::Mat R12 = R1w*R2w.t();
             cv::Mat t12 = -R1w*R2w.t()*t2w+t1w;
 
-            cv::Mat t12x = Converter::tocvSkewMatrix(t12);
+            cv::Mat t12x = vi_slam::basics::converter::tocvSkewMatrix(t12);
 
             const cv::Mat &K1 = pKF1->mK;
             const cv::Mat &K2 = pKF2->mK;
-
 
             return K1.t().inv()*t12x*R12*K2.inv();
         }
@@ -3916,7 +3887,7 @@ void Tracking::PrintTimeStats()
             // Retrieve neighbor keyframes in covisibility graph
             const vector<KeyFrame*> vpKFs = mpAtlas->GetAllKeyFrames();
 
-            ORBmatcher matcher(0.6,false);
+            FMatcher matcher(0.6,false);
 
             cv::Mat Rcw1 = mpLastKeyFrame->GetRotation();
             cv::Mat Rwc1 = Rcw1.t();

@@ -47,9 +47,16 @@ namespace vi_slam{
         class Map;
     }
 
+    namespace geometry{
+        class Camera;
+        class Pinhole;
+        class KannalaBrandt8;
+    }
+
     namespace core{
 
         class System;
+        class MonoInitializer;
 
         class Tracking {
 
