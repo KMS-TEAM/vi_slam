@@ -13,25 +13,108 @@
 
 namespace vi_slam{
     namespace display{
-        MapDrawer::MapDrawer(datastructures::Map* pMap, const string &strSettingPath):mpMap(pMap)
+
+        using namespace datastructures;
+
+        MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath):mpAtlas(pAtlas)
         {
             cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
-            mKeyFrameSize = fSettings["Viewer.KeyFrameSize"];
-            mKeyFrameLineWidth = fSettings["Viewer.KeyFrameLineWidth"];
-            mGraphLineWidth = fSettings["Viewer.GraphLineWidth"];
-            mPointSize = fSettings["Viewer.PointSize"];
-            mCameraSize = fSettings["Viewer.CameraSize"];
-            mCameraLineWidth = fSettings["Viewer.CameraLineWidth"];
+            bool is_correct = ParseViewerParamFile(fSettings);
 
+            if(!is_correct)
+            {
+                std::cerr << "**ERROR in the config file, the format is not correct**" << std::endl;
+                try
+                {
+                    throw -1;
+                }
+                catch(exception &e)
+                {
+
+                }
+            }
+        }
+
+        bool MapDrawer::ParseViewerParamFile(cv::FileStorage &fSettings)
+        {
+            bool b_miss_params = false;
+
+            cv::FileNode node = fSettings["Viewer.KeyFrameSize"];
+            if(!node.empty())
+            {
+                mKeyFrameSize = node.real();
+            }
+            else
+            {
+                std::cerr << "*Viewer.KeyFrameSize parameter doesn't exist or is not a real number*" << std::endl;
+                b_miss_params = true;
+            }
+
+            node = fSettings["Viewer.KeyFrameLineWidth"];
+            if(!node.empty())
+            {
+                mKeyFrameLineWidth = node.real();
+            }
+            else
+            {
+                std::cerr << "*Viewer.KeyFrameLineWidth parameter doesn't exist or is not a real number*" << std::endl;
+                b_miss_params = true;
+            }
+
+            node = fSettings["Viewer.GraphLineWidth"];
+            if(!node.empty())
+            {
+                mGraphLineWidth = node.real();
+            }
+            else
+            {
+                std::cerr << "*Viewer.GraphLineWidth parameter doesn't exist or is not a real number*" << std::endl;
+                b_miss_params = true;
+            }
+
+            node = fSettings["Viewer.PointSize"];
+            if(!node.empty())
+            {
+                mPointSize = node.real();
+            }
+            else
+            {
+                std::cerr << "*Viewer.PointSize parameter doesn't exist or is not a real number*" << std::endl;
+                b_miss_params = true;
+            }
+
+            node = fSettings["Viewer.CameraSize"];
+            if(!node.empty())
+            {
+                mCameraSize = node.real();
+            }
+            else
+            {
+                std::cerr << "*Viewer.CameraSize parameter doesn't exist or is not a real number*" << std::endl;
+                b_miss_params = true;
+            }
+
+            node = fSettings["Viewer.CameraLineWidth"];
+            if(!node.empty())
+            {
+                mCameraLineWidth = node.real();
+            }
+            else
+            {
+                std::cerr << "*Viewer.CameraLineWidth parameter doesn't exist or is not a real number*" << std::endl;
+                b_miss_params = true;
+            }
+
+            return !b_miss_params;
         }
 
         void MapDrawer::DrawMapPoints()
         {
-            const vector<datastructures::MapPoint*> &vpMPs = mpMap->GetAllMapPoints();
-            const vector<datastructures::MapPoint*> &vpRefMPs = mpMap->GetReferenceMapPoints();
+            const vector<MapPoint*> &vpMPs = mpAtlas->GetAllMapPoints();
+            const vector<MapPoint*> &vpRefMPs = mpAtlas->GetReferenceMapPoints();
 
-            std::set<datastructures::MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
+            set<MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
             if(vpMPs.empty())
                 return;
@@ -53,7 +136,7 @@ namespace vi_slam{
             glBegin(GL_POINTS);
             glColor3f(1.0,0.0,0.0);
 
-            for(std::set<datastructures::MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
+            for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
             {
                 if((*sit)->isBad())
                     continue;
@@ -65,28 +148,39 @@ namespace vi_slam{
             glEnd();
         }
 
-        void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph)
+        void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph)
         {
             const float &w = mKeyFrameSize;
             const float h = w*0.75;
             const float z = w*0.6;
 
-            const vector<datastructures::KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+            const vector<KeyFrame*> vpKFs = mpAtlas->GetAllKeyFrames();
 
             if(bDrawKF)
             {
                 for(size_t i=0; i<vpKFs.size(); i++)
                 {
-                    datastructures::KeyFrame* pKF = vpKFs[i];
+                    KeyFrame* pKF = vpKFs[i];
                     cv::Mat Twc = pKF->GetPoseInverse().t();
+                    unsigned int index_color = pKF->mnOriginMapId;
 
                     glPushMatrix();
 
                     glMultMatrixf(Twc.ptr<GLfloat>(0));
 
-                    glLineWidth(mKeyFrameLineWidth);
-                    glColor3f(0.0f,0.0f,1.0f);
-                    glBegin(GL_LINES);
+                    if(!pKF->GetParent()) // It is the first KF in the map
+                    {
+                        glLineWidth(mKeyFrameLineWidth*5);
+                        glColor3f(1.0f,0.0f,0.0f);
+                        glBegin(GL_LINES);
+                    }
+                    else
+                    {
+                        glLineWidth(mKeyFrameLineWidth);
+                        glColor3f(mfFrameColors[index_color][0],mfFrameColors[index_color][1],mfFrameColors[index_color][2]);
+                        glBegin(GL_LINES);
+                    }
+
                     glVertex3f(0,0,0);
                     glVertex3f(w,h,z);
                     glVertex3f(0,0,0);
@@ -110,6 +204,8 @@ namespace vi_slam{
                     glEnd();
 
                     glPopMatrix();
+
+                    glEnd();
                 }
             }
 
@@ -122,11 +218,11 @@ namespace vi_slam{
                 for(size_t i=0; i<vpKFs.size(); i++)
                 {
                     // Covisibility Graph
-                    const vector<datastructures::KeyFrame*> vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
+                    const vector<KeyFrame*> vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
                     cv::Mat Ow = vpKFs[i]->GetCameraCenter();
                     if(!vCovKFs.empty())
                     {
-                        for(vector<datastructures::KeyFrame*>::const_iterator vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
+                        for(vector<KeyFrame*>::const_iterator vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
                         {
                             if((*vit)->mnId<vpKFs[i]->mnId)
                                 continue;
@@ -137,7 +233,7 @@ namespace vi_slam{
                     }
 
                     // Spanning tree
-                    datastructures::KeyFrame* pParent = vpKFs[i]->GetParent();
+                    KeyFrame* pParent = vpKFs[i]->GetParent();
                     if(pParent)
                     {
                         cv::Mat Owp = pParent->GetCameraCenter();
@@ -146,8 +242,8 @@ namespace vi_slam{
                     }
 
                     // Loops
-                    std::set<datastructures::KeyFrame*> sLoopKFs = vpKFs[i]->GetLoopEdges();
-                    for(std::set<datastructures::KeyFrame*>::iterator sit=sLoopKFs.begin(), send=sLoopKFs.end(); sit!=send; sit++)
+                    set<KeyFrame*> sLoopKFs = vpKFs[i]->GetLoopEdges();
+                    for(set<KeyFrame*>::iterator sit=sLoopKFs.begin(), send=sLoopKFs.end(); sit!=send; sit++)
                     {
                         if((*sit)->mnId<vpKFs[i]->mnId)
                             continue;
@@ -158,6 +254,90 @@ namespace vi_slam{
                 }
 
                 glEnd();
+            }
+
+            if(bDrawInertialGraph && mpAtlas->isImuInitialized())
+            {
+                glLineWidth(mGraphLineWidth);
+                glColor4f(1.0f,0.0f,0.0f,0.6f);
+                glBegin(GL_LINES);
+
+                //Draw inertial links
+                for(size_t i=0; i<vpKFs.size(); i++)
+                {
+                    KeyFrame* pKFi = vpKFs[i];
+                    cv::Mat Ow = pKFi->GetCameraCenter();
+                    KeyFrame* pNext = pKFi->mNextKF;
+                    if(pNext)
+                    {
+                        cv::Mat Owp = pNext->GetCameraCenter();
+                        glVertex3f(Ow.at<float>(0),Ow.at<float>(1),Ow.at<float>(2));
+                        glVertex3f(Owp.at<float>(0),Owp.at<float>(1),Owp.at<float>(2));
+                    }
+                }
+
+                glEnd();
+            }
+
+            vector<Map*> vpMaps = mpAtlas->GetAllMaps();
+
+            if(bDrawKF)
+            {
+                for(Map* pMap : vpMaps)
+                {
+                    if(pMap == mpAtlas->GetCurrentMap())
+                        continue;
+
+                    vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+
+                    for(size_t i=0; i<vpKFs.size(); i++)
+                    {
+                        KeyFrame* pKF = vpKFs[i];
+                        cv::Mat Twc = pKF->GetPoseInverse().t();
+                        unsigned int index_color = pKF->mnOriginMapId;
+
+                        glPushMatrix();
+
+                        glMultMatrixf(Twc.ptr<GLfloat>(0));
+
+                        if(!vpKFs[i]->GetParent()) // It is the first KF in the map
+                        {
+                            glLineWidth(mKeyFrameLineWidth*5);
+                            glColor3f(1.0f,0.0f,0.0f);
+                            glBegin(GL_LINES);
+                        }
+                        else
+                        {
+                            glLineWidth(mKeyFrameLineWidth);
+                            glColor3f(mfFrameColors[index_color][0],mfFrameColors[index_color][1],mfFrameColors[index_color][2]);
+                            glBegin(GL_LINES);
+                        }
+
+                        glVertex3f(0,0,0);
+                        glVertex3f(w,h,z);
+                        glVertex3f(0,0,0);
+                        glVertex3f(w,-h,z);
+                        glVertex3f(0,0,0);
+                        glVertex3f(-w,-h,z);
+                        glVertex3f(0,0,0);
+                        glVertex3f(-w,h,z);
+
+                        glVertex3f(w,h,z);
+                        glVertex3f(w,-h,z);
+
+                        glVertex3f(-w,h,z);
+                        glVertex3f(-w,-h,z);
+
+                        glVertex3f(-w,h,z);
+                        glVertex3f(w,h,z);
+
+                        glVertex3f(-w,-h,z);
+                        glVertex3f(w,-h,z);
+                        glEnd();
+
+                        glPopMatrix();
+                    }
+                }
             }
         }
 
@@ -206,18 +386,18 @@ namespace vi_slam{
 
         void MapDrawer::SetCurrentCameraPose(const cv::Mat &Tcw)
         {
-            std::unique_lock<std::mutex> lock(mMutexCamera);
+            unique_lock<mutex> lock(mMutexCamera);
             mCameraPose = Tcw.clone();
         }
 
-        void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M)
+        void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw)
         {
             if(!mCameraPose.empty())
             {
                 cv::Mat Rwc(3,3,CV_32F);
                 cv::Mat twc(3,1,CV_32F);
                 {
-                    std::unique_lock<std::mutex> lock(mMutexCamera);
+                    unique_lock<mutex> lock(mMutexCamera);
                     Rwc = mCameraPose.rowRange(0,3).colRange(0,3).t();
                     twc = -Rwc*mCameraPose.rowRange(0,3).col(3);
                 }
@@ -241,9 +421,80 @@ namespace vi_slam{
                 M.m[13] = twc.at<float>(1);
                 M.m[14] = twc.at<float>(2);
                 M.m[15]  = 1.0;
+
+                MOw.SetIdentity();
+                MOw.m[12] = twc.at<float>(0);
+                MOw.m[13] = twc.at<float>(1);
+                MOw.m[14] = twc.at<float>(2);
             }
             else
+            {
                 M.SetIdentity();
+                MOw.SetIdentity();
+            }
+        }
+
+        void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw, pangolin::OpenGlMatrix &MTwwp)
+        {
+            if(!mCameraPose.empty())
+            {
+                cv::Mat Rwc(3,3,CV_32F);
+                cv::Mat twc(3,1,CV_32F);
+                cv::Mat Rwwp(3,3,CV_32F);
+                {
+                    unique_lock<mutex> lock(mMutexCamera);
+                    Rwc = mCameraPose.rowRange(0,3).colRange(0,3).t();
+                    twc = -Rwc*mCameraPose.rowRange(0,3).col(3);
+                }
+
+                M.m[0] = Rwc.at<float>(0,0);
+                M.m[1] = Rwc.at<float>(1,0);
+                M.m[2] = Rwc.at<float>(2,0);
+                M.m[3]  = 0.0;
+
+                M.m[4] = Rwc.at<float>(0,1);
+                M.m[5] = Rwc.at<float>(1,1);
+                M.m[6] = Rwc.at<float>(2,1);
+                M.m[7]  = 0.0;
+
+                M.m[8] = Rwc.at<float>(0,2);
+                M.m[9] = Rwc.at<float>(1,2);
+                M.m[10] = Rwc.at<float>(2,2);
+                M.m[11]  = 0.0;
+
+                M.m[12] = twc.at<float>(0);
+                M.m[13] = twc.at<float>(1);
+                M.m[14] = twc.at<float>(2);
+                M.m[15]  = 1.0;
+
+                MOw.SetIdentity();
+                MOw.m[12] = twc.at<float>(0);
+                MOw.m[13] = twc.at<float>(1);
+                MOw.m[14] = twc.at<float>(2);
+
+                MTwwp.SetIdentity();
+                MTwwp.m[0] = Rwwp.at<float>(0,0);
+                MTwwp.m[1] = Rwwp.at<float>(1,0);
+                MTwwp.m[2] = Rwwp.at<float>(2,0);
+
+                MTwwp.m[4] = Rwwp.at<float>(0,1);
+                MTwwp.m[5] = Rwwp.at<float>(1,1);
+                MTwwp.m[6] = Rwwp.at<float>(2,1);
+
+                MTwwp.m[8] = Rwwp.at<float>(0,2);
+                MTwwp.m[9] = Rwwp.at<float>(1,2);
+                MTwwp.m[10] = Rwwp.at<float>(2,2);
+
+                MTwwp.m[12] = twc.at<float>(0);
+                MTwwp.m[13] = twc.at<float>(1);
+                MTwwp.m[14] = twc.at<float>(2);
+            }
+            else
+            {
+                M.SetIdentity();
+                MOw.SetIdentity();
+                MTwwp.SetIdentity();
+            }
         }
     }
 }

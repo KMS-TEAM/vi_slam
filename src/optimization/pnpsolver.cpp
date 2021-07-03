@@ -18,7 +18,7 @@ using namespace std;
 namespace vi_slam{
 
     namespace optimization{
-        PnPSolver::PnPSolver(const datastructures::Frame &F, const vector<datastructures::MapPoint*> &vpMapPointMatches):
+        PnPSolver::PnPSolver(const Frame &F, const vector<MapPoint*> &vpMapPointMatches):
                 pws(0), us(0), alphas(0), pcs(0), maximum_number_of_correspondences(0), number_of_correspondences(0), mnInliersi(0),
                 mnIterations(0), mnBestInliers(0), N(0)
         {
@@ -32,13 +32,13 @@ namespace vi_slam{
             int idx=0;
             for(size_t i=0, iend=vpMapPointMatches.size(); i<iend; i++)
             {
-                datastructures::MapPoint* pMP = vpMapPointMatches[i];
+                MapPoint* pMP = vpMapPointMatches[i];
 
                 if(pMP)
                 {
                     if(!pMP->isBad())
                     {
-                        const cv::KeyPoint &kp = F.keypoints_[i];
+                        const cv::KeyPoint &kp = F.ukeypoints_[i];
 
                         mvP2D.push_back(kp.pt);
                         mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);
@@ -291,7 +291,6 @@ namespace vi_slam{
                 }
             }
         }
-
 
         void PnPSolver::set_maximum_number_of_correspondences(int n)
         {
@@ -697,7 +696,7 @@ namespace vi_slam{
                 cvmSet(&L_6x5, i, 4, cvmGet(L_6x10, i, 4));
             }
 
-            cvSolve(&L_6x5, Rho, &B5, DECOMP_SVD);
+            cvSolve(&L_6x5, Rho, &B5, CV_SVD);
 
             if (b5[0] < 0) {
                 betas[0] = sqrt(-b5[0]);

@@ -55,7 +55,7 @@
 #ifndef VI_SLAM_PNPSOLVER_H
 #define VI_SLAM_PNPSOLVER_H
 
-#include "../common_include.h"
+#include "vi_slam/common_include.h"
 
 #include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/datastructures/frame.h"
@@ -72,9 +72,12 @@ namespace vi_slam{
     }
 
     namespace optimization{
-        class PnPSolver {
+
+        using namespace datastructures;
+
+        class PnPSolver{
         public:
-            PnPSolver(const datastructures::Frame &F, const vector<datastructures::MapPoint*> &vpMapPointMatches);
+            PnPSolver(const Frame &F, const vector<MapPoint*> &vpMapPointMatches);
 
             ~PnPSolver();
 
@@ -138,7 +141,6 @@ namespace vi_slam{
 
             void mat_to_quat(const double R[3][3], double q[4]);
 
-
             double uc, vc, fu, fv;
 
             double * pws, * us, * alphas, * pcs;
@@ -148,7 +150,7 @@ namespace vi_slam{
             double cws[4][3], ccs[4][3];
             double cws_determinant;
 
-            vector<datastructures::MapPoint*> mvpMapPointMatches;
+            vector<MapPoint*> mvpMapPointMatches;
 
             // 2D Points
             vector<cv::Point2f> mvP2D;
