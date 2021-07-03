@@ -25,6 +25,8 @@ namespace vi_slam{
 
     namespace display{
 
+        using namespace datastructures;
+
         class MapDrawer
         {
         public:

@@ -40,7 +40,10 @@ namespace vi_slam{
 
         class MapPoint;
         class KeyFrame;
-        class IMU;
+        // class IMU;
+
+        using namespace IMU;
+        using namespace geometry;
 
         typedef struct PtConn_
         {
@@ -176,8 +179,8 @@ namespace vi_slam{
             Frame* mpPrevFrame;
             IMU::Preintegrated* mpImuPreintegratedFrame;
 
-            map<long unsigned int, cv::Point2f> mmProjectPoints;
-            map<long unsigned int, cv::Point2f> mmMatchedInImage;
+            std::map<long unsigned int, cv::Point2f> mmProjectPoints;
+            std::map<long unsigned int, cv::Point2f> mmMatchedInImage;
 
             string mNameFile;
 
@@ -203,7 +206,7 @@ namespace vi_slam{
             Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Camera* pCamera,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
             // Constructor for Monocular cameras.
-            Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Camera* pCamera, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+            Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, Camera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
         public: // Below are deprecated. These were used in the two-frame-matching vo.
 
@@ -279,7 +282,7 @@ namespace vi_slam{
             // Compute the cell of a keypoint (return false if outside the grid)
             bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
-            vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, , const bool bRight = false) const;
+            vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
 
             // Search a match for each keypoint in the left image to a keypoint in the right image.
             // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
@@ -357,7 +360,7 @@ namespace vi_slam{
             cv::Mat mTlr, mRlr, mtlr, mTrl;
             cv::Matx34f mTrlx, mTlrx;
 
-            Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, cv::Mat& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+            Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, FExtractor* extractorLeft, FExtractor* extractorRight, DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Camera* pCamera, Camera* pCamera2, cv::Mat& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
             //Stereo fisheye
             void ComputeStereoFishEyeMatches();

@@ -37,6 +37,7 @@ namespace vi_slam{
         class Map;
         class MapPoint;
 
+
         class KeyFrame {
 
         public:
@@ -97,7 +98,7 @@ namespace vi_slam{
 
             // Merge Edges
             void AddMergeEdge(KeyFrame* pKF);
-            set<KeyFrame*> GetMergeEdges();
+            std::set<KeyFrame*> GetMergeEdges();
 
             // MapPoint observation functions
             int GetNumberMPs();
@@ -148,7 +149,7 @@ namespace vi_slam{
             bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
             bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
 
-            void SetORBVocabulary(ORBVocabulary* pORBVoc);
+            void SetORBVocabulary(DBoW3::Vocabulary* pORBVoc);
             void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
 
             bool bImu;

@@ -321,10 +321,10 @@ namespace vi_slam{
         {
             unique_lock<mutex> lock(mMutex);
             pTracker->mImGray.copyTo(mIm);
-            mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
+            mvCurrentKeys=pTracker->mCurrentFrame.keypoints_;
 
             if(both){
-                mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
+                mvCurrentKeysRight = pTracker->mCurrentFrame.keypointsRight_;
                 pTracker->mImRight.copyTo(mImRight);
                 N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
             }
@@ -353,7 +353,7 @@ namespace vi_slam{
 
             if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)
             {
-                mvIniKeys=pTracker->mInitialFrame.mvKeys;
+                mvIniKeys=pTracker->mInitialFrame.keypoints_;
                 mvIniMatches=pTracker->mvIniMatches;
             }
             else if(pTracker->mLastProcessedState==Tracking::OK)
@@ -370,7 +370,7 @@ namespace vi_slam{
                             else
                                 mvbVO[i]=true;
 
-                            mmMatchedInImage[pMP->mnId] = mvCurrentKeys[i].pt;
+                            mmMatchedInImage[pMP->id_] = mvCurrentKeys[i].pt;
 
                         }
                         else

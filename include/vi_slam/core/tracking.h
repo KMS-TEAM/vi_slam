@@ -42,7 +42,6 @@ namespace vi_slam{
         class Frame;
         class KeyFrame;
         class Atlas;
-        class IMU;
         class MapPoint;
         class Map;
     }
@@ -55,13 +54,16 @@ namespace vi_slam{
 
     namespace core{
 
+        using namespace datastructures::IMU;
+        using namespace display;
+
         class System;
         class MonoInitializer;
 
         class Tracking {
 
         public:
-            Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
+            Tracking(System* pSys, DBoW3::Vocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
                      KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq=std::string());
 
             ~Tracking();
@@ -254,15 +256,15 @@ namespace vi_slam{
             LoopClosing* mpLoopClosing;
 
             //ORB
-            ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-            ORBextractor* mpIniORBextractor;
+            FExtractor* mpORBextractorLeft, *mpORBextractorRight;
+            FExtractor* mpIniORBextractor;
 
             //BoW
-            ORBVocabulary* mpORBVocabulary;
+            DBoW3::Vocabulary* mpORBVocabulary;
             KeyFrameDatabase* mpKeyFrameDB;
 
             // Initalization (only for monocular)
-            Initializer* mpInitializer;
+            MonoInitializer* mpInitializer;
             bool mbSetInit;
 
             //Local Map
@@ -339,7 +341,7 @@ namespace vi_slam{
             double mTime_LocalMapTrack;
             double mTime_NewKF_Dec;
 
-            GeometricCamera* mpCamera, *mpCamera2;
+            Camera* mpCamera, *mpCamera2;
 
             int initID, lastID;
 

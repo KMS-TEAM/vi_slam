@@ -65,6 +65,8 @@ namespace vi_slam{
         vector<cv::DMatch> inliers2DMatches(const vector<int> inliers);
         vector<cv::KeyPoint> pts2Keypts(const vector<cv::Point2f> pts);
 
+        using namespace datastructures;
+        using namespace std;
         class FMatcher
         {
         public:

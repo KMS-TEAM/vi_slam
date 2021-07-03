@@ -2456,7 +2456,7 @@ namespace vi_slam{
 
             cv::Mat deltaT = vKFs.back()->GetPose()*vKFs.front()->GetPoseInverse();
             mVelocity = cv::Mat();
-            Eigen::Vector3d phi = datastructures::IMU::LogSO3(vi_slam::basics::converter::toMatrix3d(deltaT.rowRange(0,3).colRange(0,3)));
+            Eigen::Vector3d phi = basics::converter::toVector3d(IMU::LogSO3(deltaT.rowRange(0,3).colRange(0,3)));
 
             double aux = (mCurrentFrame.time_stamp_-mLastFrame.time_stamp_)/(mCurrentFrame.time_stamp_-mInitialFrame.time_stamp_);
             phi *= aux;

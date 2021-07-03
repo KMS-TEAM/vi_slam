@@ -28,9 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-using namespace vi_slam::core;
-using namespace vi_slam::datastructures;
-
 namespace vi_slam{
 
     namespace datastructures{
@@ -47,6 +44,9 @@ namespace vi_slam{
     }
 
     namespace core{
+
+        using namespace display;
+        using namespace datastructures;
 
         class LocalMapping;
         class LoopClosing;
@@ -189,7 +189,7 @@ namespace vi_slam{
             eSensor mSensor;
 
             // ORB vocabulary used for place recognition and feature matching.
-            ORBVocabulary* mpVocabulary;
+            DBoW3::Vocabulary* mpVocabulary;
 
             // KeyFrame database for place recognition (relocalization and loop detection).
             KeyFrameDatabase* mpKeyFrameDatabase;

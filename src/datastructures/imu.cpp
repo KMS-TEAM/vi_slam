@@ -6,8 +6,9 @@
 #include <iostream>
 
 namespace vi_slam{
-    namespace geometry{
+    namespace datastructures{
         namespace IMU{
+
             const float eps = 1e-4;
 
             cv::Mat NormalizeRotation(const cv::Mat &R)
@@ -166,7 +167,7 @@ namespace vi_slam{
                 Initialize(b_);
             }
 
-// Copy constructor
+            // Copy constructor
             Preintegrated::Preintegrated(Preintegrated* pImuPre): dT(pImuPre->dT), C(pImuPre->C.clone()), Info(pImuPre->Info.clone()),
                                                                   Nga(pImuPre->Nga.clone()), NgaWalk(pImuPre->NgaWalk.clone()), b(pImuPre->b), dR(pImuPre->dR.clone()), dV(pImuPre->dV.clone()),
                                                                   dP(pImuPre->dP.clone()), JRg(pImuPre->JRg.clone()), JVg(pImuPre->JVg.clone()), JVa(pImuPre->JVa.clone()), JPg(pImuPre->JPg.clone()),

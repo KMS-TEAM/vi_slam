@@ -40,24 +40,15 @@ namespace vi_slam{
 
             vector<KeyFrame*> mvpKeyFrameOrigins;
 
-            std::mutex mMutexMapUpdate;
 
             // This avoid that two points are created simultaneously in separate threads (id conflict)
-            std::mutex mMutexPointCreation;
-
-            std::set<MapPoint*> mspMapPoints;
-            std::set<KeyFrame*> mspKeyFrames;
 
             std::vector<MapPoint*> mvpReferenceMapPoints;
 
             long unsigned int mnMaxKFid;
 
-            // Index related to a big change in the map (loop closure, global BA)
-            int mnBigChangeIdx;
-
             std::mutex mMutexMap;
 
-            vector<KeyFrame*> mvpKeyFrameOrigins;
             vector<unsigned long int> mvBackupKeyFrameOriginsId;
             KeyFrame* mpFirstRegionKF;
             std::mutex mMutexMapUpdate;
@@ -81,15 +72,12 @@ namespace vi_slam{
             KeyFrame* mpKFinitial;
             KeyFrame* mpKFlowerID;
 
-            std::vector<MapPoint*> mvpReferenceMapPoints;
-
             bool mbImuInitialized;
 
             int mnMapChange;
             int mnMapChangeNotified;
 
             long unsigned int mnInitKFid;
-            long unsigned int mnMaxKFid;
             long unsigned int mnLastLoopKFid;
 
             // Index related to a big change in the map (loop closure, global BA)

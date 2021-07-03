@@ -263,7 +263,7 @@ namespace vi_slam{
             AssignFeaturesToGrid();
         }
 
-        Frame::Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, geometry::Camera* pCamera, Frame* pPrevF, const IMU::Calib &ImuCalib)
+        Frame::Frame(const cv::Mat &imGray, const double &timeStamp, geometry::FExtractor* extractor,DBoW3::Vocabulary* voc, geometry::Camera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
                 :mpcpi(NULL),mpVocaburary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<geometry::FExtractor*>(NULL)),
                  time_stamp_(timeStamp), mK(static_cast<geometry::Pinhole*>(pCamera)->toK()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
                  mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera),
@@ -319,10 +319,10 @@ namespace vi_slam{
                 mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
                 mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
 
-                fx = K.at<float>(0,0);
-                fy = K.at<float>(1,1);
-                cx = K.at<float>(0,2);
-                cy = K.at<float>(1,2);
+                fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
+                fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
+                cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,2);
+                cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,2);
                 invfx = 1.0f/fx;
                 invfy = 1.0f/fy;
 
@@ -414,7 +414,7 @@ namespace vi_slam{
             vector<int> vLapping = {x0,x1};
             if(flag==0) {
                 // std::cerr << "Check Image: " << im.size() << std::endl;
-                mpORBextractorLeft->compute(im, cv::Mat(), keypoints_, descriptors_, ,vLapping);
+                mpORBextractorLeft->compute(im, cv::Mat(), keypoints_, descriptors_ ,vLapping);
             }
             else {
                 mpORBextractorRight->compute(im, cv::Mat(), keypointsRight_, descriptorsRight_, vLapping);

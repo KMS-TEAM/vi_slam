@@ -74,7 +74,7 @@ namespace vi_slam
             bool isStopped();
             bool isKeyPressed();
         };
-
+        using namespace core;
         class Viewer
         {
         public:

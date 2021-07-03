@@ -15,6 +15,7 @@ namespace vi_slam{
     }
 
     namespace optimization{
+        using namespace datastructures;
         class MLPnPsolver {
         public:
             MLPnPsolver(const Frame &F, const vector<MapPoint*> &vpMapPointMatches);
@@ -140,7 +141,7 @@ namespace vi_slam{
             //----------------------------------------------------
             //Fields of the solver
             //----------------------------------------------------
-            vector<MapPoint*> mvpMapPointMatches;
+            vector<datastructures::MapPoint*> mvpMapPointMatches;
 
             // 2D Points
             vector<cv::Point2f> mvP2D;
@@ -201,7 +202,8 @@ namespace vi_slam{
             // Max square error associated with scale level. Max error = th*th*sigma(level)*sigma(level)
             vector<float> mvMaxError;
 
-            GeometricCamera* mpCamera;
+            geometry::Camera* mpCamera;
         };
     }
 }
+#endif

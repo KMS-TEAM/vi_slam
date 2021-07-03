@@ -27,6 +27,9 @@
 
 namespace vi_slam{
     namespace optimization{
+
+        using namespace core;
+
         class Optimizer {
         public:
             void static BundleAdjustment(const std::vector<KeyFrame*> &vpKF, const std::vector<MapPoint*> &vpMP,
