@@ -1031,11 +1031,11 @@ namespace vi_slam{
                 computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
         }
 
-        void FExtractor::compute(cv::InputArray image, cv::InputArray mask, std::vector<cv::KeyPoint> &keypointsoutput,
-                                 cv::OutputArray descriptors)
+        int FExtractor::compute(cv::InputArray image, cv::InputArray mask, std::vector<cv::KeyPoint> &keypointsoutput,
+                                 cv::OutputArray descriptors, std::vector<int> &vLappingArea)
         {
             if(image.empty())
-                return;
+                return -1;
 
             Mat image_ = image.getMat();
             assert(image.type() == CV_8UC1 );
@@ -1064,10 +1064,15 @@ namespace vi_slam{
             }
 
 
-            keypointsoutput.clear();
-            keypointsoutput.reserve(nkeypoints);
+            // keypointsoutput.clear();
+            // keypointsoutput.reserve(nkeypoints);
+            keypointsoutput = vector<cv::KeyPoint>(nkeypoints);
 
             int offset = 0;
+
+            //Modified for speeding up stereo fisheye matching
+            int monoIndex = 0, stereoIndex = nkeypoints-1;
+
             for (int level = 0; level < nlevels; ++level)
             {
                 vector<KeyPoint>& keypoints = allKeypoints[level];
@@ -1081,24 +1086,50 @@ namespace vi_slam{
                 GaussianBlur(workingMat, workingMat, Size(7, 7), 2, 2, BORDER_REFLECT_101);
 
                 // Compute the descriptors
-                Mat desc = descriptors_.rowRange(offset, offset + nkeypointsLevel);
+                // Mat desc = descriptors_.rowRange(offset, offset + nkeypointsLevel);
+                Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
                 computeDescriptors(workingMat, keypoints, desc, pattern);
                 // std::cerr << "Check descriptor: " << desc.size() << std::endl;
 
                 offset += nkeypointsLevel;
 
                 // Scale keypoint coordinates
-                if (level != 0)
-                {
-                    float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
-                    for (vector<KeyPoint>::iterator _keypoint = keypoints.begin(),
-                                 keypointEnd = keypoints.end(); _keypoint != keypointEnd; ++_keypoint)
-                        _keypoint->pt *= scale;
+//                if (level != 0)
+//                {
+//                    float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
+//                    for (vector<KeyPoint>::iterator _keypoint = keypoints.begin(),
+//                                 keypointEnd = keypoints.end(); _keypoint != keypointEnd; ++_keypoint)
+//                        _keypoint->pt *= scale;
+//                }
+//                // And add the keypoints to the output
+//                keypointsoutput.insert(keypointsoutput.end(), keypoints.begin(), keypoints.end());
+
+
+                float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
+                int i = 0;
+                for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
+                             keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
+
+                    // Scale keypoint coordinates
+                    if (level != 0){
+                        keypoint->pt *= scale;
+                    }
+
+                    if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
+                        keypointsoutput.at(stereoIndex) = (*keypoint);
+                        desc.row(i).copyTo(descriptors_.row(stereoIndex));
+                        stereoIndex--;
+                    }
+                    else{
+                        keypointsoutput.at(monoIndex) = (*keypoint);
+                        desc.row(i).copyTo(descriptors_.row(monoIndex));
+                        monoIndex++;
+                    }
+                    i++;
                 }
-                // And add the keypoints to the output
-                keypointsoutput.insert(keypointsoutput.end(), keypoints.begin(), keypoints.end());
             }
             // std::cerr << "Check keypoint ORB: " << keypointsoutput.size() << std::endl;
+            return monoIndex;
         }
 
         void FExtractor::ComputePyramid(cv::Mat image)

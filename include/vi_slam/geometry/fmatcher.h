@@ -5,13 +5,11 @@
 #ifndef VI_SLAM_FEATURE_MATCH_H
 #define VI_SLAM_FEATURE_MATCH_H
 
-#include "../common_include.h"
+#include "vi_slam/common_include.h"
 
 #include "vi_slam/datastructures/mappoint.h"
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/frame.h"
-
-
 
 namespace vi_slam{
 
