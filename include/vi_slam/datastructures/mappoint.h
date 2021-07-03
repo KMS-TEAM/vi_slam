@@ -135,7 +135,7 @@ namespace vi_slam{
 
             KeyFrame* GetReferenceKeyFrame();
 
-            std::map<KeyFrame*,size_t> GetObservations();
+            std::map<KeyFrame*,std::tuple<int,int>> GetObservations();
             int Observations();
 
             void AddObservation(KeyFrame* pKF,size_t idx);

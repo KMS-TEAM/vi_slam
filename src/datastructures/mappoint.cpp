@@ -242,7 +242,7 @@ namespace vi_slam{
 
         void MapPoint::Replace(MapPoint* pMP)
         {
-            if(pMP->mnId==this->mnId)
+            if(pMP->id_==this->id_)
                 return;
 
             int nvisible, nfound;
