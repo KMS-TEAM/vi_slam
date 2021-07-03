@@ -12,6 +12,9 @@
 
 namespace vi_slam{
     namespace optimization{
+
+        using namespace geometry;
+
         class  EdgeSE3ProjectXYZOnlyPose: public  g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap>{
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -36,7 +39,7 @@ namespace vi_slam{
             virtual void linearizeOplus();
 
             Eigen::Vector3d Xw;
-            GeometricCamera* pCamera;
+            Camera* pCamera;
         };
 
         class  EdgeSE3ProjectXYZOnlyPoseToBody: public  g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap>{
@@ -63,7 +66,7 @@ namespace vi_slam{
             virtual void linearizeOplus();
 
             Eigen::Vector3d Xw;
-            GeometricCamera* pCamera;
+            Camera* pCamera;
 
             g2o::SE3Quat mTrl;
         };
@@ -93,7 +96,7 @@ namespace vi_slam{
 
             virtual void linearizeOplus();
 
-            GeometricCamera* pCamera;
+            Camera* pCamera;
         };
 
         class  EdgeSE3ProjectXYZToBody: public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>{
@@ -121,7 +124,7 @@ namespace vi_slam{
 
             virtual void linearizeOplus();
 
-            GeometricCamera* pCamera;
+            Camera* pCamera;
             g2o::SE3Quat mTrl;
         };
 
@@ -139,7 +142,7 @@ namespace vi_slam{
 
             virtual void oplusImpl(const double* update_)
             {
-                Eigen::Map<g2o::Vector7d> update(const_cast<double*>(update_));
+                Eigen::Map<g2o::Vector7> update(const_cast<double*>(update_));
 
                 if (_fix_scale)
                     update[6] = 0;
@@ -148,13 +151,13 @@ namespace vi_slam{
                 setEstimate(s*estimate());
             }
 
-            GeometricCamera* pCamera1, *pCamera2;
+            Camera* pCamera1, *pCamera2;
 
             bool _fix_scale;
         };
 
 
-        class EdgeSim3ProjectXYZ : public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, ORB_SLAM3::VertexSim3Expmap>
+        class EdgeSim3ProjectXYZ : public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, optimization::VertexSim3Expmap>
         {
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -164,7 +167,7 @@ namespace vi_slam{
 
             void computeError()
             {
-                const ORB_SLAM3::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap*>(_vertices[1]);
+                const optimization::VertexSim3Expmap* v1 = static_cast<const optimization::VertexSim3Expmap*>(_vertices[1]);
                 const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
                 Eigen::Vector2d obs(_measurement);
@@ -185,7 +188,7 @@ namespace vi_slam{
 
             void computeError()
             {
-                const ORB_SLAM3::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap*>(_vertices[1]);
+                const optimization::VertexSim3Expmap* v1 = static_cast<const optimization::VertexSim3Expmap*>(_vertices[1]);
                 const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
                 Eigen::Vector2d obs(_measurement);
