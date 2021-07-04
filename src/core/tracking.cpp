@@ -1335,10 +1335,15 @@ namespace vi_slam{
 
             if (mSensor == System::MONOCULAR)
             {
-                if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+
+                if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames){
+
                     mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-                else
-                    mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+
+                }
+                else {
+                    mCurrentFrame = Frame(mImGray, timestamp, mpORBextractorLeft, mpORBVocabulary, mpCamera, mDistCoef, mbf, mThDepth);
+                }
             }
             else if(mSensor == System::IMU_MONOCULAR)
             {
@@ -1742,6 +1747,7 @@ namespace vi_slam{
                     StereoInitialization();
                 else
                 {
+
                     MonocularInitialization();
                 }
 
@@ -2257,6 +2263,7 @@ namespace vi_slam{
 
             if(!mpInitializer)
             {
+
                 // Set Reference Frame
                 if(mCurrentFrame.keypoints_.size()>100)
                 {
@@ -2289,6 +2296,7 @@ namespace vi_slam{
             }
             else
             {
+
                 if (((int)mCurrentFrame.keypoints_.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.time_stamp_-mInitialFrame.time_stamp_>1.0)))
                 {
                     delete mpInitializer;
@@ -2345,6 +2353,9 @@ namespace vi_slam{
             KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
             KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
+            std::cerr << "Check: " << pKFini->mvKeysUn.size() << std::endl;
+            std::cerr << "Check: " << pKFcur->mvKeysUn.size() << std::endl;
+
             if(mSensor == System::IMU_MONOCULAR)
                 pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(NULL);
 
@@ -2355,6 +2366,8 @@ namespace vi_slam{
             // Insert KFs in the map
             mpAtlas->AddKeyFrame(pKFini);
             mpAtlas->AddKeyFrame(pKFcur);
+
+
 
             for(size_t i=0; i<mvIniMatches.size();i++)
             {
@@ -2391,6 +2404,9 @@ namespace vi_slam{
 
             // Bundle Adjustment
             Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
+
+            // std:cerr << "Map Point checked" << std::endl;
+
             Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(),20);
 
             pKFcur->PrintPointDistribution();

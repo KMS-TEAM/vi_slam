@@ -1917,6 +1917,7 @@ namespace vi_slam{
 
         int FMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const float th, const bool bRight)
         {
+
             cv::Mat Rcw,tcw, Ow;
             Camera* pCamera;
 
@@ -1945,6 +1946,8 @@ namespace vi_slam{
 
             const int nMPs = vpMapPoints.size();
 
+            // std::cerr << vpMapPoints.size() << std::endl;
+
             // For debbuging
             int count_notMP = 0, count_bad=0, count_isinKF = 0, count_negdepth = 0, count_notinim = 0, count_dist = 0, count_normal=0, count_notidx = 0, count_thcheck = 0;
             for(int i=0; i<nMPs; i++)
@@ -1967,7 +1970,6 @@ namespace vi_slam{
                     count_isinKF++;
                     continue;
                 }
-
 
                 cv::Mat p3Dw = pMP->GetWorldPos();
                 cv::Mat p3Dc = Rcw*p3Dw + tcw;
@@ -2009,7 +2011,8 @@ namespace vi_slam{
 
                 // Viewing angle must be less than 60 deg
                 cv::Mat Pn = pMP->GetNormal();
-
+                // std::cerr << "Check ........" << std::endl;
+                // std::cerr << Pn.size() << std::endl;
                 if(PO.dot(Pn)<0.5*dist3D)
                 {
                     count_normal++;

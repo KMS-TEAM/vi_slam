@@ -35,6 +35,7 @@ namespace vi_slam{
         {
             vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
             vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
+            std::cerr << "Check Global Bundle Adjustment: " << vpKFs.size() << " " << vpMP.size() << std::endl;
             BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
         }
 
@@ -47,7 +48,7 @@ namespace vi_slam{
             Map* pMap = vpKFs[0]->GetMap();
 
             g2o::SparseOptimizer optimizer;
-            g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
+            // g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
 
             // linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolver_6_3::PoseMatrixType>();
             // g2o::BlockSolver_6_3 * solver_ptr = new g2o::BlockSolver_6_3(linearSolver);
@@ -69,6 +70,7 @@ namespace vi_slam{
             long unsigned int maxKFid = 0;
 
             const int nExpectedSize = (vpKFs.size())*vpMP.size();
+            std:cerr << "Check expected Size: " << nExpectedSize << std::endl;
 
             vector<optimization::EdgeSE3ProjectXYZ*> vpEdgesMono;
             vpEdgesMono.reserve(nExpectedSize);
@@ -106,6 +108,7 @@ namespace vi_slam{
                 if(pKF->isBad())
                     continue;
                 g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
+                // std::cerr << "Check Key Frame pose: " << pKF->GetPose() << std::endl;
                 vSE3->setEstimate(basics::converter::toSE3Quat(pKF->GetPose()));
                 vSE3->setId(pKF->mnId);
                 vSE3->setFixed(pKF->mnId==pMap->GetInitKFid());
@@ -118,14 +121,15 @@ namespace vi_slam{
             const float thHuber3D = sqrt(7.815);
 
             // Set MapPoint vertices
-
             for(size_t i=0; i<vpMP.size(); i++)
             {
                 MapPoint* pMP = vpMP[i];
                 if(pMP->isBad())
                     continue;
                 g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
+                // std::cerr << pMP->GetWorldPos() << std::endl;
                 vPoint->setEstimate(basics::converter::toVector3d(pMP->GetWorldPos()));
+
                 const int id = pMP->id_+maxKFid+1;
                 vPoint->setId(id);
                 vPoint->setMarginalized(true);
@@ -859,11 +863,13 @@ namespace vi_slam{
                 for(int i=0; i<N; i++)
                 {
                     MapPoint* pMP = pFrame->mvpMapPoints[i];
-                    std::cerr << pMP->id_ << std::endl;
+                    // std::cerr << "Check" << std::endl;
                     if(pMP)
                     {
+
                         //Conventional SLAM
                         if(!pFrame->mpCamera2){
+                            // std::cerr << "Check" << std::endl;
                             // Monocular observation
                             if(pFrame->mvuRight[i]<0)
                             {
@@ -896,6 +902,7 @@ namespace vi_slam{
                                 vpEdgesMono.push_back(e);
                                 vnIndexEdgeMono.push_back(i);
                             }
+
                             else  // Stereo observation
                             {
 
@@ -1455,6 +1462,18 @@ namespace vi_slam{
                 {
                     return;
                 }
+
+            // Make sure we have vertices to optimize!
+            bool allVerticesMarginalized = true;
+            for (size_t i = 0; i < optimizer.indexMapping().size(); ++i) {
+                g2o::OptimizableGraph::Vertex* v = optimizer.indexMapping()[i];
+                if (! v->marginalized()){
+                    allVerticesMarginalized = false;
+                    break;
+                }
+            }
+            if( allVerticesMarginalized )
+                return;
 
             optimizer.initializeOptimization();
 

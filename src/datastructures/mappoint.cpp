@@ -107,13 +107,13 @@ namespace vi_slam{
         cv::Mat MapPoint::GetWorldPos()
         {
             std::unique_lock<std::mutex> lock(mMutexPos);
-            return pos_.clone();
+            return mWorldPos.clone();
         }
 
         cv::Mat MapPoint::GetNormal()
         {
             unique_lock<mutex> lock(mMutexPos);
-            return norm_.clone();
+            return mNormalVector.clone();
         }
 
         cv::Matx31f MapPoint::GetWorldPos2()

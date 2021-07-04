@@ -285,6 +285,7 @@ namespace vi_slam{
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
 #endif
+
             ExtractORB(0,imGray, 0, 1000);
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
@@ -294,12 +295,14 @@ namespace vi_slam{
 
             N = keypoints_.size();
 
-            // std::cerr << "Check keypoint: " << N << std::endl;
+            std::cerr << "Check keypoint: " << N << std::endl;
 
             if(keypoints_.empty())
                 return;
 
             UndistortKeyPoints();
+
+            std::cerr << "Check UndistortKeyPoints: " << ukeypoints_.size() << std::endl;
 
             // Set no stereo information
             mvuRight = vector<float>(N,-1);
@@ -355,6 +358,7 @@ namespace vi_slam{
             }
 
             mpMutexImu = new std::mutex();
+
         }
 
         //-------------------------------------------
