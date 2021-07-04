@@ -5,19 +5,22 @@
 #ifndef VI_SLAM_LOOPCLOSING_H
 #define VI_SLAM_LOOPCLOSING_H
 
-#include "../common_include.h"
-
+#include "vi_slam/common_include.h"
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/map.h"
 #include "vi_slam/datastructures/keyframedatabase.h"
-
+#include "vi_slam/datastructures/atlas.h"
 #include "vi_slam/core/localmapping.h"
 #include "vi_slam/core/tracking.h"
+#include "vi_slam/basics/config.h"
+#include "vi_slam/display/viewer.h"
 
+#include "DBoW3/DBoW3/src/DBoW3.h"
 #include <g2o/types/sim3/types_seven_dof_expmap.h>
 
 #include <mutex>
 #include <thread>
+#include <boost/algorithm/string.hpp>
 
 namespace vi_slam{
 
@@ -25,12 +28,19 @@ namespace vi_slam{
         class KeyFrame;
         class Map;
         class KeyFrameDatabase;
+        class Atlas;
+    }
+
+    namespace display{
+        class Viewer;
     }
 
     namespace core{
 
         class Tracking;
         class LocalMapping;
+
+        using namespace datastructures;
 
         class LoopClosing {
             public:
@@ -41,7 +51,7 @@ namespace vi_slam{
 
             public:
 
-                LoopClosing(datastructures::Map* pMap, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale);
+                LoopClosing(Atlas* pAtlas, datastructures::KeyFrameDatabase* pDB, DBoW3::Vocabulary* pVoc,const bool bFixScale);
 
                 void SetTracker(Tracking* pTracker);
 
@@ -53,9 +63,10 @@ namespace vi_slam{
                 void InsertKeyFrame(datastructures::KeyFrame *pKF);
 
                 void RequestReset();
+                void RequestResetActiveMap(datastructures::Map* pMap);
 
                 // This function will run in a separate thread
-                void RunGlobalBundleAdjustment(unsigned long nLoopKF);
+                void RunGlobalBundleAdjustment(datastructures::Map* pActiveMap,unsigned long nLoopKF);
 
                 bool isRunningGBA(){
                     unique_lock<std::mutex> lock(mMutexGBA);
@@ -70,69 +81,139 @@ namespace vi_slam{
 
                 bool isFinished();
 
+                display::Viewer* mpViewer;
+
                 EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+#ifdef REGISTER_TIMES
+                double timeDetectBoW;
+
+                std::vector<double> vTimeBoW_ms;
+                std::vector<double> vTimeSE3_ms;
+                std::vector<double> vTimePRTotal_ms;
+
+                std::vector<double> vTimeLoopFusion_ms;
+                std::vector<double> vTimeLoopEssent_ms;
+                std::vector<double> vTimeLoopTotal_ms;
+
+                std::vector<double> vTimeMergeFusion_ms;
+                std::vector<double> vTimeMergeBA_ms;
+                std::vector<double> vTimeMergeTotal_ms;
+
+                std::vector<double> vTimeFullGBA_ms;
+                std::vector<double> vTimeMapUpdate_ms;
+                std::vector<double> vTimeGBATotal_ms;
+#endif
 
             protected:
 
-                bool CheckNewKeyFrames();
+            bool CheckNewKeyFrames();
 
-                bool DetectLoop();
 
-                bool ComputeSim3();
+            //Methods to implement the new place recognition algorithm
+            bool NewDetectCommonRegions();
+            bool DetectAndReffineSim3FromLastKF(KeyFrame* pCurrentKF, KeyFrame* pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
+                                                std::vector<MapPoint*> &vpMPs, std::vector<MapPoint*> &vpMatchedMPs);
+            bool DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, KeyFrame* &pMatchedKF, KeyFrame* &pLastCurrentKF, g2o::Sim3 &g2oScw,
+                                            int &nNumCoincidences, std::vector<MapPoint*> &vpMPs, std::vector<MapPoint*> &vpMatchedMPs);
+            bool DetectCommonRegionsFromLastKF(KeyFrame* pCurrentKF, KeyFrame* pMatchedKF, g2o::Sim3 &gScw, int &nNumProjMatches,
+                                               std::vector<MapPoint*> &vpMPs, std::vector<MapPoint*> &vpMatchedMPs);
+            int FindMatchesByProjection(KeyFrame* pCurrentKF, KeyFrame* pMatchedKFw, g2o::Sim3 &g2oScw,
+                                        set<MapPoint*> &spMatchedMPinOrigin, vector<MapPoint*> &vpMapPoints,
+                                        vector<MapPoint*> &vpMatchedMapPoints);
 
-                void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap);
 
-                void CorrectLoop();
+            void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap, vector<MapPoint*> &vpMapPoints);
+            void SearchAndFuse(const vector<KeyFrame*> &vConectedKFs, vector<MapPoint*> &vpMapPoints);
 
-                void ResetIfRequested();
-                bool mbResetRequested;
-                std::mutex mMutexReset;
+            void CorrectLoop();
 
-                bool CheckFinish();
-                void SetFinish();
-                bool mbFinishRequested;
-                bool mbFinished;
-                std::mutex mMutexFinish;
+            void MergeLocal();
+            void MergeLocal2();
 
-                datastructures::Map* mpMap;
-                Tracking* mpTracker;
+            void ResetIfRequested();
+            bool mbResetRequested;
+            bool mbResetActiveMapRequested;
+            Map* mpMapToReset;
+            std::mutex mMutexReset;
 
-                datastructures::KeyFrameDatabase* mpKeyFrameDB;
-                DBoW3::Vocabulary* mpORBVocabulary;
+            bool CheckFinish();
+            void SetFinish();
+            bool mbFinishRequested;
+            bool mbFinished;
+            std::mutex mMutexFinish;
 
-                LocalMapping *mpLocalMapper;
+            Atlas* mpAtlas;
+            Tracking* mpTracker;
 
-                std::list<datastructures::KeyFrame*> mlpLoopKeyFrameQueue;
+            KeyFrameDatabase* mpKeyFrameDB;
+            DBoW3::Vocabulary* mpORBVocabulary;
 
-                std::mutex mMutexLoopQueue;
+            LocalMapping *mpLocalMapper;
 
-                // Loop detector parameters
-                float mnCovisibilityConsistencyTh;
+            std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 
-                // Loop detector variables
-                datastructures::KeyFrame* mpCurrentKF;
-                datastructures::KeyFrame* mpMatchedKF;
-                std::vector<ConsistentGroup> mvConsistentGroups;
-                std::vector<datastructures::KeyFrame*> mvpEnoughConsistentCandidates;
-                std::vector<datastructures::KeyFrame*> mvpCurrentConnectedKFs;
-                std::vector<datastructures::MapPoint*> mvpCurrentMatchedPoints;
-                std::vector<datastructures::MapPoint*> mvpLoopMapPoints;
-                cv::Mat mScw;
-                g2o::Sim3 mg2oScw;
+            std::mutex mMutexLoopQueue;
 
-                long unsigned int mLastLoopKFid;
+            // Loop detector parameters
+            float mnCovisibilityConsistencyTh;
 
-                // Variables related to Global Bundle Adjustment
-                bool mbRunningGBA;
-                bool mbFinishedGBA;
-                bool mbStopGBA;
-                std::mutex mMutexGBA;
-                std::thread* mpThreadGBA;
+            // Loop detector variables
+            KeyFrame* mpCurrentKF;
+            KeyFrame* mpLastCurrentKF;
+            KeyFrame* mpMatchedKF;
+            std::vector<ConsistentGroup> mvConsistentGroups;
+            std::vector<KeyFrame*> mvpEnoughConsistentCandidates;
+            std::vector<KeyFrame*> mvpCurrentConnectedKFs;
+            std::vector<MapPoint*> mvpCurrentMatchedPoints;
+            std::vector<MapPoint*> mvpLoopMapPoints;
+            cv::Mat mScw;
+            g2o::Sim3 mg2oScw;
 
-                // Fix scale in the stereo/RGB-D case
-                bool mbFixScale;
+            //-------
+            Map* mpLastMap;
 
-                bool mnFullBAIdx;
+            bool mbLoopDetected;
+            int mnLoopNumCoincidences;
+            int mnLoopNumNotFound;
+            KeyFrame* mpLoopLastCurrentKF;
+            g2o::Sim3 mg2oLoopSlw;
+            g2o::Sim3 mg2oLoopScw;
+            KeyFrame* mpLoopMatchedKF;
+            std::vector<MapPoint*> mvpLoopMPs;
+            std::vector<MapPoint*> mvpLoopMatchedMPs;
+            bool mbMergeDetected;
+            int mnMergeNumCoincidences;
+            int mnMergeNumNotFound;
+            KeyFrame* mpMergeLastCurrentKF;
+            g2o::Sim3 mg2oMergeSlw;
+            g2o::Sim3 mg2oMergeSmw;
+            g2o::Sim3 mg2oMergeScw;
+            KeyFrame* mpMergeMatchedKF;
+            std::vector<MapPoint*> mvpMergeMPs;
+            std::vector<MapPoint*> mvpMergeMatchedMPs;
+            std::vector<KeyFrame*> mvpMergeConnectedKFs;
+
+            g2o::Sim3 mSold_new;
+            //-------
+
+            long unsigned int mLastLoopKFid;
+
+            // Variables related to Global Bundle Adjustment
+            bool mbRunningGBA;
+            bool mbFinishedGBA;
+            bool mbStopGBA;
+            std::mutex mMutexGBA;
+            std::thread* mpThreadGBA;
+
+            // Fix scale in the stereo/RGB-D case
+            bool mbFixScale;
+            
+            bool mnFullBAIdx;
+
+            vector<double> vdPR_CurrentTime;
+            vector<double> vdPR_MatchedTime;
+            vector<int> vnPR_TypeRecogn;
         };
     }
 }

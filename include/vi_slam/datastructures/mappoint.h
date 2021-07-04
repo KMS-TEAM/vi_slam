@@ -5,13 +5,22 @@
 #ifndef VI_SLAM_MAPPOINT_H
 #define VI_SLAM_MAPPOINT_H
 
-#include "../common_include.h"
+#include "vi_slam/common_include.h"
 #include "vi_slam/datastructures/frame.h"
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/map.h"
 
+#include<mutex>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/array.hpp>
+#include <boost/serialization/map.hpp>
+
 namespace vi_slam{
     namespace datastructures{
+
+        class KeyFrame;
+        class Map;
+        class Frame;
 
         class MapPoint
         {
@@ -35,8 +44,16 @@ namespace vi_slam{
             vector<unsigned char> color_; // r,g,b
             cv::Mat descriptor_;              // Descriptor for matching
 
+            // Position in absolute coordinates
+            cv::Mat mWorldPos;
+            cv::Matx31f mWorldPosx;
+
             // Keyframes observing the point and associated index in keyframe
-            std::map<KeyFrame*,size_t> mObservations;
+            std::map<KeyFrame*,std::tuple<int,int> > mObservations;
+            // Mean viewing direction
+            cv::Mat mNormalVector;
+            cv::Matx31f mNormalVectorx;
+
             // Reference KeyFrame
             KeyFrame* mpRefKF;
 
@@ -55,10 +72,13 @@ namespace vi_slam{
             // Variables used by the tracking
             float mTrackProjX;
             float mTrackProjY;
+            float mTrackDepth;
+            float mTrackDepthR;
             float mTrackProjXR;
-            bool mbTrackInView;
-            int mnTrackScaleLevel;
-            float mTrackViewCos;
+            float mTrackProjYR;
+            bool mbTrackInView, mbTrackInViewR;
+            int mnTrackScaleLevel, mnTrackScaleLevelR;
+            float mTrackViewCos, mTrackViewCosR;
             long unsigned int mnTrackReferenceForFrame;
             long unsigned int mnLastFrameSeen;
 
@@ -72,11 +92,24 @@ namespace vi_slam{
             long unsigned int mnCorrectedReference;
             cv::Mat mPosGBA;
             long unsigned int mnBAGlobalForKF;
+            long unsigned int mnBALocalForMerge;
 
+            // Variable used by merging
+            cv::Mat mPosMerge;
+            cv::Mat mNormalVectorMerge;
 
             static std::mutex mGlobalMutex;
             std::mutex mMutexPos;
             std::mutex mMutexFeatures;
+            std::mutex mMutexMap;
+
+            // Fopr inverse depth optimization
+            double mInvDepth;
+            double mInitU;
+            double mInitV;
+            KeyFrame* mpHostKF;
+
+            unsigned int mnOriginMapId;
 
         public:                 // Properties for constructing local mapping
             bool good_;         // TODO: determine wheter a good point
@@ -84,25 +117,31 @@ namespace vi_slam{
             int visible_times_; // being visible in current frame
 
         public: // Functions
+            MapPoint();
             MapPoint(const cv::Point3f &pos, const cv::Mat &descriptor, const cv::Mat &norm,
                      unsigned char r = 0, unsigned char g = 0, unsigned char b = 0);
 
             MapPoint(const cv::Mat &Pos, KeyFrame* pRefKF, Map* pMap);
             MapPoint(const cv::Mat &Pos,  Map* pMap, Frame* pFrame, const int &idxF);
+            MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF, KeyFrame* pHostKF, Map* pMap);
 
-            void setPos(const cv::Mat &Pos);
+            void SetWorldPos(const cv::Mat &Pos);
             cv::Mat GetWorldPos();
 
             cv::Mat GetNormal();
+
+            cv::Matx31f GetWorldPos2();
+            cv::Matx31f GetNormal2();
+
             KeyFrame* GetReferenceKeyFrame();
 
-            std::map<KeyFrame*,size_t> GetObservations();
+            std::map<KeyFrame*,std::tuple<int,int>> GetObservations();
             int Observations();
 
             void AddObservation(KeyFrame* pKF,size_t idx);
             void EraseObservation(KeyFrame* pKF);
 
-            int GetIndexInKeyFrame(KeyFrame* pKF);
+            std::tuple<int,int> GetIndexInKeyFrame(KeyFrame* pKF);
             bool IsInKeyFrame(KeyFrame* pKF);
 
             void SetBadFlag();
@@ -123,11 +162,15 @@ namespace vi_slam{
             cv::Mat GetDescriptor();
 
             void UpdateNormalAndDepth();
+            void SetNormalVector(cv::Mat& normal);
 
             float GetMinDistanceInvariance();
             float GetMaxDistanceInvariance();
             int PredictScale(const float &currentDist, KeyFrame*pKF);
             int PredictScale(const float &currentDist, Frame* pF);
+
+            Map* GetMap();
+            void UpdateMap(Map* pMap);
         };
     }
 }

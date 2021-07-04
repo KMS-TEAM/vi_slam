@@ -5,7 +5,7 @@
 #ifndef VI_SLAM_FEXTRACTOR_H
 #define VI_SLAM_FEXTRACTOR_H
 
-#include "../common_include.h"
+#include "vi_slam/common_include.h"
 
 namespace vi_slam{
     namespace geometry{
@@ -35,9 +35,9 @@ namespace vi_slam{
             // Compute the ORB features and descriptors on an image.
             // ORB are dispersed on the image using an octree.
             // Mask is ignored in the current implementation.
-            void compute(cv::InputArray image, cv::InputArray mask,
+            int compute(cv::InputArray image, cv::InputArray mask,
                          std::vector<cv::KeyPoint>& keypoints,
-                         cv::OutputArray descriptors);
+                         cv::OutputArray descriptors, std::vector<int> &vLappingArea);
 
             int inline GetLevels(){
                 return nlevels;}
