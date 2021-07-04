@@ -1,4 +1,6 @@
 #include "vi_slam/optimization/mlpnpsolver.h"
+#include "DBoW3/DUtils/Random.h"
+#include "DBoW3/DUtils/Timestamp.h"
 
 #include <Eigen/Sparse>
 
@@ -20,8 +22,8 @@ namespace vi_slam{
 
                 if(pMP){
                     if(!pMP -> isBad()){
-                        if(i >= F.mvKeysUn.size()) continue;
-                        const cv::KeyPoint &kp = F.mvKeysUn[i];
+                        if(i >= F.ukeypoints_.size()) continue;
+                        const cv::KeyPoint &kp = F.ukeypoints_[i];
 
                         mvP2D.push_back(kp.pt);
                         mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);

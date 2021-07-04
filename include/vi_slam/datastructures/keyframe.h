@@ -315,6 +315,7 @@ namespace vi_slam{
             KeyFrame* mpParent;
             std::set<KeyFrame*> mspChildrens;
             std::set<KeyFrame*> mspLoopEdges;
+            std::set<KeyFrame*> mspMergeEdges;
 
             // Bad flags
             bool mbNotErase;

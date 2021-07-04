@@ -116,7 +116,7 @@ namespace vi_slam{
         };
 
         // Optimizable parameters are IMU pose
-        class VertexPose : public g2o::BaseVertex<6,ImuCamPose>
+        class VertexPose : public g2o::BaseVertex<6,optimization::ImuCamPose>
         {
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -141,21 +141,21 @@ namespace vi_slam{
             }
         };
 
-        class VertexPose4DoF : public g2o::BaseVertex<4,ImuCamPose>
+        class VertexPose4DoF : public g2o::BaseVertex<4,optimization::ImuCamPose>
         {
             // Translation and yaw are the only optimizable variables
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             VertexPose4DoF(){}
             VertexPose4DoF(KeyFrame* pKF){
-                setEstimate(ImuCamPose(pKF));
+                setEstimate(optimization::ImuCamPose(pKF));
             }
             VertexPose4DoF(Frame* pF){
-                setEstimate(ImuCamPose(pF));
+                setEstimate(optimization::ImuCamPose(pF));
             }
             VertexPose4DoF(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame* pKF){
 
-                setEstimate(ImuCamPose(_Rwc, _twc, pKF));
+                setEstimate(optimization::ImuCamPose(_Rwc, _twc, pKF));
             }
 
             virtual bool read(std::istream& is){return false;}

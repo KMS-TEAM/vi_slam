@@ -7,7 +7,6 @@
 #include "vi_slam/geometry/fmatcher.h"
 #include<mutex>
 
-
 namespace vi_slam
 {
     namespace datastructures {
@@ -495,6 +494,19 @@ namespace vi_slam
         set<KeyFrame *> KeyFrame::GetLoopEdges() {
             unique_lock <mutex> lockCon(mMutexConnections);
             return mspLoopEdges;
+        }
+
+        void KeyFrame::AddMergeEdge(KeyFrame* pKF)
+        {
+            unique_lock<mutex> lockCon(mMutexConnections);
+            mbNotErase = true;
+            mspMergeEdges.insert(pKF);
+        }
+
+        set<KeyFrame*> KeyFrame::GetMergeEdges()
+        {
+            unique_lock<mutex> lockCon(mMutexConnections);
+            return mspMergeEdges;
         }
 
         void KeyFrame::SetNotErase() {

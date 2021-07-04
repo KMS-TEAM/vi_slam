@@ -10,6 +10,8 @@ using namespace std;
 namespace vi_slam{
     namespace datastructures{
 
+        long unsigned int Map::nNextId = 0;
+
         Map::Map():mnMaxKFid(0),mnBigChangeIdx(0), mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
                    mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false)
         {

@@ -4,11 +4,12 @@
 
 namespace vi_slam{
     namespace optimization{
+
         ImuCamPose::ImuCamPose(KeyFrame *pKF):its(0)
         {
             // Load IMU pose
-            twb = Converter::toVector3d(pKF->GetImuPosition());
-            Rwb = Converter::toMatrix3d(pKF->GetImuRotation());
+            twb = basics::converter::toVector3d(pKF->GetImuPosition());
+            Rwb = basics::converter::toMatrix3d(pKF->GetImuRotation());
 
             // Load camera poses
             int num_cams;
@@ -26,18 +27,18 @@ namespace vi_slam{
             pCamera.resize(num_cams);
 
             // Left camera
-            tcw[0] = Converter::toVector3d(pKF->GetTranslation());
-            Rcw[0] = Converter::toMatrix3d(pKF->GetRotation());
-            tcb[0] = Converter::toVector3d(pKF->mImuCalib.Tcb.rowRange(0,3).col(3));
-            Rcb[0] = Converter::toMatrix3d(pKF->mImuCalib.Tcb.rowRange(0,3).colRange(0,3));
+            tcw[0] = basics::converter::toVector3d(pKF->GetTranslation());
+            Rcw[0] = basics::converter::toMatrix3d(pKF->GetRotation());
+            tcb[0] = basics::converter::toVector3d(pKF->mImuCalib.Tcb.rowRange(0,3).col(3));
+            Rcb[0] = basics::converter::toMatrix3d(pKF->mImuCalib.Tcb.rowRange(0,3).colRange(0,3));
             Rbc[0] = Rcb[0].transpose();
-            tbc[0] = Converter::toVector3d(pKF->mImuCalib.Tbc.rowRange(0,3).col(3));
+            tbc[0] = basics::converter::toVector3d(pKF->mImuCalib.Tbc.rowRange(0,3).col(3));
             pCamera[0] = pKF->mpCamera;
             bf = pKF->mbf;
 
             if(num_cams>1)
             {
-                Eigen::Matrix4d Trl = Converter::toMatrix4d(pKF->mTrl);
+                Eigen::Matrix4d Trl = basics::converter::toMatrix4d(pKF->mTrl);
                 Rcw[1] = Trl.block<3,3>(0,0)*Rcw[0];
                 tcw[1] = Trl.block<3,3>(0,0)*tcw[0]+Trl.block<3,1>(0,3);
                 tcb[1] = Trl.block<3,3>(0,0)*tcb[0]+Trl.block<3,1>(0,3);
@@ -55,8 +56,8 @@ namespace vi_slam{
         ImuCamPose::ImuCamPose(Frame *pF):its(0)
         {
             // Load IMU pose
-            twb = Converter::toVector3d(pF->GetImuPosition());
-            Rwb = Converter::toMatrix3d(pF->GetImuRotation());
+            twb = basics::converter::toVector3d(pF->GetImuPosition());
+            Rwb = basics::converter::toMatrix3d(pF->GetImuRotation());
 
             // Load camera poses
             int num_cams;
@@ -74,18 +75,18 @@ namespace vi_slam{
             pCamera.resize(num_cams);
 
             // Left camera
-            tcw[0] = Converter::toVector3d(pF->mTcw.rowRange(0,3).col(3));
-            Rcw[0] = Converter::toMatrix3d(pF->mTcw.rowRange(0,3).colRange(0,3));
-            tcb[0] = Converter::toVector3d(pF->mImuCalib.Tcb.rowRange(0,3).col(3));
-            Rcb[0] = Converter::toMatrix3d(pF->mImuCalib.Tcb.rowRange(0,3).colRange(0,3));
+            tcw[0] = basics::converter::toVector3d(pF->T_w_c_.rowRange(0,3).col(3));
+            Rcw[0] = basics::converter::toMatrix3d(pF->T_w_c_.rowRange(0,3).colRange(0,3));
+            tcb[0] = basics::converter::toVector3d(pF->mImuCalib.Tcb.rowRange(0,3).col(3));
+            Rcb[0] = basics::converter::toMatrix3d(pF->mImuCalib.Tcb.rowRange(0,3).colRange(0,3));
             Rbc[0] = Rcb[0].transpose();
-            tbc[0] = Converter::toVector3d(pF->mImuCalib.Tbc.rowRange(0,3).col(3));
+            tbc[0] = basics::converter::toVector3d(pF->mImuCalib.Tbc.rowRange(0,3).col(3));
             pCamera[0] = pF->mpCamera;
             bf = pF->mbf;
 
             if(num_cams>1)
             {
-                Eigen::Matrix4d Trl = Converter::toMatrix4d(pF->mTrl);
+                Eigen::Matrix4d Trl = basics::converter::toMatrix4d(pF->mTrl);
                 Rcw[1] = Trl.block<3,3>(0,0)*Rcw[0];
                 tcw[1] = Trl.block<3,3>(0,0)*tcw[0]+Trl.block<3,1>(0,3);
                 tcb[1] = Trl.block<3,3>(0,0)*tcb[0]+Trl.block<3,1>(0,3);
@@ -111,10 +112,10 @@ namespace vi_slam{
             tbc.resize(1);
             pCamera.resize(1);
 
-            tcb[0] = Converter::toVector3d(pKF->mImuCalib.Tcb.rowRange(0,3).col(3));
-            Rcb[0] = Converter::toMatrix3d(pKF->mImuCalib.Tcb.rowRange(0,3).colRange(0,3));
+            tcb[0] = basics::converter::toVector3d(pKF->mImuCalib.Tcb.rowRange(0,3).col(3));
+            Rcb[0] = basics::converter::toMatrix3d(pKF->mImuCalib.Tcb.rowRange(0,3).colRange(0,3));
             Rbc[0] = Rcb[0].transpose();
-            tbc[0] = Converter::toVector3d(pKF->mImuCalib.Tbc.rowRange(0,3).col(3));
+            tbc[0] = basics::converter::toVector3d(pKF->mImuCalib.Tbc.rowRange(0,3).col(3));
             twb = _Rwc*tcb[0]+_twc;
             Rwb = _Rwc*Rcb[0];
             Rcw[0] = _Rwc.transpose();
@@ -437,17 +438,17 @@ namespace vi_slam{
 
         VertexVelocity::VertexVelocity(KeyFrame* pKF)
         {
-            setEstimate(Converter::toVector3d(pKF->GetVelocity()));
+            setEstimate(basics::converter::toVector3d(pKF->GetVelocity()));
         }
 
         VertexVelocity::VertexVelocity(Frame* pF)
         {
-            setEstimate(Converter::toVector3d(pF->mVw));
+            setEstimate(basics::converter::toVector3d(pF->mVw));
         }
 
         VertexGyroBias::VertexGyroBias(KeyFrame *pKF)
         {
-            setEstimate(Converter::toVector3d(pKF->GetGyroBias()));
+            setEstimate(basics::converter::toVector3d(pKF->GetGyroBias()));
         }
 
         VertexGyroBias::VertexGyroBias(Frame *pF)
@@ -459,7 +460,7 @@ namespace vi_slam{
 
         VertexAccBias::VertexAccBias(KeyFrame *pKF)
         {
-            setEstimate(Converter::toVector3d(pKF->GetAccBias()));
+            setEstimate(basics::converter::toVector3d(pKF->GetAccBias()));
         }
 
         VertexAccBias::VertexAccBias(Frame *pF)
@@ -471,9 +472,9 @@ namespace vi_slam{
 
 
 
-        EdgeInertial::EdgeInertial(IMU::Preintegrated *pInt):JRg(Converter::toMatrix3d(pInt->JRg)),
-                                                             JVg(Converter::toMatrix3d(pInt->JVg)), JPg(Converter::toMatrix3d(pInt->JPg)), JVa(Converter::toMatrix3d(pInt->JVa)),
-                                                             JPa(Converter::toMatrix3d(pInt->JPa)), mpInt(pInt), dt(pInt->dT)
+        EdgeInertial::EdgeInertial(IMU::Preintegrated *pInt):JRg(basics::converter::toMatrix3d(pInt->JRg)),
+                                                             JVg(basics::converter::toMatrix3d(pInt->JVg)), JPg(basics::converter::toMatrix3d(pInt->JPg)), JVa(basics::converter::toMatrix3d(pInt->JVa)),
+                                                             JPa(basics::converter::toMatrix3d(pInt->JPa)), mpInt(pInt), dt(pInt->dT)
         {
             // This edge links 6 vertices
             resize(6);
@@ -506,9 +507,9 @@ namespace vi_slam{
             const VertexPose* VP2 = static_cast<const VertexPose*>(_vertices[4]);
             const VertexVelocity* VV2 = static_cast<const VertexVelocity*>(_vertices[5]);
             const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
-            const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b1));
-            const Eigen::Vector3d dV = Converter::toVector3d(mpInt->GetDeltaVelocity(b1));
-            const Eigen::Vector3d dP = Converter::toVector3d(mpInt->GetDeltaPosition(b1));
+            const Eigen::Matrix3d dR = basics::converter::toMatrix3d(mpInt->GetDeltaRotation(b1));
+            const Eigen::Vector3d dV = basics::converter::toVector3d(mpInt->GetDeltaVelocity(b1));
+            const Eigen::Vector3d dP = basics::converter::toVector3d(mpInt->GetDeltaPosition(b1));
 
             const Eigen::Vector3d er = LogSO3(dR.transpose()*VP1->estimate().Rwb.transpose()*VP2->estimate().Rwb);
             const Eigen::Vector3d ev = VP1->estimate().Rwb.transpose()*(VV2->estimate() - VV1->estimate() - g*dt) - dV;
@@ -535,7 +536,7 @@ namespace vi_slam{
             const Eigen::Matrix3d Rbw1 = Rwb1.transpose();
             const Eigen::Matrix3d Rwb2 = VP2->estimate().Rwb;
 
-            const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b1));
+            const Eigen::Matrix3d dR = basics::converter::toMatrix3d(mpInt->GetDeltaRotation(b1));
             const Eigen::Matrix3d eR = dR.transpose()*Rbw1*Rwb2;
             const Eigen::Vector3d er = LogSO3(eR);
             const Eigen::Matrix3d invJr = InverseRightJacobianSO3(er);
@@ -578,9 +579,9 @@ namespace vi_slam{
             _jacobianOplus[5].block<3,3>(3,0) = Rbw1; // OK
         }
 
-        EdgeInertialGS::EdgeInertialGS(IMU::Preintegrated *pInt):JRg(Converter::toMatrix3d(pInt->JRg)),
-                                                                 JVg(Converter::toMatrix3d(pInt->JVg)), JPg(Converter::toMatrix3d(pInt->JPg)), JVa(Converter::toMatrix3d(pInt->JVa)),
-                                                                 JPa(Converter::toMatrix3d(pInt->JPa)), mpInt(pInt), dt(pInt->dT)
+        EdgeInertialGS::EdgeInertialGS(IMU::Preintegrated *pInt):JRg(basics::converter::toMatrix3d(pInt->JRg)),
+                                                                 JVg(basics::converter::toMatrix3d(pInt->JVg)), JPg(basics::converter::toMatrix3d(pInt->JPg)), JVa(basics::converter::toMatrix3d(pInt->JVa)),
+                                                                 JPa(basics::converter::toMatrix3d(pInt->JPa)), mpInt(pInt), dt(pInt->dT)
         {
             // This edge links 8 vertices
             resize(8);
@@ -616,9 +617,9 @@ namespace vi_slam{
             const IMU::Bias b(VA->estimate()[0],VA->estimate()[1],VA->estimate()[2],VG->estimate()[0],VG->estimate()[1],VG->estimate()[2]);
             g = VGDir->estimate().Rwg*gI;
             const double s = VS->estimate();
-            const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b));
-            const Eigen::Vector3d dV = Converter::toVector3d(mpInt->GetDeltaVelocity(b));
-            const Eigen::Vector3d dP = Converter::toVector3d(mpInt->GetDeltaPosition(b));
+            const Eigen::Matrix3d dR = basics::converter::toMatrix3d(mpInt->GetDeltaRotation(b));
+            const Eigen::Vector3d dV = basics::converter::toVector3d(mpInt->GetDeltaVelocity(b));
+            const Eigen::Vector3d dP = basics::converter::toVector3d(mpInt->GetDeltaPosition(b));
 
             const Eigen::Vector3d er = LogSO3(dR.transpose()*VP1->estimate().Rwb.transpose()*VP2->estimate().Rwb);
             const Eigen::Vector3d ev = VP1->estimate().Rwb.transpose()*(s*(VV2->estimate() - VV1->estimate()) - g*dt) - dV;
@@ -652,7 +653,7 @@ namespace vi_slam{
             Gm(1,0) = IMU::GRAVITY_VALUE;
             const double s = VS->estimate();
             const Eigen::MatrixXd dGdTheta = Rwg*Gm;
-            const Eigen::Matrix3d dR = Converter::toMatrix3d(mpInt->GetDeltaRotation(b));
+            const Eigen::Matrix3d dR = basics::converter::toMatrix3d(mpInt->GetDeltaRotation(b));
             const Eigen::Matrix3d eR = dR.transpose()*Rbw1*Rwb2;
             const Eigen::Vector3d er = LogSO3(eR);
             const Eigen::Matrix3d invJr = InverseRightJacobianSO3(er);
@@ -776,12 +777,12 @@ namespace vi_slam{
             if(d<1e-5)
             {
                 Eigen::Matrix3d res = Eigen::Matrix3d::Identity() + W +0.5*W*W;
-                return Converter::toMatrix3d(IMU::NormalizeRotation(Converter::toCvMat(res)));
+                return basics::converter::toMatrix3d(IMU::NormalizeRotation(basics::converter::toCvMat(res)));
             }
             else
             {
                 Eigen::Matrix3d res =Eigen::Matrix3d::Identity() + W*sin(d)/d + W*W*(1.0-cos(d))/d2;
-                return Converter::toMatrix3d(IMU::NormalizeRotation(Converter::toCvMat(res)));
+                return basics::converter::toMatrix3d(IMU::NormalizeRotation(basics::converter::toCvMat(res)));
             }
         }
 

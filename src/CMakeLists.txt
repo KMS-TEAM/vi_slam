@@ -1,7 +1,24 @@
 file(GLOB_RECURSE SOURCES
-        basics/*.cpp
-        datastructures/*.cpp
-        display/*.cpp
+
+        basics/basics.cpp
+        basics/config.cpp
+        basics/converter.cpp
+        basics/eigen_funcs.cpp
+        basics/opencv_funcs.cpp
+        basics/yaml.cpp
+
+        datastructures/atlas.cpp
+        datastructures/frame.cpp
+        datastructures/imu.cpp
+        datastructures/keyframe.cpp
+        datastructures/keyframedatabase.cpp
+        datastructures/map.cpp
+        datastructures/mappoint.cpp
+
+        display/display_lib.cpp
+        display/framedrawer.cpp
+        display/mapdrawer.cpp
+        display/viewer.cpp
 
         geometry/cameramodels/camera.cpp
         geometry/cameramodels/pinhole.cpp
@@ -12,8 +29,20 @@ file(GLOB_RECURSE SOURCES
         geometry/fmatcher.cpp
         geometry/motion_estimation.cpp
 
-        optimization/*.cpp
-        core/*cpp
+        optimization/g2o_ba.cpp
+        optimization/g2otypes.cpp
+        optimization/mlpnpsolver.cpp
+        optimization/optimizer.cpp
+        optimization/optimizetypes.cpp
+        optimization/pnpsolver.cpp
+        optimization/sim3solver.cpp
+
+        core/core_commons.cpp
+        core/localmapping.cpp
+        core/loopclosing.cpp
+        core/monoinitializer.cpp
+        core/system.cpp
+        core/tracking.cpp
         )
 
 add_library(vi_slam SHARED ${SOURCES})

@@ -859,6 +859,7 @@ namespace vi_slam{
                 for(int i=0; i<N; i++)
                 {
                     MapPoint* pMP = pFrame->mvpMapPoints[i];
+                    std::cerr << pMP->id_ << std::endl;
                     if(pMP)
                     {
                         //Conventional SLAM
@@ -897,6 +898,7 @@ namespace vi_slam{
                             }
                             else  // Stereo observation
                             {
+
                                 nInitialCorrespondences++;
                                 pFrame->mvbOutlier[i] = false;
 

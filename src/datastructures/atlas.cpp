@@ -1,4 +1,5 @@
 #include "vi_slam/datastructures/atlas.h"
+#include "vi_slam/datastructures/map.h"
 #include "vi_slam/display/viewer.h"
 
 #include "vi_slam/geometry/cameramodels/camera.h"
@@ -9,6 +10,9 @@
 
 namespace vi_slam{
     namespace datastructures{
+
+        class Map;
+
         Atlas::Atlas(){
             mpCurrentMap = static_cast<Map*>(NULL);
         }
@@ -41,7 +45,7 @@ namespace vi_slam{
         void Atlas::CreateNewMap()
         {
             unique_lock<mutex> lock(mMutexAtlas);
-            cout << "Creation of new map with id: " << Map::nNextId << endl;
+            cout << "Creation of new map with id: " << mpCurrentMap->nNextId << endl;
             if(mpCurrentMap){
                 cout << "Exits current map " << endl;
                 if(!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())

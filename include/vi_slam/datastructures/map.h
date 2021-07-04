@@ -164,7 +164,6 @@ namespace vi_slam{
 
             unsigned int GetLowerKFID();
 
-
         };
     }
 }
