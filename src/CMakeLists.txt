@@ -46,7 +46,7 @@ file(GLOB_RECURSE SOURCES
         core/tracking.cpp
         )
 
-add_library(vi_slam SHARED ${SOURCES} ../include/vi_slam/optimization/isam2optimizer.cpp ../include/vi_slam/optimization/isam2optimizer.h)
+add_library(vi_slam SHARED ${SOURCES})
 
 target_link_libraries( vi_slam
         #vilib::vilib
