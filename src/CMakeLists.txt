@@ -36,6 +36,7 @@ file(GLOB_RECURSE SOURCES
         optimization/optimizetypes.cpp
         optimization/pnpsolver.cpp
         optimization/sim3solver.cpp
+        optimization/isam2optimizer.cpp
 
         core/core_commons.cpp
         core/localmapping.cpp
@@ -45,7 +46,7 @@ file(GLOB_RECURSE SOURCES
         core/tracking.cpp
         )
 
-add_library(vi_slam SHARED ${SOURCES})
+add_library(vi_slam SHARED ${SOURCES} ../include/vi_slam/optimization/isam2optimizer.cpp ../include/vi_slam/optimization/isam2optimizer.h)
 
 target_link_libraries( vi_slam
         #vilib::vilib
