@@ -6,6 +6,7 @@ file(GLOB_RECURSE SOURCES
         basics/eigen_funcs.cpp
         basics/opencv_funcs.cpp
         basics/yaml.cpp
+        basics/logger.cpp
 
         datastructures/atlas.cpp
         datastructures/frame.cpp
