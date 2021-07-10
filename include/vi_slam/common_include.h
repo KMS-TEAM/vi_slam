@@ -30,6 +30,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
+#include "vi_slam/basics/logger.h"
+
 
 using std::cout;
 using std::endl;
