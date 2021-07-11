@@ -38,6 +38,7 @@ file(GLOB_RECURSE SOURCES
         optimization/pnpsolver.cpp
         optimization/sim3solver.cpp
         optimization/gtsamoptimizer.cpp
+        optimization/iSAM2Optimizer.cpp
 
         core/core_commons.cpp
         core/localmapping.cpp
