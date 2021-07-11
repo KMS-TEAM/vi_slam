@@ -1439,6 +1439,8 @@ namespace vi_slam{
             const int n = mvImuFromLastFrame.size()-1;
             IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame.mImuBias,mCurrentFrame.mImuCalib);
 
+            // Add GTSAM IMU Preintergrated here
+
             for(int i=0; i<n; i++)
             {
                 float tstep;
