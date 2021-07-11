@@ -10,13 +10,59 @@
 #include "vi_slam/optimization/optimizer.h"
 #include "vi_slam/optimization/gtsamoptimizer.h"
 #include "vi_slam/optimization/gtsamserialization.h"
+#include "vi_slam/basics/yaml.h"
+
+#include <gtsam/navigation/ImuFactor.h> // **
+#include <gtsam/navigation/CombinedImuFactor.h> // **
+#include <gtsam/slam/BetweenFactor.h> // **
 
 //#define DEBUG
 
 namespace vi_slam {
+
+    namespace basics{
+        class Yaml;
+    }
+
     namespace optimization{
 
-        GtsamOptimizer::GtsamOptimizer() {
+        GTSAMOptimizer::GTSAMOptimizer(std::string& config_path) {
+
+            basics::Yaml readConfig(config_path);
+
+            // YAML intrinsics (pinhole): [fu fv pu pv]
+            std::vector<double> cam0_intrinsics(4);
+            cam0_intrinsics = readConfig.get_vec<double>("cam0/resolution");
+            this->f = (cam0_intrinsics[0] + cam0_intrinsics[1]) / 2;
+            this->cx = cam0_intrinsics[2];
+            this->cy = cam0_intrinsics[3];
+
+            // YAML image resolution parameters (radtan): [k1 k2 r1 r2]
+            vector<double> cam0_resolution(2);
+            cam0_resolution = readConfig.get_vec<double>("cam0/resolution");
+            this->resolution_x = cam0_resolution[0];
+            this->resolution_y = cam0_resolution[1];
+
+            // YAML extrinsics (distance between 2 cameras and transform between imu and camera))
+            vector<double> T_cam1(16);
+            T_cam1 = readConfig.get_vec<double>("cam1/T_cn_cnm1");
+            this->Tx = T_cam1[3];
+
+            vector<double> T_cam_imu(16);
+            T_cam_imu = readConfig.get_vec<double>("cam0/T_cam_imu");
+            gtsam::Matrix4 T_cam_imu_mat_copy(T_cam_imu.data());
+            T_cam_imu_mat = move(T_cam_imu_mat_copy);
+
+            // Set K: (fx, fy, s, u0, v0, b) (b: baseline where Z = f*d/b; Tx is negative)
+            this->K.reset(new Cal3_S2Stereo(cam0_intrinsics[0], cam0_intrinsics[1], 0.0,
+                                            this->cx, this->cy, -this->Tx));
+
+            // iSAM2 settings
+            ISAM2Params parameters;
+            parameters.relinearizeThreshold = 0.01;
+            parameters.relinearizeSkip = 1;
+            isam.reset(new ISAM2(parameters));
+
             logger_ = spdlog::rotating_logger_st("GtsamTransformer",
                                                  "GtsamTransformer.log",
                                                  1048576 * 50,
@@ -28,9 +74,67 @@ namespace vi_slam {
 #endif
             logger_->info("CTOR - GtsamTransformer instance created");
             between_factors_prior_ = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 1e2, 1e2, 1e2, 1, 1, 1).finished());
+            // Noise models
+            pose_noise = noiseModel::Diagonal::Sigmas(
+                    (Vector(6) << Vector3::Constant(0.5),Vector3::Constant(0.1)).finished()); // (roll,pitch,yaw in rad; std on x,y,z in meters)
+            velocity_noise = noiseModel::Isotropic::Sigma(3, 0.1); // (dim, sigma in m/s)
+            bias_noise = noiseModel::Isotropic::Sigma(6, 1e-3); // (dim, sigma)
+            pose_landmark_noise = noiseModel::Isotropic::Sigma(3, 1.0); // (dim, sigma in pixels): one pixel in u and v
+            landmark_noise = noiseModel::Isotropic::Sigma(3, 0.1);
         }
 
-        void GtsamOptimizer::addMonoMeasurement(vi_slam::datastructures::KeyFrame *pKF,
+        void GTSAMOptimizer::initializeIMUParameters(const IMU::Point &imu) {
+
+            // Get (constant) IMU covariance of angular vel, and linear acc (row major about x, y, z axes)
+            boost::array<double, 9> ang_vel_cov;
+            boost::array<double, 9> lin_acc_cov;
+
+            lin_acc_cov[0] = 0.04;
+            lin_acc_cov[1] = 0;
+            lin_acc_cov[2] = 0;
+
+            lin_acc_cov[3] = 0;
+            lin_acc_cov[4] = 0.04;
+            lin_acc_cov[5] = 0;
+
+            lin_acc_cov[6] = 0;
+            lin_acc_cov[7] = 0;
+            lin_acc_cov[8] = 0.04;
+
+            ang_vel_cov[0] = 0.02;
+            ang_vel_cov[1] = 0;
+            ang_vel_cov[2] = 0;
+
+            ang_vel_cov[3] = 0;
+            ang_vel_cov[4] = 0.02;
+            ang_vel_cov[5] = 0;
+
+            ang_vel_cov[6] = 0;
+            ang_vel_cov[7] = 0;
+            ang_vel_cov[8] = 0.02;
+
+            // Convert covariances to matrix form (Eigen::Matrix<float, 3, 3>)
+            // gtsam::Matrix3 orient_cov_mat(orient_cov.data());
+            gtsam::Matrix3 ang_vel_cov_mat(ang_vel_cov.data());
+            gtsam::Matrix3 lin_acc_cov_mat(lin_acc_cov.data());
+            // std::cout << "Orientation Covariance Matrix (not used): " << std::endl << orient_cov_mat << std::endl;
+            std::cout << "Angular Velocity Covariance Matrix: " << std::endl << ang_vel_cov_mat << std::endl;
+            std::cout << "Linear Acceleration Covariance Matrix: " << std::endl << lin_acc_cov_mat << std::endl;
+
+            // Assign IMU preintegration parameters
+            boost::shared_ptr<PreintegratedCombinedMeasurements::Params> p = PreintegratedCombinedMeasurements::Params::MakeSharedU();
+            p->n_gravity = gtsam::Vector3(-imu.a.x, -imu.a.y, -imu.a.z);
+            p->accelerometerCovariance = lin_acc_cov_mat;
+            p->integrationCovariance = Matrix33::Identity(3,3)*1e-8; // (DON'T USE "orient_cov_mat": ALL ZEROS)
+            p->gyroscopeCovariance = ang_vel_cov_mat;
+            p->biasAccCovariance = Matrix33::Identity(3,3)*pow(0.004905,2);
+            p->biasOmegaCovariance = Matrix33::Identity(3,3)*pow(0.000001454441043,2);
+            p->biasAccOmegaInt = Matrix::Identity(6,6)*1e-5;
+            imu_preintegrated = reinterpret_cast<PreintegratedCombinedMeasurements *>(new PreintegratedImuMeasurements(
+                    p, gtsam::imuBias::ConstantBias())); // CHANGE BACK TO COMBINED: (Combined<->Imu)
+        }
+
+        void GTSAMOptimizer::addMonoMeasurement(vi_slam::datastructures::KeyFrame *pKF,
                                                   vi_slam::datastructures::MapPoint *pMP,
                                                   Eigen::Matrix<double, 2, 1> &obs,
                                                   const float inv_sigma_2) {
@@ -56,12 +160,12 @@ namespace vi_slam {
             session_factors_[std::make_pair(keyframe_sym.key(), landmark_sym.key())] = std::make_pair(gtsam::serialize(factor), FactorType::MONO);
         }
 
-        void GtsamOptimizer::addStereoMeasurement(vi_slam::datastructures::KeyFrame *pKF,
+        void GTSAMOptimizer::addStereoMeasurement(vi_slam::datastructures::KeyFrame *pKF,
                                                     vi_slam::datastructures::MapPoint *pMP,
                                                     Eigen::Matrix<double, 3, 1> &obs,
                                                     const float inv_sigma_2) {
             logger_->debug("addStereoMeasurement - pKF->mnId: {}, pMP->mnId: {}", pKF->mnId, pMP->id_);
-            logger_->debug("addStereoMeasurement - pKF->mnId: {}, pMP->mnId: {}", pKF->mnId, pMP->id_);
+            // logger_->debug("addStereoMeasurement - pKF->mnId: {}, pMP->mnId: {}", pKF->mnId, pMP->id_);
             if (!is_cam_params_initialized_) {
                 std::cout << "addStereoMeasurement - camera params has not been initialized!" << std::endl;
                 exit(-2);
@@ -90,7 +194,7 @@ namespace vi_slam {
                 boost::optional<const gtsam::KeyVector>,
                 boost::optional<const gtsam::KeyVector>,
                 boost::optional<gtsam::Values>,
-                boost::optional<std::tuple<std::string, double, std::string>>> GtsamOptimizer::checkForNewData() {
+                boost::optional<std::tuple<std::string, double, std::string>>> GTSAMOptimizer::checkForNewData() {
             if (ready_data_queue_.empty()) {
                 logger_->debug("checkForNewData - there is no new data.");
                 return std::make_tuple(false, boost::none, boost::none, boost::none, boost::none, boost::none, boost::none, boost::none);
@@ -108,7 +212,7 @@ namespace vi_slam {
             }
         }
 
-        bool GtsamOptimizer::start() {
+        bool GTSAMOptimizer::start() {
             std::unique_lock<std::mutex> lock(mutex_, std::try_to_lock);
             if (lock.owns_lock()) {
                 logger_->info("start - new recovering session.");
@@ -126,7 +230,7 @@ namespace vi_slam {
             return false;
         }
 
-        void GtsamOptimizer::finish() {
+        void GTSAMOptimizer::finish() {
             std::unique_lock<std::mutex> *lock;
 
             do {
@@ -172,28 +276,28 @@ namespace vi_slam {
             delete lock;
         }
 
-        void GtsamOptimizer::exportKeysFromMap(std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> &map,
+        void GTSAMOptimizer::exportKeysFromMap(std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> &map,
                                                  std::vector<std::pair<gtsam::Key, gtsam::Key>> &output) {
             for (const auto &it: map) {
                 output.push_back(it.first);
             }
         }
 
-        void GtsamOptimizer::exportValuesFromMap(std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> &map,
+        void GTSAMOptimizer::exportValuesFromMap(std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> &map,
                                                    std::vector<std::pair<std::string, FactorType>> &output) {
             for (const auto &it: map) {
                 output.push_back(it.second);
             }
         }
 
-        std::string GtsamOptimizer::setToString(const std::set<gtsam::Key> &set) const {
+        std::string GTSAMOptimizer::setToString(const std::set<gtsam::Key> &set) const {
             std::stringstream ss;
             for (const auto &it: set)
                 ss << it << " ";
             return ss.str();
         }
 
-        gtsam::NonlinearFactorGraph GtsamOptimizer::createFactorGraph(std::vector<std::pair<std::string, FactorType>> ser_factors_vec,
+        gtsam::NonlinearFactorGraph GTSAMOptimizer::createFactorGraph(std::vector<std::pair<std::string, FactorType>> ser_factors_vec,
                                                                         bool is_incremental) {
             // In use only in batch mode (not incremental)
             std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> new_active_factors;
@@ -282,8 +386,8 @@ namespace vi_slam {
             return graph;
         }
 
-        gtsam::NonlinearFactorGraph GtsamOptimizer::createFactorGraph(map<pair<gtsam::Key, gtsam::Key>,
-                pair<string, vi_slam::optimization::GtsamOptimizer::FactorType>> ser_factors_map,
+        gtsam::NonlinearFactorGraph GTSAMOptimizer::createFactorGraph(map<pair<gtsam::Key, gtsam::Key>,
+                pair<string, vi_slam::optimization::GTSAMOptimizer::FactorType>> ser_factors_map,
                                                                         bool is_incremental) {
             std::vector<std::pair<std::string, FactorType>> ser_factors_vec;
             for (const auto &it: ser_factors_map)
@@ -292,7 +396,7 @@ namespace vi_slam {
             return createFactorGraph(ser_factors_vec, is_incremental);
         }
 
-        std::vector<size_t> GtsamOptimizer::createDeletedFactorsIndicesVec(std::vector<std::pair<gtsam::Key, gtsam::Key>> &del_factors) {
+        std::vector<size_t> GTSAMOptimizer::createDeletedFactorsIndicesVec(std::vector<std::pair<gtsam::Key, gtsam::Key>> &del_factors) {
             std::vector<size_t> deleted_factors_indecies;
             for (const auto &it: del_factors) {
                 auto dict_it = factor_indecies_dict_.find(it);
@@ -308,13 +412,13 @@ namespace vi_slam {
             return deleted_factors_indecies;
         }
 
-        map<pair<gtsam::Key, gtsam::Key>, pair<string, GtsamOptimizer::FactorType>> GtsamOptimizer::getDifferenceSet(map<pair<gtsam::Key, gtsam::Key>,
+        map<pair<gtsam::Key, gtsam::Key>, pair<string, GTSAMOptimizer::FactorType>> GTSAMOptimizer::getDifferenceSet(map<pair<gtsam::Key, gtsam::Key>,
                 pair<string,
-                        vi_slam::optimization::GtsamOptimizer::FactorType>> &set_A,
+                        vi_slam::optimization::GTSAMOptimizer::FactorType>> &set_A,
                                                                                                                          map<pair<gtsam::Key, gtsam::Key>,
                                                                                                                                  pair<string,
-                                                                                                                                         vi_slam::optimization::GtsamOptimizer::FactorType>> &set_B) {
-            map<pair<gtsam::Key, gtsam::Key>, pair<string, GtsamOptimizer::FactorType>> diff_set;
+                                                                                                                                         vi_slam::optimization::GTSAMOptimizer::FactorType>> &set_B) {
+            map<pair<gtsam::Key, gtsam::Key>, pair<string, GTSAMOptimizer::FactorType>> diff_set;
             for (const auto &it_A: set_A) {
                 if (set_B.find(it_A.first) == set_B.end()) {
                     diff_set.insert(it_A);
@@ -323,7 +427,7 @@ namespace vi_slam {
             return diff_set;
         }
 
-        void GtsamOptimizer::transformGraphToGtsam(const vector<vi_slam::datastructures::KeyFrame *> &vpKFs, const vector<vi_slam::datastructures::MapPoint *> &vpMP) {
+        void GTSAMOptimizer::transformGraphToGtsam(const vector<vi_slam::datastructures::KeyFrame *> &vpKFs, const vector<vi_slam::datastructures::MapPoint *> &vpMP) {
             if (!start())
                 return;
             for (const auto &pKF: vpKFs) {
@@ -343,9 +447,13 @@ namespace vi_slam {
             finish();
         }
 
-        void GtsamOptimizer::updateKeyFrame(vi_slam::datastructures::KeyFrame *pKF, bool add_between_factor) {
+        void GTSAMOptimizer::updateKeyFrame(vi_slam::datastructures::KeyFrame *pKF, bool add_between_factor) {
             // Create keyframe symbol
             gtsam::Symbol sym('x', pKF->mnId);
+            gtsam::Symbol v_sym('v', pKF->mnId);
+            gtsam::Symbol b_sym('b', pKF->mnId);
+
+            double dt = (pKF->mTimeStamp - prev_imu_timestamp);
 
             // Create camera parameters
             if (!is_cam_params_initialized_) {
@@ -364,9 +472,32 @@ namespace vi_slam {
 
             // Adding prior factor for x0
             if (pKF->mnId == 0) {
+
+                // GTSAMOptimizer::initializeIMUParameters(pKF->mpImuPreintegrated);
+
+                // prev_velocity = Vector3();
+                prev_imu_bias = imuBias::ConstantBias();
+
                 auto prior_noise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6).finished());
+
                 gtsam::PriorFactor<gtsam::Pose3> prior_factor(gtsam::Symbol('x', 0), stereo_cam.pose(), prior_noise);
+                gtsam::PriorFactor<gtsam::Vector3> v_prior_factor(gtsam::Symbol('v', 0), prev_velocity, velocity_noise);
+                gtsam::PriorFactor<gtsam::imuBias::ConstantBias> b_prior_factor (gtsam::Symbol('b', 0), prev_imu_bias, bias_noise);
+
                 session_factors_[std::make_pair(sym.key(), sym.key())] = std::make_pair(gtsam::serialize(prior_factor), FactorType::PRIOR);
+                session_factors_[std::make_pair(v_sym.key(), v_sym.key())] = std::make_pair(gtsam::serialize(v_prior_factor), FactorType::PRIOR);
+                session_factors_[std::make_pair(b_sym.key(), b_sym.key())] = std::make_pair(gtsam::serialize(b_prior_factor), FactorType::PRIOR);
+
+//                newNodes.insert(Symbol('x', 0), stereo_cam.pose());
+//                newNodes.insert(Symbol('v', 0), prev_velocity);
+//                newNodes.insert(Symbol('b', 0), prev_imu_bias);
+//
+//                graph.emplace_shared< PriorFactor<Pose3> >(Symbol('x', 0), stereo_cam.pose(), pose_noise);
+//                graph.emplace_shared< PriorFactor<Vector3> >(Symbol('v', 0), prev_velocity, velocity_noise);
+//                graph.emplace_shared< PriorFactor<imuBias::ConstantBias> >(Symbol('b', 0), prev_imu_bias, bias_noise);
+//
+//                // Indicate that all node values seen in pose 0 have been seen for next iteration (landmarks)
+//                optimizedNodes = newNodes;
             }
 
             // Adding between factor
@@ -387,7 +518,7 @@ namespace vi_slam {
             }
         }
 
-        void GtsamOptimizer::updateLandmark(vi_slam::datastructures::MapPoint *pMP) {
+        void GTSAMOptimizer::updateLandmark(vi_slam::datastructures::MapPoint *pMP) {
             // Create landmark symbol
             gtsam::Symbol sym('l', pMP->id_);
 
@@ -398,7 +529,7 @@ namespace vi_slam {
             session_values_.insert(sym.key(), p_gtsam);
         }
 
-        void GtsamOptimizer::updateObservations(MapPoint *pMP, const std::map<KeyFrame*,std::tuple<int,int>> &observations) {
+        void GTSAMOptimizer::updateObservations(MapPoint *pMP, const std::map<KeyFrame*,std::tuple<int,int>> &observations) {
             for (const auto &mit: observations) {
                 KeyFrame *pKFi = mit.first;
                 if (pKFi->isBad())
@@ -423,7 +554,7 @@ namespace vi_slam {
             }
         }
 
-        void GtsamOptimizer::calculateDiffrencesBetweenValueSets() {
+        void GTSAMOptimizer::calculateDiffrencesBetweenValueSets() {
             // Handle added states
             if (last_session_values_.empty()) {
                 add_states_ = session_values_.keys();
@@ -435,7 +566,7 @@ namespace vi_slam {
             del_states_ = getDifferenceKeyList(last_session_values_.keys(), session_values_.keys());
         }
 
-        void GtsamOptimizer::calculateDiffrencesBetweenFactorSets() {
+        void GTSAMOptimizer::calculateDiffrencesBetweenFactorSets() {
             // Handle added factors
             std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> add_factors_map;
             if (last_session_factors_.empty()) {
@@ -452,7 +583,7 @@ namespace vi_slam {
             exportKeysFromMap(del_factors_map, del_factors_);
         }
 
-        gtsam::KeyVector GtsamOptimizer::getDifferenceKeyList(const gtsam::KeyVector &vec_A, const gtsam::KeyVector &vec_B) {
+        gtsam::KeyVector GTSAMOptimizer::getDifferenceKeyList(const gtsam::KeyVector &vec_A, const gtsam::KeyVector &vec_B) {
             gtsam::KeyVector diff_vec;
             for (const auto &it_A: vec_A) {
                 if (std::find(vec_B.begin(), vec_B.end(), it_A) == vec_B.end()) {
@@ -462,7 +593,7 @@ namespace vi_slam {
             return diff_vec;
         }
 
-        void GtsamOptimizer::setUpdateType(const vi_slam::optimization::GtsamOptimizer::UpdateType update_type) {
+        void GTSAMOptimizer::setUpdateType(const vi_slam::optimization::GTSAMOptimizer::UpdateType update_type) {
             update_type_ = update_type;
             if (update_type_ == BATCH) {
                 logger_->info("setUpdateType - Batch");

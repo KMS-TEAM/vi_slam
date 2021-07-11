@@ -8,6 +8,7 @@
 #include "vi_slam/common_include.h"
 #include "vi_slam/datastructures/imu.h"
 #include "vi_slam/datastructures/keyframe.h"
+#include "vi_slam/basics/yaml.h"
 
 // ISAM2 INCLUDES
 /* ************************************************************************* */
@@ -103,7 +104,7 @@ namespace vi_slam {
 
         using namespace datastructures;
 
-        class GtsamOptimizer {
+        class GTSAMOptimizer {
             friend class Optimizer;
 
             enum FactorType {
@@ -120,7 +121,7 @@ namespace vi_slam {
             };
 
         public:
-            GtsamOptimizer();
+            GTSAMOptimizer(std::string& config_path);
 
             /**
              * Returns tuple contains:
@@ -151,6 +152,9 @@ namespace vi_slam {
         private:
             bool start();
             void finish();
+
+            void initializeIMUParameters(const IMU::Point& imu);
+
             void updateKeyFrame(vi_slam::datastructures::KeyFrame *pKF, bool add_between_factor = false);
 
             void updateLandmark(vi_slam::datastructures::MapPoint *pMP);
@@ -195,6 +199,32 @@ namespace vi_slam {
 
             gtsam::KeyVector getDifferenceKeyList(const gtsam::KeyVector &vec_A, const gtsam::KeyVector &vec_B);
 
+        public:
+            // Create iSAM2 object
+            unique_ptr<gtsam::ISAM2> isam;
+
+            // Initialize Factor Graph and Values Estimates on Nodes (continually updated by isam.update())
+            gtsam::NonlinearFactorGraph graph;
+            gtsam::Values newNodes;
+            gtsam::Values optimizedNodes; // current estimate of values
+            gtsam::Pose3 prev_pose;       // current estimate of previous pose
+            gtsam::Vector3 prev_velocity;       // previous pose outputted by camera
+            gtsam::imuBias::ConstantBias prev_imu_bias; // **
+
+            // Initialize IMU Variables // **
+            gtsam::PreintegratedCombinedMeasurements* imu_preintegrated; // CHANGE BACK TO COMBINED (Combined<->Imu)
+            double prev_imu_timestamp;
+
+            // Initialize VIO Variables
+            double f;                     // Camera calibration intrinsics
+            double cx;
+            double cy;
+            double resolution_x;          // Image distortion intrinsics
+            double resolution_y;
+            gtsam::Cal3_S2Stereo::shared_ptr K;  // Camera calibration intrinsic matrix
+            double Tx;                    // Camera calibration extrinsic: distance from cam0 to cam1
+            gtsam::Matrix4 T_cam_imu_mat; // Transform to get to camera IMU frame from camera frame
+
             std::queue<std::tuple<bool,
                     bool,
                     std::string,
@@ -207,7 +237,14 @@ namespace vi_slam {
             gtsam::Values session_values_, last_session_values_;
             gtsam::Cal3_S2Stereo::shared_ptr cam_params_stereo_;
             gtsam::Cal3_S2::shared_ptr cam_params_mono_;
+
             gtsam::noiseModel::Diagonal::shared_ptr between_factors_prior_;
+            gtsam::noiseModel::Diagonal::shared_ptr pose_noise;
+            gtsam::noiseModel::Diagonal::shared_ptr velocity_noise;
+            gtsam::noiseModel::Diagonal::shared_ptr bias_noise;
+            gtsam::noiseModel::Isotropic::shared_ptr pose_landmark_noise;
+            gtsam::noiseModel::Isotropic::shared_ptr landmark_noise;
+
             bool is_cam_params_initialized_ = false;
             std::vector<std::pair<std::string, FactorType>> add_factors_;
             std::vector<std::pair<gtsam::Key, gtsam::Key>> del_factors_;

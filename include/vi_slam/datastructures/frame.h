@@ -20,6 +20,10 @@
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/datastructures/imu.h"
 
+#include <gtsam/navigation/ImuFactor.h>
+#include <gtsam/navigation/CombinedImuFactor.h>
+#include <gtsam/slam/BetweenFactor.h>
+
 #include <mutex>
 
 namespace vi_slam{

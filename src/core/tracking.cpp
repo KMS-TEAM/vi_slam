@@ -22,6 +22,10 @@
 #include <chrono>
 #include <unistd.h>
 
+#include <gtsam/navigation/ImuFactor.h>
+#include <gtsam/navigation/CombinedImuFactor.h>
+#include <gtsam/slam/BetweenFactor.h>
+
 using namespace std;
 using namespace cv;
 using namespace vi_slam;
