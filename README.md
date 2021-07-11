@@ -40,6 +40,18 @@ sudo apt-get install pcl-tools
 ### Pangolin
 Version: [v0.6](https://github.com/stevenlovegrove/Pangolin/releases/tag/v0.6)
 
+### GTSAM install
+
+#### Add PPA
+```
+sudo add-apt-repository ppa:borglab/gtsam-release-4.0
+sudo apt update  
+```
+#### Install:
+```
+sudo apt install libgtsam-dev libgtsam-unstable-dev
+```
+
 ## Mannual
 
 1. Install all requirement

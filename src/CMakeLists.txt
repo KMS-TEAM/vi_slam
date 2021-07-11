@@ -6,6 +6,7 @@ file(GLOB_RECURSE SOURCES
         basics/eigen_funcs.cpp
         basics/opencv_funcs.cpp
         basics/yaml.cpp
+        basics/logger.cpp
 
         datastructures/atlas.cpp
         datastructures/frame.cpp
@@ -36,6 +37,8 @@ file(GLOB_RECURSE SOURCES
         optimization/optimizetypes.cpp
         optimization/pnpsolver.cpp
         optimization/sim3solver.cpp
+        optimization/gtsamoptimizer.cpp
+        optimization/iSAM2Optimizer.cpp
 
         core/core_commons.cpp
         core/localmapping.cpp

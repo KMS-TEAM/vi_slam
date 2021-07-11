@@ -30,6 +30,10 @@
 #include <mutex>
 #include <unordered_set>
 
+#include <gtsam/navigation/ImuFactor.h>
+#include <gtsam/navigation/CombinedImuFactor.h>
+#include <gtsam/slam/BetweenFactor.h>
+
 namespace vi_slam{
 
     namespace display{
@@ -187,7 +191,7 @@ namespace vi_slam{
             vector<int> vnKeyFramesLM;
             vector<int> vnMapPointsLM;
 
-        protected:
+        public:
 
             // Main tracking function. It is independent of the input sensor.
             void Track();

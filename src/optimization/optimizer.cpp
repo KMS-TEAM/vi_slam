@@ -4480,7 +4480,6 @@ namespace vi_slam{
                 }
             }
 
-
             // Stereo
             for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
             {
