@@ -1197,7 +1197,6 @@ namespace vi_slam{
 
             mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
 
-
             return true;
         }
 
@@ -1645,7 +1644,6 @@ namespace vi_slam{
 
         void Tracking::Track()
         {
-
             if (bStepByStep)
             {
                 while(!mbStep)
