@@ -187,7 +187,7 @@ namespace vi_slam{
             vector<int> vnKeyFramesLM;
             vector<int> vnMapPointsLM;
 
-        protected:
+        public:
 
             // Main tracking function. It is independent of the input sensor.
             void Track();
