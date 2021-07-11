@@ -335,7 +335,7 @@ namespace vi_slam {
                 if (pMP->isBad())
                     continue;
                 updateLandmark(pMP);
-                const std::map<KeyFrame *, size_t> observations = pMP->GetObservations();
+                const std::map<KeyFrame*,std::tuple<int,int>> observations = pMP->GetObservations();
                 updateObservations(pMP, observations);
             }
             calculateDiffrencesBetweenValueSets();
@@ -398,14 +398,16 @@ namespace vi_slam {
             session_values_.insert(sym.key(), p_gtsam);
         }
 
-        void GtsamOptimizer::updateObservations(MapPoint *pMP, const map<vi_slam::datastructures::KeyFrame *, size_t> &observations) {
+        void GtsamOptimizer::updateObservations(MapPoint *pMP, const std::map<KeyFrame*,std::tuple<int,int>> &observations) {
             for (const auto &mit: observations) {
                 KeyFrame *pKFi = mit.first;
                 if (pKFi->isBad())
                     continue;
-                const cv::KeyPoint &kpUn = pKFi->mvKeysUn[mit.second];
+
+                tuple<int,int> indexes = mit.second;
+                const cv::KeyPoint &kpUn = pKFi->mvKeysUn[get<0>(indexes)];
                 // Monocular observation
-                if (pKFi->mvuRight[mit.second] < 0) {
+                if (pKFi->mvuRight[get<1>(indexes)] < 0) {
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
                     const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
@@ -413,7 +415,7 @@ namespace vi_slam {
                 } else // Stereo observation
                 {
                     Eigen::Matrix<double, 3, 1> obs;
-                    const float kp_ur = pKFi->mvuRight[mit.second];
+                    const float kp_ur = pKFi->mvuRight[get<1>(indexes)];
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
                     const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
                     addStereoMeasurement(pKFi, pMP, obs, invSigma2);

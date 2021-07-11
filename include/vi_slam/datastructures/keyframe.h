@@ -37,7 +37,6 @@ namespace vi_slam{
         class Map;
         class MapPoint;
 
-
         class KeyFrame {
 
         public:

@@ -7,6 +7,7 @@
 
 #include "vi_slam/common_include.h"
 #include "vi_slam/datastructures/imu.h"
+#include "vi_slam/datastructures/keyframe.h"
 
 // ISAM2 INCLUDES
 /* ************************************************************************* */
@@ -96,8 +97,11 @@ namespace vi_slam {
     namespace datastructures{
         class KeyFrame;
         class MapPoint;
+        class KeyFrame;
     }
     namespace optimization{
+
+        using namespace datastructures;
 
         class GtsamOptimizer {
             friend class Optimizer;
@@ -152,8 +156,7 @@ namespace vi_slam {
             void updateLandmark(vi_slam::datastructures::MapPoint *pMP);
 
             void updateObservations(vi_slam::datastructures::MapPoint *pMP,
-                                    const std::map<vi_slam::datastructures::KeyFrame *,
-                                            size_t> &observations);
+                                    const std::map<KeyFrame*,std::tuple<int,int>> &observations);
 
             void addMonoMeasurement(vi_slam::datastructures::KeyFrame *pKF,
                                     vi_slam::datastructures::MapPoint *pMP,
