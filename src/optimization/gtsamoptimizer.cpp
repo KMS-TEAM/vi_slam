@@ -253,18 +253,20 @@ namespace vi_slam {
             logger_->info("finish - active states set size: {}", session_values_.size());
             logger_->info("finish - active factors vector size: {}", session_factors_.size());
 
-            isam->update(graph, newNodes);
-            optimizedNodes = isam->calculateEstimate();
+            // isam->update(graph, newNodes);
+            // optimizedNodes = isam->calculateEstimate();
 
-            graph.resize(0);
-            newNodes.clear();
+            // graph.resize(0);
+            // newNodes.clear();
 
             if (update_type_ == INCREMENTAL) {
                 // Incremental update
-                gtsam::NonlinearFactorGraph incremental_factor_graph = createFactorGraph(add_factors_, true);
+                createFactorGraph(add_factors_, true);
+//                isam->update(graph, session_values_);
+//                optimizedNodes = isam->calculateEstimate();
                 ready_data_queue_.emplace(true,
                                           true,
-                                          gtsam::serialize(incremental_factor_graph),
+                                          gtsam::serialize(graph),
                                           createDeletedFactorsIndicesVec(del_factors_),
                                           add_states_,
                                           del_states_,
@@ -272,10 +274,12 @@ namespace vi_slam {
                                           recent_kf_);
             } else if (update_type_ == BATCH) {
                 // Batch update
-                gtsam::NonlinearFactorGraph active_factor_graph = createFactorGraph(session_factors_, false);
+                createFactorGraph(session_factors_, false);
+//                isam->update(graph, session_values_);
+//                optimizedNodes = isam->calculateEstimate();
                 ready_data_queue_.emplace(true,
                                           false,
-                                          gtsam::serialize(active_factor_graph),
+                                          gtsam::serialize(graph),
                                           createDeletedFactorsIndicesVec(del_factors_),
                                           add_states_,
                                           del_states_,
@@ -292,6 +296,10 @@ namespace vi_slam {
 
             last_session_values_ = session_values_;
             last_session_factors_ = session_factors_;
+
+            // Clear the objects holding new factors and node values for the next iteration
+//            graph.resize(0);
+//            session_values_.clear();
 
             delete lock;
         }
@@ -317,7 +325,7 @@ namespace vi_slam {
             return ss.str();
         }
 
-        gtsam::NonlinearFactorGraph GTSAMOptimizer::createFactorGraph(std::vector<std::pair<std::string, FactorType>> ser_factors_vec,
+        void GTSAMOptimizer::createFactorGraph(std::vector<std::pair<std::string, FactorType>> ser_factors_vec,
                                                                         bool is_incremental) {
             // In use only in batch mode (not incremental)
             std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> new_active_factors;
@@ -327,7 +335,7 @@ namespace vi_slam {
                 factor_indecies_dict_.clear();
             }
 
-            gtsam::NonlinearFactorGraph graph;
+            // gtsam::NonlinearFactorGraph graph;
             for (const auto &it: ser_factors_vec) {
                 switch (it.second) {
                     case FactorType::PRIOR: {
@@ -404,10 +412,10 @@ namespace vi_slam {
                 }
             }
 
-            return graph;
+            // return graph;
         }
 
-        gtsam::NonlinearFactorGraph GTSAMOptimizer::createFactorGraph(map<pair<gtsam::Key, gtsam::Key>,
+        void GTSAMOptimizer::createFactorGraph(map<pair<gtsam::Key, gtsam::Key>,
                 pair<string, vi_slam::optimization::GTSAMOptimizer::FactorType>> ser_factors_map,
                                                                         bool is_incremental) {
             std::vector<std::pair<std::string, FactorType>> ser_factors_vec;
@@ -466,6 +474,7 @@ namespace vi_slam {
             calculateDiffrencesBetweenValueSets();
             calculateDiffrencesBetweenFactorSets();
             finish();
+
         }
 
         void GTSAMOptimizer::updateKeyFrame(vi_slam::datastructures::KeyFrame *pKF, bool add_between_factor) {
@@ -490,6 +499,8 @@ namespace vi_slam {
             gtsam::StereoCamera stereo_cam(left_cam_pose, cam_params_stereo_);
 
             session_values_.insert(sym.key(), stereo_cam.pose());
+            session_values_.insert(v_sym.key(), prev_velocity);
+            session_values_.insert(b_sym.key(), prev_imu_bias);
 
             // Adding prior factor for x0
             if (pKF->mnId == 0) {
@@ -509,16 +520,16 @@ namespace vi_slam {
                 session_factors_[std::make_pair(v_sym.key(), v_sym.key())] = std::make_pair(gtsam::serialize(v_prior_factor), FactorType::PRIOR);
                 session_factors_[std::make_pair(b_sym.key(), b_sym.key())] = std::make_pair(gtsam::serialize(b_prior_factor), FactorType::PRIOR);
 
-                newNodes.insert(Symbol('x', 0), stereo_cam.pose());
-                newNodes.insert(Symbol('v', 0), prev_velocity);
-                newNodes.insert(Symbol('b', 0), prev_imu_bias);
+//                session_values_.insert(Symbol('x', 0), stereo_cam.pose());
+//                session_values_.insert(Symbol('v', 0), prev_velocity);
+//                session_values_.insert(Symbol('b', 0), prev_imu_bias);
 
                 graph.emplace_shared< PriorFactor<Pose3> >(Symbol('x', 0), stereo_cam.pose(), pose_noise);
                 graph.emplace_shared< PriorFactor<Vector3> >(Symbol('v', 0), prev_velocity, velocity_noise);
                 graph.emplace_shared< PriorFactor<imuBias::ConstantBias> >(Symbol('b', 0), prev_imu_bias, bias_noise);
 
                 // Indicate that all node values seen in pose 0 have been seen for next iteration (landmarks)
-                optimizedNodes = newNodes;
+                // optimizedNodes = newNodes;
             }
 
             // Adding between factor
@@ -559,9 +570,9 @@ namespace vi_slam {
                         // Predict initial estimates for current state
                         NavState prev_optimized_state = NavState(stereo_cam.pose(), prev_velocity);
                         NavState propagated_state = pKF->mpImuPreintegrated->gtsam_imu_preintegrated.predict(prev_optimized_state, prev_imu_bias);
-                        newNodes.insert(Symbol('x', pKF->mnId), propagated_state.pose());
-                        newNodes.insert(Symbol('v', pKF->mnId), propagated_state.v());
-                        newNodes.insert(Symbol('b', pKF->mnId), prev_imu_bias);
+                        session_values_.insert(Symbol('x', pKF->mnId), propagated_state.pose());
+                        session_values_.insert(Symbol('v', pKF->mnId), propagated_state.v());
+                        session_values_.insert(Symbol('b', pKF->mnId), prev_imu_bias);
 
                     }
                 }
@@ -583,7 +594,7 @@ namespace vi_slam {
 
             session_values_.insert(sym.key(), p_gtsam);
 
-            newNodes.insert(sym.key(), p_gtsam);
+            // newNodes.insert(sym.key(), p_gtsam);
 
             noiseModel::Isotropic::shared_ptr prior_landmark_noise = noiseModel::Isotropic::Sigma(3, 500); // 50m std on x,y,z
             graph.emplace_shared<PriorFactor<Point3> >(sym.key(), p_gtsam, prior_landmark_noise);
