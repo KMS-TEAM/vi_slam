@@ -185,6 +185,12 @@ namespace vi_slam {
                            landmark_sym.key(),
                            cam_params_stereo_);
             session_factors_[std::make_pair(keyframe_sym.key(), landmark_sym.key())] = std::make_pair(gtsam::serialize(factor), FactorType::STEREO);
+
+            graph.emplace_shared<gtsam::GenericStereoFactor<gtsam::Pose3, gtsam::Point3>>(obs_gtsam,
+                                                                                          gtsam::noiseModel::Diagonal::Variances(Eigen::Vector3d(1 / inv_sigma_2, 1 / inv_sigma_2, 1 / inv_sigma_2)),
+                                                                                          keyframe_sym.key(),
+                                                                                          landmark_sym.key(),
+                                                                                          cam_params_stereo_);
         }
 
         std::tuple<bool,
@@ -223,6 +229,13 @@ namespace vi_slam {
                 add_factors_.clear();
                 del_factors_.clear();
                 session_factors_.clear();
+
+                // iSAM2 settings
+                ISAM2Params parameters;
+                parameters.relinearizeThreshold = 0.01;
+                parameters.relinearizeSkip = 1;
+                isam.reset(new ISAM2(parameters));
+
                 return true;
             } else {
                 logger_->warn("start - can't own mutex. returns");
@@ -239,6 +252,13 @@ namespace vi_slam {
             logger_->info("finish - ending recovering session. new_optimized_data is now available");
             logger_->info("finish - active states set size: {}", session_values_.size());
             logger_->info("finish - active factors vector size: {}", session_factors_.size());
+
+            isam->update(graph, newNodes);
+            optimizedNodes = isam->calculateEstimate();
+
+            graph.resize(0);
+            newNodes.clear();
+
             if (update_type_ == INCREMENTAL) {
                 // Incremental update
                 gtsam::NonlinearFactorGraph incremental_factor_graph = createFactorGraph(add_factors_, true);
@@ -306,6 +326,7 @@ namespace vi_slam {
                 current_index_ = 0;
                 factor_indecies_dict_.clear();
             }
+
             gtsam::NonlinearFactorGraph graph;
             for (const auto &it: ser_factors_vec) {
                 switch (it.second) {
@@ -488,26 +509,60 @@ namespace vi_slam {
                 session_factors_[std::make_pair(v_sym.key(), v_sym.key())] = std::make_pair(gtsam::serialize(v_prior_factor), FactorType::PRIOR);
                 session_factors_[std::make_pair(b_sym.key(), b_sym.key())] = std::make_pair(gtsam::serialize(b_prior_factor), FactorType::PRIOR);
 
-//                newNodes.insert(Symbol('x', 0), stereo_cam.pose());
-//                newNodes.insert(Symbol('v', 0), prev_velocity);
-//                newNodes.insert(Symbol('b', 0), prev_imu_bias);
-//
-//                graph.emplace_shared< PriorFactor<Pose3> >(Symbol('x', 0), stereo_cam.pose(), pose_noise);
-//                graph.emplace_shared< PriorFactor<Vector3> >(Symbol('v', 0), prev_velocity, velocity_noise);
-//                graph.emplace_shared< PriorFactor<imuBias::ConstantBias> >(Symbol('b', 0), prev_imu_bias, bias_noise);
-//
-//                // Indicate that all node values seen in pose 0 have been seen for next iteration (landmarks)
-//                optimizedNodes = newNodes;
+                newNodes.insert(Symbol('x', 0), stereo_cam.pose());
+                newNodes.insert(Symbol('v', 0), prev_velocity);
+                newNodes.insert(Symbol('b', 0), prev_imu_bias);
+
+                graph.emplace_shared< PriorFactor<Pose3> >(Symbol('x', 0), stereo_cam.pose(), pose_noise);
+                graph.emplace_shared< PriorFactor<Vector3> >(Symbol('v', 0), prev_velocity, velocity_noise);
+                graph.emplace_shared< PriorFactor<imuBias::ConstantBias> >(Symbol('b', 0), prev_imu_bias, bias_noise);
+
+                // Indicate that all node values seen in pose 0 have been seen for next iteration (landmarks)
+                optimizedNodes = newNodes;
             }
 
             // Adding between factor
             if (add_between_factor) {
                 if (pKF->mnId != 0) {
                     gtsam::Symbol sym_before('x', pKF->mnId - 1);
+                    gtsam::Symbol v_sym_before('v', pKF->mnId - 1);
+                    gtsam::Symbol b_sym_before('b', pKF->mnId - 1);
                     if (session_values_.exists(sym_before.key())) {
                         gtsam::Pose3 relative_pose = stereo_cam.pose().between(session_values_.at<gtsam::Pose3>(sym_before.key())).between(gtsam::Pose3());
                         gtsam::BetweenFactor<gtsam::Pose3> between_factor(sym_before, sym, relative_pose, between_factors_prior_);
                         session_factors_[std::make_pair(sym_before.key(), sym.key())] = std::make_pair(gtsam::serialize(between_factor), FactorType::BETWEEN);
+
+                        gtsam::ImuFactor imu_factor(sym_before, v_sym_before,
+                                                    sym, v_sym,
+                                                    b_sym_before, pKF->mpImuPreintegrated->gtsam_imu_preintegrated);
+
+                        gtsam::imuBias::ConstantBias zero_bias(Vector3(0, 0, 0), Vector3(0, 0, 0));
+
+                        gtsam::BetweenFactor<gtsam::imuBias::ConstantBias> imuBiasFactor(b_sym_before,
+                                                                                         b_sym_before,
+                                                                                         zero_bias,
+                                                                                         bias_noise);
+
+                        graph.emplace_shared<ImuFactor>(
+                                sym_before, v_sym_before,
+                                sym, v_sym,
+                                b_sym_before, pKF->mpImuPreintegrated->gtsam_imu_preintegrated
+                        );
+                        // imuBias::ConstantBias zero_bias(Vector3(0, 0, 0), Vector3(0, 0, 0));
+                        graph.emplace_shared< BetweenFactor<imuBias::ConstantBias> >(
+                                b_sym_before,
+                                b_sym_before,
+                                zero_bias,
+                                bias_noise
+                        );
+
+                        // Predict initial estimates for current state
+                        NavState prev_optimized_state = NavState(stereo_cam.pose(), prev_velocity);
+                        NavState propagated_state = pKF->mpImuPreintegrated->gtsam_imu_preintegrated.predict(prev_optimized_state, prev_imu_bias);
+                        newNodes.insert(Symbol('x', pKF->mnId), propagated_state.pose());
+                        newNodes.insert(Symbol('v', pKF->mnId), propagated_state.v());
+                        newNodes.insert(Symbol('b', pKF->mnId), prev_imu_bias);
+
                     }
                 }
             }
@@ -527,6 +582,12 @@ namespace vi_slam {
             gtsam::Point3 p_gtsam(p_cv.at<float>(0), p_cv.at<float>(1), p_cv.at<float>(2));
 
             session_values_.insert(sym.key(), p_gtsam);
+
+            newNodes.insert(sym.key(), p_gtsam);
+
+            noiseModel::Isotropic::shared_ptr prior_landmark_noise = noiseModel::Isotropic::Sigma(3, 500); // 50m std on x,y,z
+            graph.emplace_shared<PriorFactor<Point3> >(sym.key(), p_gtsam, prior_landmark_noise);
+
         }
 
         void GTSAMOptimizer::updateObservations(MapPoint *pMP, const std::map<KeyFrame*,std::tuple<int,int>> &observations) {

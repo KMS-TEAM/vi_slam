@@ -5,6 +5,66 @@
 #include "vi_slam/datastructures/imu.h"
 #include <iostream>
 
+#include <gtsam/geometry/Pose3.h>
+#include <gtsam/geometry/Cal3_S2Stereo.h>
+
+// Each variable in the system (poses and landmarks) must be identified with a unique key.
+// We can either use simple integer keys (1, 2, 3, ...) or symbols (X1, X2, L1).
+// Here we will use Symbols
+#include <gtsam/inference/Symbol.h>
+
+// We want to use iSAM2 to solve the structure-from-motion problem incrementally, so
+// include iSAM2 here
+#include <gtsam/nonlinear/ISAM2.h>
+
+// iSAM2 requires as input a set of new factors to be added stored in a factor graph,
+// and initial guesses for any new variables used in the added factors
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/Values.h>
+
+// In GTSAM, measurement functions are represented as 'factors'. Several common factors
+// have been provided with the library for solving robotics/SLAM/Bundle Adjustment problems.
+#include <gtsam/slam/PriorFactor.h>
+#include <gtsam/slam/StereoFactor.h>
+
+// For keys representation
+#include <gtsam/inference/Symbol.h>
+
+// For keyframes pose
+#include <gtsam/geometry/StereoCamera.h>
+
+// For between factors
+#include <gtsam/slam/BetweenFactor.h>
+
+// For landmarks position
+#include <gtsam/geometry/Point3.h>
+
+// For first keyframe pose
+//#include <gtsam/nonlinear/NonlinearEquality.h>
+#include <gtsam/slam/PriorFactor.h>
+
+//// Mono ////
+// For landmarks coordinates
+#include <gtsam/geometry/Point2.h>
+// For factors between keyframe and landmarks
+#include <gtsam/slam/ProjectionFactor.h>
+
+//// Stereo ////
+// For landmarks coordinates
+#include <gtsam/geometry/StereoPoint2.h>
+// For factors between keyframe and landmarks
+#include <gtsam/slam/StereoFactor.h>
+
+// Factor Container
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+// Values Container
+#include <gtsam/nonlinear/Values.h>
+
+// Serialization
+#include <gtsam/base/serialization.h>
+
+#include<boost/array.hpp>
+
 namespace vi_slam{
     namespace datastructures{
         namespace IMU{
@@ -224,6 +284,56 @@ namespace vi_slam{
                 avgW = cv::Mat::zeros(3,1,CV_32F);
                 dT=0.0f;
                 mvMeasurements.clear();
+            }
+
+            void Preintegrated::GTSAMinitializeIMUParameters(const IMU::Point &imu) {
+                // Get (constant) IMU covariance of angular vel, and linear acc (row major about x, y, z axes)
+                boost::array<double, 9> ang_vel_cov;
+                boost::array<double, 9> lin_acc_cov;
+
+                lin_acc_cov[0] = 0.04;
+                lin_acc_cov[1] = 0;
+                lin_acc_cov[2] = 0;
+
+                lin_acc_cov[3] = 0;
+                lin_acc_cov[4] = 0.04;
+                lin_acc_cov[5] = 0;
+
+                lin_acc_cov[6] = 0;
+                lin_acc_cov[7] = 0;
+                lin_acc_cov[8] = 0.04;
+
+                ang_vel_cov[0] = 0.02;
+                ang_vel_cov[1] = 0;
+                ang_vel_cov[2] = 0;
+
+                ang_vel_cov[3] = 0;
+                ang_vel_cov[4] = 0.02;
+                ang_vel_cov[5] = 0;
+
+                ang_vel_cov[6] = 0;
+                ang_vel_cov[7] = 0;
+                ang_vel_cov[8] = 0.02;
+
+                // Convert covariances to matrix form (Eigen::Matrix<float, 3, 3>)
+                // gtsam::Matrix3 orient_cov_mat(orient_cov.data());
+                gtsam::Matrix3 ang_vel_cov_mat(ang_vel_cov.data());
+                gtsam::Matrix3 lin_acc_cov_mat(lin_acc_cov.data());
+                // std::cout << "Orientation Covariance Matrix (not used): " << std::endl << orient_cov_mat << std::endl;
+                std::cout << "Angular Velocity Covariance Matrix: " << std::endl << ang_vel_cov_mat << std::endl;
+                std::cout << "Linear Acceleration Covariance Matrix: " << std::endl << lin_acc_cov_mat << std::endl;
+
+                // Assign IMU preintegration parameters
+                boost::shared_ptr<gtsam::PreintegratedCombinedMeasurements::Params> p = gtsam::PreintegratedCombinedMeasurements::Params::MakeSharedU();
+                p->n_gravity = gtsam::Vector3(-imu.a.x, -imu.a.y, -imu.a.z);
+                p->accelerometerCovariance = lin_acc_cov_mat;
+                p->integrationCovariance = gtsam::Matrix33::Identity(3,3)*1e-8; // (DON'T USE "orient_cov_mat": ALL ZEROS)
+                p->gyroscopeCovariance = ang_vel_cov_mat;
+                p->biasAccCovariance = gtsam::Matrix33::Identity(3,3)*pow(0.004905,2);
+                p->biasOmegaCovariance = gtsam::Matrix33::Identity(3,3)*pow(0.000001454441043,2);
+                p->biasAccOmegaInt = gtsam::Matrix::Identity(6,6)*1e-5;
+                gtsam_imu_preintegrated = reinterpret_cast<gtsam::PreintegratedCombinedMeasurements *>(new gtsam::PreintegratedImuMeasurements(
+                        p, gtsam::imuBias::ConstantBias())); // CHANGE BACK TO COMBINED: (Combined<->Imu)
             }
 
             void Preintegrated::Reintegrate()

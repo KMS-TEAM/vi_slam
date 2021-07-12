@@ -111,7 +111,8 @@ namespace vi_slam {
                 PRIOR,
                 BETWEEN,
                 MONO,
-                STEREO
+                STEREO,
+                IMUFACTOR
             };
         public:
             // GTSAM Transformer Update Type

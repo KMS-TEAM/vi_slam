@@ -16,6 +16,10 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 
+#include <gtsam/navigation/ImuFactor.h>
+#include <gtsam/navigation/CombinedImuFactor.h>
+#include <gtsam/slam/BetweenFactor.h>
+
 namespace vi_slam{
     namespace datastructures{
         namespace IMU
@@ -215,6 +219,8 @@ namespace vi_slam{
                 Bias GetOriginalBias();
                 Bias GetUpdatedBias();
 
+                void GTSAMinitializeIMUParameters(const IMU::Point &imu);
+
             public:
                 float dT;
                 cv::Mat C;
@@ -228,6 +234,8 @@ namespace vi_slam{
                 cv::Mat avgA;
                 cv::Mat avgW;
 
+                // Initialize IMU Variables // **
+                gtsam::PreintegratedImuMeasurements gtsam_imu_preintegrated; // CHANGE BACK TO COMBINED (Combined<->Imu)
 
             private:
                 // Updated bias
