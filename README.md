@@ -13,6 +13,8 @@ We will start a new SLAM platform soon...
 
 ## Requirement
 
+### DBoW3 (in thirdparty folder)
+
 ### G2O
 
 - Dependencies
