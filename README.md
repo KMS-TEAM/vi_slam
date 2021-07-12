@@ -1,5 +1,10 @@
 # Vi-SLAM
 
+## Failed....
+Only 3 can build and run but too bad performace...
+
+We will start a new SLAM platform soon...
+
 ## Requirement
 
 ### G2O
