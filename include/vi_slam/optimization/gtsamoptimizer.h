@@ -9,7 +9,7 @@
 #include "vi_slam/datastructures/imu.h"
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/basics/yaml.h"
-
+#include "vi_slam/optimization/gtsamserialization.h"
 // ISAM2 INCLUDES
 /* ************************************************************************* */
 

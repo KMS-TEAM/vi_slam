@@ -332,8 +332,7 @@ namespace vi_slam{
                 p->biasAccCovariance = gtsam::Matrix33::Identity(3,3)*pow(0.004905,2);
                 p->biasOmegaCovariance = gtsam::Matrix33::Identity(3,3)*pow(0.000001454441043,2);
                 p->biasAccOmegaInt = gtsam::Matrix::Identity(6,6)*1e-5;
-                gtsam_imu_preintegrated = reinterpret_cast<gtsam::PreintegratedCombinedMeasurements *>(new gtsam::PreintegratedImuMeasurements(
-                        p, gtsam::imuBias::ConstantBias())); // CHANGE BACK TO COMBINED: (Combined<->Imu)
+                gtsam_imu_preintegrated = gtsam::PreintegratedImuMeasurements(p, gtsam::imuBias::ConstantBias()); // CHANGE BACK TO COMBINED: (Combined<->Imu)
             }
 
             void Preintegrated::Reintegrate()
