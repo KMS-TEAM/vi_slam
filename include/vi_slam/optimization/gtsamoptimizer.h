@@ -9,7 +9,7 @@
 #include "vi_slam/datastructures/imu.h"
 #include "vi_slam/datastructures/keyframe.h"
 #include "vi_slam/basics/yaml.h"
-
+#include "vi_slam/optimization/gtsamserialization.h"
 // ISAM2 INCLUDES
 /* ************************************************************************* */
 
@@ -111,7 +111,8 @@ namespace vi_slam {
                 PRIOR,
                 BETWEEN,
                 MONO,
-                STEREO
+                STEREO,
+                IMUFACTOR
             };
         public:
             // GTSAM Transformer Update Type
@@ -186,9 +187,9 @@ namespace vi_slam {
 
             std::string setToString(const std::set<gtsam::Key> &set) const;
 
-            gtsam::NonlinearFactorGraph createFactorGraph(std::vector<std::pair<std::string, FactorType>> ser_factors_vec, bool is_incremental);
+            void createFactorGraph(std::vector<std::pair<std::string, FactorType>> ser_factors_vec, bool is_incremental);
 
-            gtsam::NonlinearFactorGraph createFactorGraph(std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> ser_factors_map,
+            void createFactorGraph(std::map<std::pair<gtsam::Key, gtsam::Key>, std::pair<std::string, FactorType>> ser_factors_map,
                                                           bool is_incremental);
 
             std::vector<size_t> createDeletedFactorsIndicesVec(std::vector<std::pair<gtsam::Key, gtsam::Key>> &del_factors);

@@ -1440,6 +1440,7 @@ namespace vi_slam{
             IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame.mImuBias,mCurrentFrame.mImuCalib);
 
             // Add GTSAM IMU Preintergrated here
+            pImuPreintegratedFromLastFrame->GTSAMinitializeIMUParameters(mvImuFromLastFrame[0]);
 
             for(int i=0; i<n; i++)
             {
@@ -1480,8 +1481,17 @@ namespace vi_slam{
 
                 if (!mpImuPreintegratedFromLastKF)
                     cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
+
                 mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
+
+                mpImuPreintegratedFromLastKF->gtsam_imu_preintegrated.integrateMeasurement(gtsam::Vector3(acc.x, acc.y, acc.z),
+                                                                                            gtsam::Vector3(angVel.x, angVel.y, angVel.z),
+                                                                                            tstep);
+
                 pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
+                pImuPreintegratedFromLastFrame->gtsam_imu_preintegrated.integrateMeasurement(gtsam::Vector3(acc.x, acc.y, acc.z),
+                                                                                              gtsam::Vector3(angVel.x, angVel.y, angVel.z),
+                                                                                              tstep);
             }
 
             mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
