@@ -327,8 +327,6 @@ namespace vi_slam{
             return Tcw;
         }
 
-
-
         void System::ActivateLocalizationMode()
         {
             unique_lock<mutex> lock(mMutexMode);
