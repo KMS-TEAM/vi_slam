@@ -20,11 +20,11 @@ namespace vi_slam{
     using namespace basics;
 
     namespace core{
-        LoopClosing::LoopClosing(Atlas *pAtlas, KeyFrameDatabase *pDB, DBoW3::Vocabulary *pVoc, const bool bFixScale):
+        LoopClosing::LoopClosing(Atlas *pAtlas, KeyFrameDatabase *pDB, DBoW3::Vocabulary *pVoc, const bool bFixScale, optimization::GTSAMOptimizer *gtsam_optimizer):
                 mbResetRequested(false), mbResetActiveMapRequested(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas),
                 mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
                 mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0), mnLoopNumCoincidences(0), mnMergeNumCoincidences(0),
-                mbLoopDetected(false), mbMergeDetected(false), mnLoopNumNotFound(0), mnMergeNumNotFound(0)
+                mbLoopDetected(false), mbMergeDetected(false), mnLoopNumNotFound(0), mnMergeNumNotFound(0), gtsam_optimizer_(gtsam_optimizer)
         {
             mnCovisibilityConsistencyTh = 3;
             mpLastCurrentKF = static_cast<KeyFrame*>(NULL);
@@ -1903,7 +1903,7 @@ namespace vi_slam{
 #endif
 
             if(!bImuInit)
-                Optimizer::GlobalBundleAdjustemnt(pActiveMap,10,&mbStopGBA,nLoopKF,false);
+                Optimizer::GlobalBundleAdjustemnt(pActiveMap,10,&mbStopGBA,nLoopKF,false, gtsam_optimizer_);
             else
                 Optimizer::FullInertialBA(pActiveMap,7,false,nLoopKF,&mbStopGBA);
 

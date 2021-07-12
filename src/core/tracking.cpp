@@ -1715,7 +1715,6 @@ namespace vi_slam{
                 }
             }
 
-
             if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO) && mpLastKeyFrame)
                 mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
 
