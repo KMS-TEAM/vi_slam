@@ -28,7 +28,7 @@ namespace vi_slam{
         Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
         System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
-                       const bool bUseViewer, const int initFr, const string &strSequence, const string &strLoadingFile):
+                       const bool bUseViewer, const int initFr, const string &strSequence, const string &strLoadingFile, const optimization::GTSAMOptimizer::UpdateType gtsam_type):
                 mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
                 mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false)
         {
@@ -50,6 +50,13 @@ namespace vi_slam{
                 cout << "Monocular-Inertial" << endl;
             else if(mSensor==IMU_STEREO)
                 cout << "Stereo-Inertial" << endl;
+
+            cout << "GTSAM Optimizer type: ";
+            if (gtsam_type==vi_slam::optimization::GTSAMOptimizer::BATCH)
+                cout << "Batch" << endl;
+            else if (gtsam_type==vi_slam::optimization::GTSAMOptimizer::INCREMENTAL)
+                cout << "Incremental" << endl;
+            gtsam_optimizer_->setUpdateType(gtsam_type);
 
             //Check settings file
             cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
@@ -96,7 +103,7 @@ namespace vi_slam{
                                      mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, strSequence);
 
             //Initialize the Local Mapping thread and launch
-            mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, strSequence);
+            mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, strSequence, gtsam_optimizer_);
             mptLocalMapping = new thread(&core::LocalMapping::Run,mpLocalMapper);
             mpLocalMapper->mThFarPoints = fsSettings["thFarPoints"];
             if(mpLocalMapper->mThFarPoints!=0)

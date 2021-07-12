@@ -14,6 +14,9 @@
 
 #include "vi_slam/core/loopclosing.h"
 
+#include "vi_slam/optimization/gtsamoptimizer.h"
+#include "vi_slam/optimization/gtsamserialization.h"
+
 #include <math.h>
 #include <g2o/types/sim3/types_seven_dof_expmap.h>
 #include <g2o/core/sparse_block_matrix.h>
@@ -26,21 +29,34 @@
 #include <g2o/solvers/dense/linear_solver_dense.h>
 
 namespace vi_slam{
+
+    namespace datastructures{
+        class KeyFrame;
+        class MapPoint;
+    }
+
+    namespace core{
+        class LoopClosing;
+    }
+
     namespace optimization{
 
         using namespace core;
+
+        class GTSAMOptimizer;
 
         class Optimizer {
         public:
             void static BundleAdjustment(const std::vector<KeyFrame*> &vpKF, const std::vector<MapPoint*> &vpMP,
                                          int nIterations = 5, bool *pbStopFlag=NULL, const unsigned long nLoopKF=0,
-                                         const bool bRobust = true);
+                                         const bool bRobust = true, GTSAMOptimizer *gtsam_optimizer = nullptr);
             void static GlobalBundleAdjustemnt(Map* pMap, int nIterations=5, bool *pbStopFlag=NULL,
-                                               const unsigned long nLoopKF=0, const bool bRobust = true);
+                                               const unsigned long nLoopKF=0, const bool bRobust = true,
+                                               GTSAMOptimizer *gtsam_optimizer = nullptr);
             void static FullInertialBA(Map *pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);
 
             void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, vector<KeyFrame*> &vpNonEnoughOptKFs);
-            void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
+            void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, GTSAMOptimizer *gtsam_optimizer = nullptr);
 
             void static MergeBundleAdjustmentVisual(KeyFrame* pCurrentKF, vector<KeyFrame*> vpWeldingKFs, vector<KeyFrame*> vpFixedKFs, bool *pbStopFlag);
 
@@ -101,6 +117,9 @@ namespace vi_slam{
             void static InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
             void static InertialOptimization(vector<KeyFrame*> vpKFs, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
             void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale);
+
+        private:
+            static void printActiveGraph(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP);
         };
     }
 }

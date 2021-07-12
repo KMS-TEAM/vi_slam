@@ -31,16 +31,16 @@ namespace vi_slam{
             return (a.second < b.second);
         }
 
-        void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
+        void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust, GTSAMOptimizer *gtsam_optimizer)
         {
             vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
             vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
             std::cerr << "Check Global Bundle Adjustment: " << vpKFs.size() << " " << vpMP.size() << std::endl;
-            BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
+            BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust, gtsam_optimizer);
         }
 
         void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
-                                         int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
+                                         int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust, GTSAMOptimizer *gtsam_optimizer)
         {
             vector<bool> vbNotIncludedMP;
             vbNotIncludedMP.resize(vpMP.size());
@@ -379,6 +379,7 @@ namespace vi_slam{
                     pMP->mnBAGlobalForKF = nLoopKF;
                 }
             }
+            gtsam_optimizer->transformGraphToGtsam(vpKFs, vpMP);
         }
 
         void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool *pbStopFlag, bool bInit, float priorG, float priorA, Eigen::VectorXd *vSingVal, bool *bHess)
@@ -1637,10 +1638,13 @@ namespace vi_slam{
             pCurrentMap->IncreaseChangeIndex();
         }
 
-        void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges)
+        void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, GTSAMOptimizer *gtsam_optimizer)
         {
             // Local KeyFrames: First Breath Search from Current Keyframe
             list<KeyFrame*> lLocalKeyFrames;
+
+            auto vpKFs = pMap->GetAllKeyFrames();
+            auto vpMP = pMap->GetAllMapPoints();
 
             lLocalKeyFrames.push_back(pKF);
             pKF->mnBALocalForKF = pKF->mnId;
@@ -2107,6 +2111,8 @@ namespace vi_slam{
                 pMP->SetWorldPos(basics::converter::toCvMat(vPoint->estimate()));
                 pMP->UpdateNormalAndDepth();
             }
+
+            gtsam_optimizer->transformGraphToGtsam(vpKFs, vpMP);
 
             // TODO Check this changeindex
             pMap->IncreaseChangeIndex();
@@ -7815,6 +7821,22 @@ namespace vi_slam{
                 pMP->UpdateNormalAndDepth();
             }
             pMap->IncreaseChangeIndex();
+        }
+
+        void Optimizer::printActiveGraph(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP) {
+            std::cout << "================== Vi-SLAM GRAPH ==================" << std::endl;
+            std::cout << "====================== FACTORS =====================" << std::endl;
+            for (size_t i = 0; i < vpKFs.size(); i++) {
+                KeyFrame *pKF = vpKFs[i];
+                if (pKF->isBad())
+                    continue;
+                auto spMP = pKF->GetMapPoints();
+                for (const auto &it: spMP) {
+                    if (it->isBad())
+                        continue;
+                    std::cout << "x" << pKF->mnId << "-l" << it->id_<< std::endl;
+                }
+            }
         }
     }
 }

@@ -1,2 +1,5 @@
 add_executable(kitti_stereo kitti_stereo.cpp)
 target_link_libraries(kitti_stereo vi_slam)
+
+add_executable(kitti_vio kitti_stereo_vio_gtsam.cpp)
+target_link_libraries(kitti_vio vi_slam)

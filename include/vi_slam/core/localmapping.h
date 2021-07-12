@@ -18,6 +18,9 @@
 #include "vi_slam/core/monoinitializer.h"
 #include "vi_slam/core/system.h"
 
+#include "vi_slam/optimization/gtsamserialization.h"
+#include "vi_slam/optimization/gtsamoptimizer.h"
+
 #include <mutex>
 
 using namespace vi_slam::datastructures;
@@ -34,6 +37,7 @@ namespace vi_slam{
 
     namespace optimization{
         class Optimizer;
+        class GTSAMOptimizer;
     }
 
     namespace core{
@@ -43,7 +47,12 @@ namespace vi_slam{
 
         class LocalMapping {
         public:
-            LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
+            LocalMapping(System* pSys,
+                         Atlas* pAtlas,
+                         const float bMonocular,
+                         bool bInertial,
+                         const string &_strSeqName=std::string(),
+                         vi_slam::optimization::GTSAMOptimizer *gtsam_optimizer = nullptr);
 
             void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -106,6 +115,8 @@ namespace vi_slam{
             // not consider far points (clouds)
             bool mbFarPoints;
             float mThFarPoints;
+
+            optimization::GTSAMOptimizer* gtsam_optimizer_;
 
 #ifdef REGISTER_TIMES
             vector<double> vdKFInsert_ms;
